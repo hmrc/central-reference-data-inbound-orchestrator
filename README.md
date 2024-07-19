@@ -1,8 +1,6 @@
 
 # central-reference-data-inbound-orchestrator
 
-This is a placeholder README.md for a new repository
-
 ## How to run service using SM2
 Run the following command to start this service along with all its dependencies locally:
 `sm2 --start CRDL_ALL`
