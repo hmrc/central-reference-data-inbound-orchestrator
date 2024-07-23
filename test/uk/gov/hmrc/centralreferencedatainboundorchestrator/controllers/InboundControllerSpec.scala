@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject()(cc: ControllerComponents)
-    extends BackendController(cc):
+class InboundControllerSpec extends AnyWordSpec, Matchers:
 
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
+  private val fakeRequest = FakeRequest("POST", "/")
+  private val controller = new InboundController(Helpers.stubControllerComponents())
+
+  "POST /" should {
+    "accept a valid message" in {
+      val result = controller.submit()(fakeRequest)
+      status(result) shouldBe ACCEPTED
+    }
   }

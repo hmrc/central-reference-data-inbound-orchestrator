@@ -21,15 +21,16 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
+import play.api.test.Helpers._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.DefaultBodyWritables._
 
-class HealthEndpointIntegrationSpec
-  extends AnyWordSpec
-     with Matchers
-     with ScalaFutures
-     with IntegrationPatience
-     with GuiceOneServerPerSuite {
+class InboundControllerISpec extends AnyWordSpec,
+  Matchers,
+  ScalaFutures,
+  IntegrationPatience,
+  GuiceOneServerPerSuite:
 
   private val wsClient = app.injector.instanceOf[WSClient]
   private val baseUrl  = s"http://localhost:$port"
@@ -38,15 +39,16 @@ class HealthEndpointIntegrationSpec
     GuiceApplicationBuilder()
       .build()
 
-  "service health endpoint" should {
-    "respond with 200 status" in {
+  "POST / endpoint" should {
+    "return created with a valid request" in {
+      val url = s"$baseUrl/central-reference-data-inbound-orchestrator/"
+      println(url)
       val response =
         wsClient
-          .url(s"$baseUrl/ping/ping")
-          .get()
+          .url(url)
+          .post("<Body/>")
           .futureValue
 
-      response.status shouldBe 200
+      response.status shouldBe ACCEPTED
     }
   }
-}
