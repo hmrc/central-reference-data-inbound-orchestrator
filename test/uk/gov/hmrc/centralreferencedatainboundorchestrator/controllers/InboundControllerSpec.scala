@@ -16,19 +16,53 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import org.apache.pekko.stream.Materializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.test.Helpers._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 
-class InboundControllerSpec extends AnyWordSpec, Matchers:
+import scala.xml.*
+
+class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
   private val fakeRequest = FakeRequest("POST", "/")
   private val controller = new InboundController(Helpers.stubControllerComponents())
+  implicit lazy val mat: Materializer = app.injector.instanceOf[Materializer]
+
+  // This is the expected body we need to send to EIS, using this for test purposes
+  // until we get a real sample input file.
+  private val validTestBody: scala.xml.Elem = <MainMessage>
+      <Body>
+        <TaskIdentifier>780912</TaskIdentifier>
+        <AttributeName>ReferenceData</AttributeName>
+      	<MessageType>gZip</MessageType>
+      	<IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b30a</IncludedBinaryObject>
+      	<MessageSender>CS/RD2</MessageSender>
+      </Body>
+    </MainMessage>
 
   "POST /" should {
     "accept a valid message" in {
-      val result = controller.submit()(fakeRequest)
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders("x-files-included" -> "true", "Content-Type" -> "application/xml")
+          .withXmlBody(validTestBody)
+      )
       status(result) shouldBe ACCEPTED
+    }
+
+    "return Bad Request if the x-files-included header is not present" in {
+      val result = controller.submit()(fakeRequest)
+      status(result) shouldBe BAD_REQUEST
+    }
+
+    "return Bad Request if there is no XML content" in {
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders("x-files-included" -> "true")
+      )
+      status(result) shouldBe BAD_REQUEST
     }
   }

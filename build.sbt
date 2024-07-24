@@ -13,7 +13,7 @@ lazy val microservice = Project("central-reference-data-inbound-orchestrator", f
     PlayKeys.playDefaultPort := 7250
   )
   .settings(resolvers += Resolver.jcenterRepo)
-  .settings(CodeCoverageSettings.settings: _*)
+  .settings(CodeCoverageSettings.settings *)
   .settings(scalacOptions := scalacOptions.value.diff(Seq("-Wunused:all")))
 
 lazy val it = project

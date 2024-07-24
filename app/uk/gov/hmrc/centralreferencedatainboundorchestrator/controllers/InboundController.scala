@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -26,6 +26,11 @@ import scala.concurrent.Future
 class InboundController @Inject()(cc: ControllerComponents)
   extends BackendController(cc):
 
+  private val FileIncludedHeader = "x-files-included"
+
   def submit(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Accepted)
+    if request.headers.get(FileIncludedHeader).contains("true") then
+      Future.successful(Accepted)
+    else
+      Future.successful(BadRequest)
   }
