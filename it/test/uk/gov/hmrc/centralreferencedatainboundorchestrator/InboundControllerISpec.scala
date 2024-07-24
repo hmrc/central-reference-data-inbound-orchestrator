@@ -46,6 +46,10 @@ class InboundControllerISpec extends AnyWordSpec,
       val response =
         wsClient
           .url(url)
+          .addHttpHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
           .post("<Body/>")
           .futureValue
 

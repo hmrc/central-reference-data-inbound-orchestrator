@@ -21,6 +21,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
 @Singleton
 class InboundController @Inject()(cc: ControllerComponents)
@@ -28,7 +29,7 @@ class InboundController @Inject()(cc: ControllerComponents)
 
   private val FileIncludedHeader = "x-files-included"
 
-  def submit(): Action[AnyContent] = Action.async { implicit request =>
+  def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
     if request.headers.get(FileIncludedHeader).contains("true") then
       Future.successful(Accepted)
     else

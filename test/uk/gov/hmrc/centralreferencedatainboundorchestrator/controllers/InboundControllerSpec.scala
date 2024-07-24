@@ -47,22 +47,33 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
     "accept a valid message" in {
       val result = controller.submit()(
         fakeRequest
-          .withHeaders("x-files-included" -> "true", "Content-Type" -> "application/xml")
-          .withXmlBody(validTestBody)
+          .withHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
     }
 
     "return Bad Request if the x-files-included header is not present" in {
-      val result = controller.submit()(fakeRequest)
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders(
+            "Content-Type" -> "application/xml"
+          )
+          .withBody(validTestBody)
+      )
       status(result) shouldBe BAD_REQUEST
     }
 
     "return Bad Request if there is no XML content" in {
       val result = controller.submit()(
         fakeRequest
-          .withHeaders("x-files-included" -> "true")
+          .withHeaders(
+            "x-files-included" -> "true"
+          )
       )
-      status(result) shouldBe BAD_REQUEST
+      status(result) shouldBe UNSUPPORTED_MEDIA_TYPE
     }
   }
