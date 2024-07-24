@@ -27,6 +27,7 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import org.mongodb.scala.*
 
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -40,7 +41,13 @@ class MessageWrapperRepository @Inject()(
   indexes = Seq(
     IndexModel(
       Indexes.ascending("uid"),
-      IndexOptions().name("uid").unique(true)
+      IndexOptions().name("uidx").unique(true)
+    ),
+    IndexModel(
+      Indexes.ascending("lastUpdated"),
+      IndexOptions()
+        .name("lastUpdatedIdx")
+        .expireAfter(appConfig.cacheTtl, TimeUnit.DAYS)
     )
   ),
   replaceIndexes = true
@@ -73,7 +80,7 @@ class MessageWrapperRepository @Inject()(
       equal("uid", uid),
       Updates.combine(
         Updates.set("status", status),
-        Updates.set("lastUpdatedTimestamp", Instant.now())
+        Updates.set("lastUpdated", Instant.now())
       ),
       UpdateOptions().upsert(true)
     ).toFuture()
