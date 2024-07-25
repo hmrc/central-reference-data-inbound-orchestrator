@@ -20,8 +20,8 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MessageWrapperRepoTrait {
-  def insert(uid: String,
+trait MessageWrapperRepoTrait:
+  def insertMessageWrapper(uid: String,
              payload: String,
              status: String)
             (implicit ec: ExecutionContext): Future[Boolean]
@@ -29,4 +29,3 @@ trait MessageWrapperRepoTrait {
   def findByUid(uid: String)(implicit ec: ExecutionContext): Future[Option[MessageWrapper]]
 
   def updateStatus(uid: String, status: String)(implicit ec: ExecutionContext): Future[Boolean]
-}

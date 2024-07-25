@@ -51,19 +51,19 @@ class MessageWrapperRepository @Inject()(
     )
   ),
   replaceIndexes = true
-) with Logging with MessageWrapperRepoTrait {
+) with Logging {
 
-  def insert(uid: String,
-             payload: String,
-             status: String)
-            (implicit ec: ExecutionContext): Future[Boolean] = {
+  def insertMessageWrapper(uid: String,
+                           payload: String,
+                           status: String)
+                          (implicit ec: ExecutionContext): Future[Boolean] = {
     logger.info(s"Inserting a message wrapper in $collectionName table with uid: $uid")
     collection.insertOne(MessageWrapper(uid, payload, status))
       .head()
       .map(_ =>
         logger.info(s"Inserted a message wrapper in $collectionName table with uid: $uid")
-          true
-        )
+        true
+      )
       .recoverWith {
         case e =>
           logger.info(s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}")
@@ -77,18 +77,16 @@ class MessageWrapperRepository @Inject()(
 
   def updateStatus(uid: String, status: String)(implicit ec: ExecutionContext): Future[Boolean] =
     collection.updateOne(
-      equal("uid", uid),
-      Updates.combine(
-        Updates.set("status", status),
-        Updates.set("lastUpdated", Instant.now())
-      ),
-      UpdateOptions().upsert(true)
-    ).toFuture()
-      .map(_ => true)
+        Filters.equal("uid", uid),
+        Updates.combine(
+          Updates.set("status", status),
+          Updates.set("lastUpdated", Instant.now())
+        )
+      ).toFuture()
+      .map(_.wasAcknowledged())
       .recoverWith {
-          case e =>
-            logger.info(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}")
-            Future.successful(false)
+        case e =>
+          logger.info(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}")
+          Future.successful(false)
       }
-
 }
