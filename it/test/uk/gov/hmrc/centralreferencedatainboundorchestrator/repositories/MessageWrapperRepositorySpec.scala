@@ -110,7 +110,7 @@ class MessageWrapperRepositorySpec
       fetchedRecord.value.status mustEqual "sent"
     }
 
-    "must return false if uid not found and updating status doesn't happen" in {
+    "must return status unchanged if uid not found and updating status doesn't happen" in {
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val updatedRecord = messageRepository.updateStatus("1234", "sent").futureValue
