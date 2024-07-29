@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.centralreferencedatainboundorchestrator
+package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
-import play.api.test.Helpers._
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.WSClient
-import play.api.libs.ws.DefaultBodyWritables._
+import play.api.test.Helpers.*
 
 class InboundControllerISpec extends AnyWordSpec,
   Matchers,
