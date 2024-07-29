@@ -23,3 +23,4 @@ import play.api.Configuration
 class AppConfig @Inject()(config: Configuration):
 
   val appName: String = config.get[String]("appName")
+  val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInDays")
