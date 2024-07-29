@@ -29,7 +29,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
   private val fakeRequest = FakeRequest("POST", "/")
   private val controller = new InboundController(Helpers.stubControllerComponents())
-  implicit lazy val mat: Materializer = app.injector.instanceOf[Materializer]
+  given mat: Materializer = app.injector.instanceOf[Materializer]
 
   // This is the expected body we need to send to EIS, using this for test purposes
   // until we get a real sample input file.
