@@ -21,7 +21,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 
-case class MessageWrapper(uid: String, payload: String, status: String, lastUpdated: Instant = Instant.now(), receivedTimestamp: Instant = Instant.now())
+case class MessageWrapper(uid: String, payload: String, status: String, lastUpdated: Instant, receivedTimestamp: Instant)
 
 object MessageWrapper:
   def apply(uid: String, payload: String, status: String): MessageWrapper = {

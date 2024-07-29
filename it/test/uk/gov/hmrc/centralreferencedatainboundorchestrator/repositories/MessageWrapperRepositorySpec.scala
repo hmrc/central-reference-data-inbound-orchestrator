@@ -47,7 +47,7 @@ class MessageWrapperRepositorySpec
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
 
-  private val messageWrapper = MessageWrapper("id", "</Body>", "received")
+  private val messageWrapper = MessageWrapper("id", "<Body/>", "received")
 
   private val mockAppConfig = mock[AppConfig]
   when(mockAppConfig.cacheTtl) thenReturn 1.toLong

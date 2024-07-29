@@ -34,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MessageWrapperRepository @Inject()(
                                      mongoComponent: MongoComponent,
                                      appConfig: AppConfig
-                                   )(implicit ec: ExecutionContext) extends PlayMongoRepository[MessageWrapper](
+                                   )(using ec: ExecutionContext) extends PlayMongoRepository[MessageWrapper](
   collectionName = "message-wrapper",
   mongoComponent = mongoComponent,
   domainFormat = MessageWrapper.mongoFormat,
@@ -51,12 +51,12 @@ class MessageWrapperRepository @Inject()(
     )
   ),
   replaceIndexes = true
-) with Logging with MessageWrapperRepoTrait:
+), Logging, MessageWrapperRepoTrait:
 
   def insertMessageWrapper(uid: String,
                            payload: String,
                            status: String)
-                          (implicit ec: ExecutionContext): Future[Boolean] = {
+                          (using ec: ExecutionContext): Future[Boolean] = {
     logger.info(s"Inserting a message wrapper in $collectionName table with uid: $uid")
     collection.insertOne(MessageWrapper(uid, payload, status))
       .head()
@@ -71,11 +71,11 @@ class MessageWrapperRepository @Inject()(
       }
   }
 
-  def findByUid(uid: String)(implicit ec: ExecutionContext): Future[Option[MessageWrapper]] =
+  def findByUid(uid: String)(using ec: ExecutionContext): Future[Option[MessageWrapper]] =
     collection.find(Filters.equal("uid", uid))
       .headOption()
 
-  def updateStatus(uid: String, status: String)(implicit ec: ExecutionContext): Future[Boolean] =
+  def updateStatus(uid: String, status: String)(using ec: ExecutionContext): Future[Boolean] =
     collection.updateOne(
         Filters.equal("uid", uid),
         Updates.combine(

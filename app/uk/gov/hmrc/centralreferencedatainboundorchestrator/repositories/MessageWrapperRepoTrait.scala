@@ -24,8 +24,8 @@ trait MessageWrapperRepoTrait:
   def insertMessageWrapper(uid: String,
                            payload: String,
                            status: String)
-                          (implicit ec: ExecutionContext): Future[Boolean]
+                          (using ec: ExecutionContext): Future[Boolean]
 
-  def findByUid(uid: String)(implicit ec: ExecutionContext): Future[Option[MessageWrapper]]
+  def findByUid(uid: String)(using ec: ExecutionContext): Future[Option[MessageWrapper]]
 
-  def updateStatus(uid: String, status: String)(implicit ec: ExecutionContext): Future[Boolean]
+  def updateStatus(uid: String, status: String)(using ec: ExecutionContext): Future[Boolean]
