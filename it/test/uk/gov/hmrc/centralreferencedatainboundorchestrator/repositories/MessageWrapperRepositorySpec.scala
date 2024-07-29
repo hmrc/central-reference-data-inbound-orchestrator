@@ -37,12 +37,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class MessageWrapperRepositorySpec
   extends AnyFreeSpec
-    with Matchers
-    with DefaultPlayMongoRepositorySupport[MessageWrapper]
-    with ScalaFutures
-    with IntegrationPatience
-    with OptionValues
-    with MockitoSugar {
+    , Matchers
+    , DefaultPlayMongoRepositorySupport[MessageWrapper]
+    , ScalaFutures
+    , IntegrationPatience
+    , OptionValues
+    , MockitoSugar {
 
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
   private val stubClock: Clock = Clock.fixed(instant, ZoneId.systemDefault)
