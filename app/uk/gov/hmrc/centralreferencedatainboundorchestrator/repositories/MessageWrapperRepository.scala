@@ -51,7 +51,7 @@ class MessageWrapperRepository @Inject()(
     )
   ),
   replaceIndexes = true
-) with Logging {
+) with Logging with MessageWrapperRepoTrait:
 
   def insertMessageWrapper(uid: String,
                            payload: String,
@@ -89,4 +89,3 @@ class MessageWrapperRepository @Inject()(
           logger.info(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}")
           Future.successful(false)
       }
-}
