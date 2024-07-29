@@ -31,7 +31,7 @@ class InboundController @Inject()(cc: ControllerComponents)
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
     if request.headers.get(FileIncludedHeader).contains("true") then
-      //TODO: Store the message into mongo, this will be done as part of CRDL-73.s
+      //TODO: Store the message into mongo, this will be done as part of CRDL-73.
       Future.successful(Accepted)
     else
       Future.successful(BadRequest)
