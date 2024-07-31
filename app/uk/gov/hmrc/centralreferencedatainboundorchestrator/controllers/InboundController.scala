@@ -16,15 +16,23 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
+import scala.xml.NodeSeq
 
-@Singleton()
-class MicroserviceHelloWorldController @Inject()(cc: ControllerComponents)
-    extends BackendController(cc):
+@Singleton
+class InboundController @Inject()(cc: ControllerComponents)
+  extends BackendController(cc):
 
-  def hello(): Action[AnyContent] = Action.async { implicit request =>
-    Future.successful(Ok("Hello world"))
+  private val FileIncludedHeader = "x-files-included"
+
+  def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
+    if request.headers.get(FileIncludedHeader).contains("true") then
+      //TODO: Store the message into mongo, this will be done as part of CRDL-73.
+      Future.successful(Accepted)
+    else
+      Future.successful(BadRequest)
   }
