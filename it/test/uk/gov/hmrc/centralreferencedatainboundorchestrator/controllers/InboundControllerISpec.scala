@@ -35,6 +35,7 @@ class InboundControllerISpec extends AnyWordSpec,
 
   private val wsClient = app.injector.instanceOf[WSClient]
   private val baseUrl  = s"http://localhost:$port"
+  private val url = s"$baseUrl/central-reference-data-inbound-orchestrator/"
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -42,8 +43,6 @@ class InboundControllerISpec extends AnyWordSpec,
 
   "POST / endpoint" should {
     "return created with a valid request" in {
-      val url = s"$baseUrl/central-reference-data-inbound-orchestrator/"
-      println(url)
       val response =
         wsClient
           .url(url)
@@ -58,8 +57,6 @@ class InboundControllerISpec extends AnyWordSpec,
     }
 
     "return bad request if the request does not contain all of the headers" in {
-      val url = s"$baseUrl/central-reference-data-inbound-orchestrator/"
-      println(url)
       val response =
         wsClient
           .url(url)
