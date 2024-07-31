@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import helpers.InboundSoapMessage
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -50,9 +51,24 @@ class InboundControllerISpec extends AnyWordSpec,
             "x-files-included" -> "true",
             "Content-Type" -> "application/xml"
           )
-          .post("<Body/>")
+          .post(InboundSoapMessage.xmlBody.toString)
           .futureValue
 
       response.status shouldBe ACCEPTED
+    }
+
+    "return bad request if the request does not contain all of the headers" in {
+      val url = s"$baseUrl/central-reference-data-inbound-orchestrator/"
+      println(url)
+      val response =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "Content-Type" -> "application/xml"
+          )
+          .post(InboundSoapMessage.xmlBody.toString)
+          .futureValue
+
+      response.status shouldBe BAD_REQUEST
     }
   }

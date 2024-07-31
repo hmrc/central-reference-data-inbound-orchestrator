@@ -22,7 +22,6 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-
 import scala.xml.*
 
 class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
@@ -33,7 +32,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
   // This is the expected body we need to send to EIS, using this for test purposes
   // until we get a real sample input file.
-  private val validTestBody: scala.xml.Elem = <MainMessage>
+  private val validTestBody: Elem = <MainMessage>
       <Body>
         <TaskIdentifier>780912</TaskIdentifier>
         <AttributeName>ReferenceData</AttributeName>
