@@ -16,23 +16,51 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import play.api.Logging
 import play.api.mvc.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators.InboundControllerOrchestrator
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import javax.xml.validation.SchemaFactory
+import javax.xml.XMLConstants
+import javax.xml.transform.stream.StreamSource
+import java.io.StringReader
+import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.NodeSeq
+import scala.util.{Success, Try}
 
 @Singleton
-class InboundController @Inject()(cc: ControllerComponents)
-  extends BackendController(cc):
+class InboundController @Inject()(
+                                   cc: ControllerComponents,
+                                   inboundControllerOrchestator: InboundControllerOrchestrator)
+                                 (using ec: ExecutionContext)
+  extends BackendController(cc) with Logging:
 
   private val FileIncludedHeader = "x-files-included"
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
-    if request.headers.get(FileIncludedHeader).contains("true") then
-      //TODO: Store the message into mongo, this will be done as part of CRDL-73.
-      Future.successful(Accepted)
+    if hasFilesHeader && validateRequestBody(request.body) then
+      inboundControllerOrchestator.processMessage(request.body) map {
+        case true => Accepted
+        case false => InternalServerError
+      }
     else
       Future.successful(BadRequest)
   }
+
+
+  private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =
+    request.headers.get(FileIncludedHeader).exists(_.toBoolean) && request.headers.get(FileIncludedHeader).contains("true")
+
+  private def validateRequestBody(body: NodeSeq) =
+    Try {
+      val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+      val xsd = getClass.getResourceAsStream("/schemas/TODO")
+      val schema = factory.newSchema(new StreamSource(xsd))
+      val validator = schema.newValidator()
+      validator.validate(new StreamSource(new StringReader(body.toString)))
+    } match {
+      case Success(_) => true
+      case _ => false
+    }
