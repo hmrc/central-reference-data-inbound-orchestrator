@@ -21,7 +21,7 @@ import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, UpdateOptions, Updates}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageStatus, MessageWrapper}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import org.mongodb.scala.*
@@ -55,7 +55,7 @@ class MessageWrapperRepository @Inject()(
 
   def insertMessageWrapper(uid: String,
                            payload: String,
-                           status: String)
+                           status: MessageStatus)
                           (using ec: ExecutionContext): Future[Boolean] = {
     logger.info(s"Inserting a message wrapper in $collectionName table with uid: $uid")
     collection.insertOne(MessageWrapper(uid, payload, status))

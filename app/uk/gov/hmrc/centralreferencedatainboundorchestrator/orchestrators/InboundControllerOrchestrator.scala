@@ -17,10 +17,9 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators
 
 import play.api.Logging
-
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.utils.EncodingUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -34,15 +33,16 @@ class InboundControllerOrchestrator @Inject() (
   def processMessage(xml: NodeSeq): Future[Boolean] =
     for
       uid <- getUID(xml)
-      dbRes <- messageWrapperRepository.insertMessageWrapper(uid, xml.toString, "RECEIVED")
+      dbRes <- messageWrapperRepository.insertMessageWrapper(uid, xml.toString, Received)
     yield dbRes
 
   private def getUID(xml: NodeSeq): Future[String] =
-    Try((xml \\ "includedBinaryObject").text.trim) match {
-      case Success(uid) =>
+    Try((xml \\ "IncludedBinaryObject").text.trim) match {
+      case Success(uid) if uid != "" =>
         logger.info("Successfully extracted UID")
-        Future.successful(EncodingUtils.decodeBase64(uid))
+        Future.successful(uid)
       case Failure(ex) =>
         logger.error("failed to find UID")
         Future.failed(ex)
+      case _ => Future.failed(new Throwable("Failed for unknown reason, potentially an empty UID or a missing Node"))
   }

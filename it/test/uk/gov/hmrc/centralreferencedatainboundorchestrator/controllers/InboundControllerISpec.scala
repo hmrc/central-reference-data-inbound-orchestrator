@@ -42,7 +42,7 @@ class InboundControllerISpec extends AnyWordSpec,
       .build()
 
   "POST / endpoint" should {
-    "return created with a valid request" in {
+    "return Accepted with a valid request" in {
       val response =
         wsClient
           .url(url)

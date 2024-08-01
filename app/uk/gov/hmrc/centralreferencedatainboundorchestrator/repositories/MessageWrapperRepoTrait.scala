@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageStatus, MessageWrapper}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MessageWrapperRepoTrait:
   def insertMessageWrapper(uid: String,
                            payload: String,
-                           status: String)
+                           status: MessageStatus)
                           (using ec: ExecutionContext): Future[Boolean]
 
   def findByUid(uid: String)(using ec: ExecutionContext): Future[Option[MessageWrapper]]

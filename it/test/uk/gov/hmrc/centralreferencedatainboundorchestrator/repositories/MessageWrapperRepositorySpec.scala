@@ -25,6 +25,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -45,7 +46,7 @@ class MessageWrapperRepositorySpec
 
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
 
-  private val messageWrapper = MessageWrapper("id", "<Body/>", "received")
+  private val messageWrapper = MessageWrapper("id", "<Body/>", Received)
 
   private val mockAppConfig = mock[AppConfig]
   when(mockAppConfig.cacheTtl) thenReturn 1.toLong
@@ -103,9 +104,9 @@ class MessageWrapperRepositorySpec
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
-      fetchedBeforeUpdateRecord.value.status mustEqual "received"
+      fetchedBeforeUpdateRecord.value.status.status mustEqual "received"
       updatedRecord mustEqual true
-      fetchedRecord.value.status mustEqual "sent"
+      fetchedRecord.value.status.status mustEqual "sent"
     }
 
     "must return status unchanged if uid not found and updating status doesn't happen" in {
@@ -116,7 +117,7 @@ class MessageWrapperRepositorySpec
 
       insertResult mustEqual true
       updatedRecord mustEqual true
-      fetchedRecord.value.status mustEqual "received"
+      fetchedRecord.value.status.status mustEqual "received"
     }
   }
 }
