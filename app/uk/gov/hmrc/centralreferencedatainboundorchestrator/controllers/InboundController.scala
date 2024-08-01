@@ -33,7 +33,7 @@ import scala.util.{Success, Try}
 @Singleton
 class InboundController @Inject()(
                                    cc: ControllerComponents,
-                                   inboundControllerOrchestator: InboundControllerOrchestrator)
+                                   inboundControllerOrchestrator: InboundControllerOrchestrator)
                                  (using ec: ExecutionContext)
   extends BackendController(cc) with Logging:
 
@@ -41,9 +41,9 @@ class InboundController @Inject()(
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
     if hasFilesHeader && validateRequestBody(request.body) then
-      inboundControllerOrchestator.processMessage(request.body) map {
-        case true => Accepted
-        case false => InternalServerError
+      inboundControllerOrchestrator.processMessage(request.body) flatMap {
+        case true => Future.successful(Accepted)
+        case false => Future.successful(InternalServerError)
       }
     else
       Future.successful(BadRequest)
@@ -56,7 +56,7 @@ class InboundController @Inject()(
   private def validateRequestBody(body: NodeSeq) =
     Try {
       val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-      val xsd = getClass.getResourceAsStream("/schemas/TODO")
+      val xsd = getClass.getResourceAsStream("/schemas/csrd120main-v1.xsd")
       val schema = factory.newSchema(new StreamSource(xsd))
       val validator = schema.newValidator()
       validator.validate(new StreamSource(new StringReader(body.toString)))

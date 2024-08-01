@@ -17,17 +17,26 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import org.apache.pekko.stream.Materializer
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators.InboundControllerOrchestrator
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.xml.*
 
 class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
+  lazy val mockInboundOrchestrator: InboundControllerOrchestrator = mock[InboundControllerOrchestrator]
+
   private val fakeRequest = FakeRequest("POST", "/")
-  private val controller = new InboundController(Helpers.stubControllerComponents())
+  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundOrchestrator)
   given mat: Materializer = app.injector.instanceOf[Materializer]
 
   // This is the expected body we need to send to EIS, using this for test purposes
@@ -44,6 +53,9 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
   "POST /" should {
     "accept a valid message" in {
+      when(mockInboundOrchestrator.processMessage(any()))
+        .thenReturn(Future.successful(true))
+
       val result = controller.submit()(
         fakeRequest
           .withHeaders(
@@ -74,5 +86,20 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
           )
       )
       status(result) shouldBe UNSUPPORTED_MEDIA_TYPE
+    }
+
+    "return internal server error if process message fails" in {
+      when(mockInboundOrchestrator.processMessage(any()))
+        .thenReturn(Future.successful(false))
+
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
