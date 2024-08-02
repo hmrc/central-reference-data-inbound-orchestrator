@@ -17,10 +17,11 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import helpers.InboundSoapMessage
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -29,7 +30,6 @@ import play.api.libs.ws.WSClient
 import play.api.test.Helpers.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.mongo.test.MongoSupport
-import org.mongodb.scala.SingleObservableFuture
 
 class InboundControllerISpec extends AnyWordSpec,
   Matchers,

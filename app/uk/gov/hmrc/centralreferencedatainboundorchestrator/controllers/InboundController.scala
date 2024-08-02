@@ -21,14 +21,14 @@ import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators.InboundControllerOrchestrator
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.io.StringReader
 import javax.inject.{Inject, Singleton}
-import javax.xml.validation.SchemaFactory
 import javax.xml.XMLConstants
 import javax.xml.transform.stream.StreamSource
-import java.io.StringReader
+import javax.xml.validation.SchemaFactory
 import scala.concurrent.{ExecutionContext, Future}
-import scala.xml.NodeSeq
 import scala.util.{Success, Try}
+import scala.xml.NodeSeq
 
 @Singleton
 class InboundController @Inject()(
