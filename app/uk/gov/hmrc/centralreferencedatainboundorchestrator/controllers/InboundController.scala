@@ -56,7 +56,7 @@ class InboundController @Inject()(
   private def validateRequestBody(body: NodeSeq) =
     Try {
       val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-      val xsd = getClass.getResourceAsStream("/schemas/csrd120main-v1.xsd")
+      val xsd = getClass.getResourceAsStream("/schemas/csrd120main-v1.xsd") // this is temporary until we get the correct XSD file from public-soap-proxy
       val schema = factory.newSchema(new StreamSource(xsd))
       val validator = schema.newValidator()
       validator.validate(new StreamSource(new StringReader(body.toString)))
