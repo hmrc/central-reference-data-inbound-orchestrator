@@ -33,10 +33,10 @@ import scala.xml.*
 
 class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
-  lazy val mockInboundOrchestrator: InboundControllerService = mock[InboundControllerService]
+  lazy val mockInboundService: InboundControllerService = mock[InboundControllerService]
 
   private val fakeRequest = FakeRequest("POST", "/")
-  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundOrchestrator)
+  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundService)
   given mat: Materializer = app.injector.instanceOf[Materializer]
 
   // This is the expected body we need to send to EIS, using this for test purposes
@@ -53,7 +53,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
   "POST /" should {
     "accept a valid message" in {
-      when(mockInboundOrchestrator.processMessage(any()))
+      when(mockInboundService.processMessage(any()))
         .thenReturn(Future.successful(true))
 
       val result = controller.submit()(
@@ -89,7 +89,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
     }
 
     "return internal server error if process message fails" in {
-      when(mockInboundOrchestrator.processMessage(any()))
+      when(mockInboundService.processMessage(any()))
         .thenReturn(Future.successful(false))
 
       val result = controller.submit()(
