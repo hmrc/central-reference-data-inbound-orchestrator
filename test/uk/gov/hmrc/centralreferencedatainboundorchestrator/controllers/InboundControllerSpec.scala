@@ -25,7 +25,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators.InboundControllerOrchestrator
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,7 +33,7 @@ import scala.xml.*
 
 class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
-  lazy val mockInboundOrchestrator: InboundControllerOrchestrator = mock[InboundControllerOrchestrator]
+  lazy val mockInboundOrchestrator: InboundControllerService = mock[InboundControllerService]
 
   private val fakeRequest = FakeRequest("POST", "/")
   private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundOrchestrator)

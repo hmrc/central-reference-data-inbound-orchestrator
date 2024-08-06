@@ -18,7 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import play.api.Logging
 import play.api.mvc.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators.InboundControllerOrchestrator
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.io.StringReader
@@ -33,7 +33,7 @@ import scala.xml.NodeSeq
 @Singleton
 class InboundController @Inject()(
                                    cc: ControllerComponents,
-                                   inboundControllerOrchestrator: InboundControllerOrchestrator)
+                                   inboundControllerService: InboundControllerService)
                                  (using ec: ExecutionContext)
   extends BackendController(cc) with Logging:
 
@@ -41,7 +41,7 @@ class InboundController @Inject()(
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
     if hasFilesHeader && validateRequestBody(request.body) then
-      inboundControllerOrchestrator.processMessage(request.body) flatMap {
+      inboundControllerService.processMessage(request.body) flatMap {
         case true => Future.successful(Accepted)
         case false => Future.successful(InternalServerError)
       }

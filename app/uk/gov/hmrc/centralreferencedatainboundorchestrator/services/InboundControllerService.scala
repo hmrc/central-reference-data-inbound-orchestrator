@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators
+package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
@@ -26,7 +26,7 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
 
 @Singleton
-class InboundControllerOrchestrator @Inject() (
+class InboundControllerService @Inject()(
             messageWrapperRepository: MessageWrapperRepository
                                               )(using ec: ExecutionContext) extends Logging:
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.centralreferencedatainboundorchestrator.orchestrators
+package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -29,10 +29,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.Future
 
-class InboundControllerOrchestratorSpec extends AnyWordSpec, Matchers, ScalaFutures:
+class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
   lazy val mockMessageWrapperRepository: MessageWrapperRepository = mock[MessageWrapperRepository]
-  private val orchestrator = new InboundControllerOrchestrator(mockMessageWrapperRepository)
+  private val orchestrator = new InboundControllerService(mockMessageWrapperRepository)
 
   // This is the expected body we need to send to EIS, using this for test purposes
   // until we get a real sample input file.
