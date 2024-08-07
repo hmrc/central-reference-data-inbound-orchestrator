@@ -21,7 +21,7 @@ import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, UpdateOptions, Updates}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageStatus, MessageWrapper}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import org.mongodb.scala.*
@@ -67,13 +67,14 @@ class MessageWrapperRepository @Inject()(
       .recoverWith {
         case e =>
           logger.info(s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}")
-          Future.successful(false)
+          Future.failed(MongoWriteError(s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}"))
       }
   }
 
   def findByUid(uid: String)(using ec: ExecutionContext): Future[Option[MessageWrapper]] =
     collection.find(Filters.equal("uid", uid))
       .headOption()
+      
 
   def updateStatus(uid: String, status: String)(using ec: ExecutionContext): Future[Boolean] =
     collection.updateOne(
@@ -87,5 +88,6 @@ class MessageWrapperRepository @Inject()(
       .recoverWith {
         case e =>
           logger.info(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}")
-          Future.successful(false)
+          Future.failed(MongoWriteError(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"))
+
       }

@@ -24,7 +24,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.test.Helpers.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.Future
@@ -66,18 +66,20 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       result shouldBe true
     }
 
-    "return false when failing to store message in Mongo" in {
+    "return MongoWriteError when failing to store message in Mongo" in {
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
-        .thenReturn(Future.successful(false))
+        .thenReturn(Future.failed(MongoWriteError("failed")))
 
-      val result = orchestrator.processMessage(validTestBody).futureValue
+      val result = orchestrator.processMessage(validTestBody)
 
-      result shouldBe false
+      recoverToExceptionIf[Throwable](result).map { rt =>
+        rt.getMessage shouldBe "failed"
+      }
     }
 
     "Throw an exception if UID is missing in XML" in {
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
-        .thenReturn(Future.successful(false))
+        .thenReturn(Future.failed(MongoWriteError("failed")))
 
       val result = orchestrator.processMessage(invalidTestBody)
 

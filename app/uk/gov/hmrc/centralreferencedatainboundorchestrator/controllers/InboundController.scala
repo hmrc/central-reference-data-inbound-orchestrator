@@ -18,6 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import play.api.Logging
 import play.api.mvc.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -27,7 +28,7 @@ import javax.xml.XMLConstants
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
 
 @Singleton
@@ -41,9 +42,12 @@ class InboundController @Inject()(
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
     if hasFilesHeader && validateRequestBody(request.body) then
-      inboundControllerService.processMessage(request.body) flatMap {
-        case true => Future.successful(Accepted)
-        case false => Future.successful(InternalServerError)
+      inboundControllerService.processMessage(request.body) transform {
+        case Success(_) => Success(Accepted)
+        case Failure(err: Throwable) => err match
+          case InvalidXMLContentError(_) => Success(BadRequest)
+          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
+          case _ => Success(InternalServerError)
       }
     else
       Future.successful(BadRequest)

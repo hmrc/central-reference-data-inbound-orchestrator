@@ -18,9 +18,12 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 
+import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
@@ -42,7 +45,7 @@ class InboundControllerService @Inject()(
         logger.info("Successfully extracted UID")
         Future.successful(uid)
       case Failure(ex) =>
-        logger.error("failed to find UID")
-        Future.failed(ex)
-      case _ => Future.failed(new Throwable("Failed for unknown reason, potentially an empty UID or a missing Node"))
-  }
+        logger.error("Failed to find UID in xml")
+        Future.failed(InvalidXMLContentError("Failed to find UID in xml"))
+      case _ => Future.failed(InvalidXMLContentError("Failed for unknown reason, potentially an empty UID or a missing Node"))
+    }

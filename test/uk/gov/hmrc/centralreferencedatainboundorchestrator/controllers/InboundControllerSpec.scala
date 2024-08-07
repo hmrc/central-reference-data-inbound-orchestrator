@@ -25,6 +25,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -90,7 +91,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
     "return internal server error if process message fails" in {
       when(mockInboundService.processMessage(any()))
-        .thenReturn(Future.successful(false))
+        .thenReturn(Future.failed(MongoWriteError("failed")))
 
       val result = controller.submit()(
         fakeRequest
@@ -101,5 +102,20 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return bad request if UID is missing in XML" in {
+      when(mockInboundService.processMessage(any()))
+        .thenReturn(Future.failed(InvalidXMLContentError("failed")))
+
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe BAD_REQUEST
     }
   }
