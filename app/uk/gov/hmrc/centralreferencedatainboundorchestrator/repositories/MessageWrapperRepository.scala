@@ -18,13 +18,14 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
 import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Filters.equal
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, UpdateOptions, Updates}
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, Updates}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import org.mongodb.scala.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
 
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -51,7 +52,7 @@ class MessageWrapperRepository @Inject()(
     )
   ),
   replaceIndexes = true
-), Logging, MessageWrapperRepoTrait:
+), Logging:
 
   def insertMessageWrapper(uid: String,
                            payload: String,
@@ -80,11 +81,11 @@ class MessageWrapperRepository @Inject()(
           Future.failed(MongoReadError(s"failed to retrieve message wrapper with uid with uid: $uid in $collectionName table with ${e.getMessage}"))
       }
   
-  def updateStatus(uid: String, status: String)(using ec: ExecutionContext): Future[Boolean] =
+  def updateStatus(uid: String, status: MessageStatus)(using ec: ExecutionContext): Future[Boolean] =
     collection.updateOne(
         Filters.equal("uid", uid),
         Updates.combine(
-          Updates.set("status", status),
+          Updates.set("status", status.toString),
           Updates.set("lastUpdated", Instant.now())
         )
       ).toFuture()
