@@ -74,8 +74,12 @@ class MessageWrapperRepository @Inject()(
   def findByUid(uid: String)(using ec: ExecutionContext): Future[Option[MessageWrapper]] =
     collection.find(Filters.equal("uid", uid))
       .headOption()
-      
-
+      .recoverWith {
+        case e =>
+          logger.info(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}")
+          Future.failed(MongoReadError(s"failed to retrieve message wrapper with uid with uid: $uid in $collectionName table with ${e.getMessage}"))
+      }
+  
   def updateStatus(uid: String, status: String)(using ec: ExecutionContext): Future[Boolean] =
     collection.updateOne(
         Filters.equal("uid", uid),
