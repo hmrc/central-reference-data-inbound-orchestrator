@@ -17,6 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
 import play.api.libs.json.{Format, Json}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant

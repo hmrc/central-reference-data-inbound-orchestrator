@@ -18,27 +18,10 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
 import play.api.libs.json.*
 
-sealed trait MessageStatus:
-  val status: String
+object MessageStatus extends Enumeration:
+  type MessageStatus = Value
 
-object MessageStatus:
+  val Received: Value = Value("Received")
+  val Sent: Value = Value("Sent")
 
-  case object Received extends MessageStatus {
-    override val status: String = "received"
-  }
-
-  case object Sent extends MessageStatus {
-    override val status: String = "sent"
-  }
-  // Define a custom Reads instance
-  given reads: Reads[MessageStatus] = Reads[MessageStatus] {
-    case JsString("received") => JsSuccess(Received)
-    case JsString("sent") => JsSuccess(Sent)
-    case _ => JsError("Unknown message status")
-  }
-  // Define a custom Writes instance
-  given writes: Writes[MessageStatus] = Writes[MessageStatus] { status =>
-    JsString(status.status)
-  }
-  // Define a Format that combines both Reads and Writes
-  given format: Format[MessageStatus] = Format(reads, writes)
+  given format: Format[MessageStatus] = Json.formatEnum(this)
