@@ -32,7 +32,7 @@ To be confirmed when we know the actual messages passed to us.
 ### Message wrapper Collection
 When we receive a successful POST request to our root endpoint `inboundController` we create a record in the Message wrapper collection. This contains the XML payload forwarded from public-soap-proxy along with various pieces of metadata such as the UID of the file.
 
-If a message is received with the following header: `x-files-included: true` then the message will not be marked as `received`. When AV scanning is successful the message wrapper is forwarded to EIS and marked as `sent`. The current TTL is set to 7 days.
+If a message is received with the following header: `x-files-included: true` then the message will be picked up correctly. When AV scanning is successful the message wrapper is forwarded to EIS and marked as `sent`. The current TTL is set to 7 days.
 
 <Details>
 <Summary>Message wrapper model</Summary>
