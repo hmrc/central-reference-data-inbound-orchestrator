@@ -23,15 +23,14 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import org.mockito.Mockito.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, ZoneId}
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class MessageWrapperRepositorySpec
@@ -45,7 +44,7 @@ class MessageWrapperRepositorySpec
 
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
 
-  private val messageWrapper = MessageWrapper("id", "<Body/>", "received")
+  private val messageWrapper = MessageWrapper("id", "<Body/>", Received)
 
   private val mockAppConfig = mock[AppConfig]
   when(mockAppConfig.cacheTtl) thenReturn 1.toLong
@@ -99,24 +98,24 @@ class MessageWrapperRepositorySpec
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val fetchedBeforeUpdateRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
-      val updatedRecord = messageRepository.updateStatus(messageWrapper.uid, "sent").futureValue
+      val updatedRecord = messageRepository.updateStatus(messageWrapper.uid, Sent).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
-      fetchedBeforeUpdateRecord.value.status mustEqual "received"
+      fetchedBeforeUpdateRecord.value.status mustEqual Received
       updatedRecord mustEqual true
-      fetchedRecord.value.status mustEqual "sent"
+      fetchedRecord.value.status mustEqual Sent
     }
 
     "must return status unchanged if uid not found and updating status doesn't happen" in {
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
-      val updatedRecord = messageRepository.updateStatus("1234", "sent").futureValue
+      val updatedRecord = messageRepository.updateStatus("1234", Sent).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
       updatedRecord mustEqual true
-      fetchedRecord.value.status mustEqual "received"
+      fetchedRecord.value.status mustEqual Received
     }
   }
 }
