@@ -55,7 +55,7 @@ class InboundController @Inject()(
 
 
   private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =
-    request.headers.get(FileIncludedHeader).exists(_.toBoolean) && request.headers.get(FileIncludedHeader).contains("true")
+    request.headers.get(FileIncludedHeader).exists(_.toBooleanOption.getOrElse(false))
 
   private def validateRequestBody(body: NodeSeq) =
     Try {
