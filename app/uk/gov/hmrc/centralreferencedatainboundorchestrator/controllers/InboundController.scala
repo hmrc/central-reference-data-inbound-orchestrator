@@ -16,23 +16,55 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import play.api.Logging
 import play.api.mvc.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.io.StringReader
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import javax.xml.XMLConstants
+import javax.xml.transform.stream.StreamSource
+import javax.xml.validation.SchemaFactory
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
 
 @Singleton
-class InboundController @Inject()(cc: ControllerComponents)
-  extends BackendController(cc):
+class InboundController @Inject()(
+                                   cc: ControllerComponents,
+                                   inboundControllerService: InboundControllerService)
+                                 (using ec: ExecutionContext)
+  extends BackendController(cc) with Logging:
 
   private val FileIncludedHeader = "x-files-included"
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
-    if request.headers.get(FileIncludedHeader).contains("true") then
-      //TODO: Store the message into mongo, this will be done as part of CRDL-73.
-      Future.successful(Accepted)
+    if hasFilesHeader && validateRequestBody(request.body) then
+      inboundControllerService.processMessage(request.body) transform {
+        case Success(_) => Success(Accepted)
+        case Failure(err: Throwable) => err match
+          case InvalidXMLContentError(_) => Success(BadRequest)
+          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
+          case _ => Success(InternalServerError)
+      }
     else
       Future.successful(BadRequest)
   }
+
+
+  private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =
+    request.headers.get(FileIncludedHeader).exists(_.toBooleanOption.getOrElse(false))
+
+  private def validateRequestBody(body: NodeSeq) =
+    Try {
+      val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+      val xsd = getClass.getResourceAsStream("/schemas/csrd120main-v1.xsd") // this is temporary until we get the correct XSD file from public-soap-proxy
+      val schema = factory.newSchema(new StreamSource(xsd))
+      val validator = schema.newValidator()
+      validator.validate(new StreamSource(new StringReader(body.toString)))
+    } match {
+      case Success(_) => true
+      case _ => false
+    }
