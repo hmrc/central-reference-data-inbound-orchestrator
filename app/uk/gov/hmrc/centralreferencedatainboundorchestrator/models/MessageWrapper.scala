@@ -17,14 +17,15 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
 import play.api.libs.json.{Format, Json}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
 
-case class MessageWrapper(uid: String, payload: String, status: String, lastUpdated: Instant, receivedTimestamp: Instant)
+case class MessageWrapper(uid: String, payload: String, status: MessageStatus, lastUpdated: Instant, receivedTimestamp: Instant)
 
 object MessageWrapper:
-  def apply(uid: String, payload: String, status: String): MessageWrapper = {
+  def apply(uid: String, payload: String, status: MessageStatus): MessageWrapper = {
     MessageWrapper(uid, payload, status, Instant.now, Instant.now)
   }
 

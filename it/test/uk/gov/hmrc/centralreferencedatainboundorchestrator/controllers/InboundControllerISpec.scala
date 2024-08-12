@@ -17,21 +17,28 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import helpers.InboundSoapMessage
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.WSClient
 import play.api.test.Helpers.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
+import uk.gov.hmrc.mongo.test.MongoSupport
 
 class InboundControllerISpec extends AnyWordSpec,
   Matchers,
   ScalaFutures,
   IntegrationPatience,
-  GuiceOneServerPerSuite:
+  MongoSupport,
+  GuiceOneServerPerSuite,
+  BeforeAndAfterEach,
+  BeforeAndAfterAll:
 
   private val wsClient = app.injector.instanceOf[WSClient]
   private val baseUrl  = s"http://localhost:$port"
@@ -39,10 +46,24 @@ class InboundControllerISpec extends AnyWordSpec,
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
+      .configure(
+        "mongodb.uri"            -> s"$mongoUri"
+      )
       .build()
 
+  lazy val messageWrapperRepository: MessageWrapperRepository = app.injector.instanceOf[MessageWrapperRepository]
+
+  override def beforeEach(): Unit = {
+    await(mongoDatabase.drop().toFuture())
+    await(messageWrapperRepository.ensureIndexes())
+  }
+
+  override def afterAll(): Unit = {
+    await(mongoDatabase.drop().toFuture())
+  }
+
   "POST / endpoint" should {
-    "return created with a valid request" in {
+    "return Accepted with a valid request" in {
       val response =
         wsClient
           .url(url)
@@ -67,5 +88,30 @@ class InboundControllerISpec extends AnyWordSpec,
           .futureValue
 
       response.status shouldBe BAD_REQUEST
+    }
+
+    "return Internal server error when two valid request with the same UID" in {
+      val response =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .post(InboundSoapMessage.xmlBody.toString)
+          .futureValue
+
+      val responseDuplicate =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .post(InboundSoapMessage.xmlBody.toString)
+          .futureValue
+
+      response.status shouldBe ACCEPTED
+      responseDuplicate.status shouldBe INTERNAL_SERVER_ERROR
     }
   }
