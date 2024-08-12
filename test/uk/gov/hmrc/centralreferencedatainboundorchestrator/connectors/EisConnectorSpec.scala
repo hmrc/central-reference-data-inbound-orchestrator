@@ -16,21 +16,15 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, post, urlEqualTo}
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import org.mockito.Mockito.when
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.Application
 import play.api.http.Status
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
 
 import scala.concurrent.ExecutionContext.Implicits.global
