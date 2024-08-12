@@ -20,7 +20,7 @@ import play.api.libs.json.{Json, OFormat, Writes}
 
 import java.time.LocalDateTime
 
-case class SdesCallback(
+case class SdesCallbackResponse(
                          notification: String,
                          filename: String,
                          correlationID: String,
@@ -32,8 +32,8 @@ case class SdesCallback(
                          failureReason: Option[String] = None
                        ) extends PropertyExtractor
 
-object SdesCallback {
-  implicit val format: OFormat[SdesCallback] = Json.format[SdesCallback]
+object SdesCallbackResponse {
+  implicit val format: OFormat[SdesCallbackResponse] = Json.format[SdesCallbackResponse]
 
-  given Writes[SdesCallback] = Json.writes[SdesCallback]
+  given Writes[SdesCallbackResponse] = Json.writes[SdesCallbackResponse]
 }

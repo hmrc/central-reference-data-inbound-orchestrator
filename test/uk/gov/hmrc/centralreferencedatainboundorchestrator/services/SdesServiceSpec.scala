@@ -24,7 +24,7 @@ import org.scalactic.Prettifier.default
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.await
 import play.api.test.Helpers.defaultAwaitTimeout
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallback}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallbackResponse}
 
 import java.time.LocalDateTime
 
@@ -37,7 +37,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
   "SdesService" should {
     "should return av scan passed when accepting a FileReceived notification" in {
       val result = sdesService.processCallback(
-        SdesCallback("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       )
        await(result) shouldBe "AV Scan passed"
@@ -45,7 +45,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
       val result = sdesService.processCallback(
-        SdesCallback("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+        SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       )
       await(result) shouldBe "AV Scan failed"

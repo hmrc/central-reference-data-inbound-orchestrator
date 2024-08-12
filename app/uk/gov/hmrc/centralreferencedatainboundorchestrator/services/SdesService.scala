@@ -17,14 +17,14 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallback
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallbackResponse
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class SdesService @Inject() ()(implicit executionContext: ExecutionContext) extends Logging:
 
-  def processCallback(sdesCallback: SdesCallback): Future[String] = {
+  def processCallback(sdesCallback: SdesCallbackResponse): Future[String] = {
     sdesCallback.notification match {
       case "FileReceived" =>
         logger.info("AV Scan passed Successfully")

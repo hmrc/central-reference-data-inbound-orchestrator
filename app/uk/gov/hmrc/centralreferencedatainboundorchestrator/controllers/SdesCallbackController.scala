@@ -17,7 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import play.api.mvc.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallback
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallbackResponse
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -28,6 +28,6 @@ import scala.concurrent.ExecutionContext
 class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerComponents)(implicit val executionContext: ExecutionContext)
   extends BackendController(cc):
   
-  def sdesCallback: Action[SdesCallback] = Action.async(parse.json[SdesCallback]) { implicit request =>
+  def sdesCallback: Action[SdesCallbackResponse] = Action.async(parse.json[SdesCallbackResponse]) { implicit request =>
     sdesService.processCallback(request.body).map(_ => Accepted)
   }

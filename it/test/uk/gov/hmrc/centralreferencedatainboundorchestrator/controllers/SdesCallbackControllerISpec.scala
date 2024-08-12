@@ -26,10 +26,10 @@ import play.api.libs.json.Json
 import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.WSClient
 import play.api.test.Helpers.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallback}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallbackResponse}
 
 import java.time.LocalDateTime
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallback.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallbackResponse.*
 
 class SdesCallbackControllerISpec extends AnyWordSpec,
   Matchers,
@@ -41,7 +41,7 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
   private val baseUrl  = s"http://localhost:$port"
   private val url = s"$baseUrl/central-reference-data-inbound-orchestrator/services/crdl/callback"
 
-  private val validTestBody: SdesCallback = SdesCallback("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+  private val validTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
 
 
