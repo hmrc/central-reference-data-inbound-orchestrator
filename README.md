@@ -23,6 +23,8 @@ Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-
 | Path - internal routes prefixed by `/central-reference-data-inbound-orchestrator` | Supported Methods | Type     | Description                                                                                    |
 |-----------------------------------------------------------------------------------|-------------------|----------|------------------------------------------------------------------------------------------------|
 | `/`                                                                               | POST              | Internal | Endpoint to receive xml messages and store in mongo. [See ItTestPayloads examples](it/helpers) |
+| `/services/crdl/callback`                                                         | POST              | Internal | Endpoint to receive antivirus Scan result from SDES.                                           |
+
 
 ### Inbound message validation
 
