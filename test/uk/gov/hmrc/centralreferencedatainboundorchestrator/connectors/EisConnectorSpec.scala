@@ -64,7 +64,7 @@ class EisConnectorSpec
     wireMockServer.stubFor(
       post(urlEqualTo("/central-reference-data-eis/services/crdl/referencedataupdate/v1"))
         .withRequestBody(equalTo((testBody).toString))
-        .willReturn(aResponse().withStatus(Status.ACCEPTED))
+        .willReturn(aResponse().withStatus(status))
     )
 
   "eis returns ACCEPTED" should {
@@ -82,7 +82,7 @@ class EisConnectorSpec
 
       whenReady(connector.forwardMessage(testBody).failed) {
         res =>
-          res.getMessage shouldBe "Non 200 response received from EIS: HTTP 400 with body: "
+          res.getMessage shouldBe "POST of 'http://localhost:6001/central-reference-data-eis/services/crdl/referencedataupdate/v1' returned 400 (Bad Request). Response body ''"
       }
     }
   }
