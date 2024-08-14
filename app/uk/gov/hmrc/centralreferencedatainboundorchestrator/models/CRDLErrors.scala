@@ -22,3 +22,7 @@ case class InvalidXMLContentError(message: String) extends CRDLErrors(message)
 case class MongoWriteError(message: String) extends CRDLErrors(message)
 
 case class MongoReadError(message: String) extends CRDLErrors(message)
+
+case class AVScanFailureError(message: String) extends CRDLErrors(message)
+
+case class NoMatchingUIDInMongoError(message: String) extends CRDLErrors(message)

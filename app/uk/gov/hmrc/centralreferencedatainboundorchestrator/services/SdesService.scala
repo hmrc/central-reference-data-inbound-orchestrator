@@ -17,20 +17,31 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallbackResponse
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SdesService @Inject() ()(implicit executionContext: ExecutionContext) extends Logging:
+class SdesService @Inject() (
+                              messageWrapperRepository: MessageWrapperRepository
+                            )(implicit executionContext: ExecutionContext) extends Logging:
 
   def processCallback(sdesCallback: SdesCallbackResponse): Future[String] = {
     sdesCallback.notification match {
       case "FileReceived" =>
         logger.info("AV Scan passed Successfully")
-        Future.successful("AV Scan passed")
+        messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
+          case Some(value) => ???
+          case None => Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
+        } 
+
       case "FileProcessingFailure" =>
         logger.info("AV Scan failed")
-        Future.successful("AV Scan failed")
+        messageWrapperRepository.updateStatus(sdesCallback.correlationID, MessageStatus.Failed) flatMap {
+          case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}") 
+          case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
+        }
     }
   }
