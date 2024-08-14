@@ -46,7 +46,7 @@ class EisConnectorSpec
 
   private lazy val connector = app.injector.instanceOf[EisConnector]
 
-  private val testBody: Elem =
+  private val validTestBody: Elem =
     <MainMessage>
       <Body>
         <TaskIdentifier>780912</TaskIdentifier>
@@ -57,9 +57,60 @@ class EisConnectorSpec
       </Body>
     </MainMessage>
 
+
+  private val invalid402TestBody: scala.xml.Elem = <MainMessage>
+    <Body>
+      <TaskIdentifier>780402</TaskIdentifier>
+      <AttributeName>ReferenceData</AttributeName>
+      <MessageType>gZip</MessageType>
+      <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b30a</IncludedBinaryObject>
+      <MessageSender>CS/RD2</MessageSender>
+    </Body>
+  </MainMessage>
+
+  private val invalid404TestBody: scala.xml.Elem = <MainMessage>
+    <Body>
+      <TaskIdentifier>780404</TaskIdentifier>
+      <AttributeName>ReferenceData</AttributeName>
+      <MessageType>gZip</MessageType>
+      <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b30a</IncludedBinaryObject>
+      <MessageSender>CS/RD2</MessageSender>
+    </Body>
+  </MainMessage>
+
+  private val invalid503TestBody: scala.xml.Elem = <MainMessage>
+    <Body>
+      <TaskIdentifier>780503</TaskIdentifier>
+      <AttributeName>ReferenceData</AttributeName>
+      <MessageType>gZip</MessageType>
+      <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b30a</IncludedBinaryObject>
+      <MessageSender>CS/RD2</MessageSender>
+    </Body>
+  </MainMessage>
+
+  private val invalid504TestBody: scala.xml.Elem = <MainMessage>
+    <Body>
+      <TaskIdentifier>780504</TaskIdentifier>
+      <AttributeName>ReferenceData</AttributeName>
+      <MessageType>gZip</MessageType>
+      <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b30a</IncludedBinaryObject>
+      <MessageSender>CS/RD2</MessageSender>
+    </Body>
+  </MainMessage>
+
+  private val invalidTestBody: scala.xml.Elem = <MainMessage>
+    <Body>
+      <TaskIdentifier>780912</TaskIdentifier>
+      <AttributeName>ReferenceData</AttributeName>
+      <MessageType>gZip</MessageType>
+      <File>c04a1612-705d-4373-8840-9d137b14b30a</File>
+      <MessageSender>CS/RD2</MessageSender>
+    </Body>
+  </MainMessage>
+
   "eis returns ACCEPTED" should {
-    "return true" in {
-      whenReady(connector.forwardMessage(testBody)) { res =>
+    "return unit when valid body with a 202" in {
+      whenReady(connector.forwardMessage(validTestBody)) { res =>
         res shouldBe ((): Unit)
       }
     }
