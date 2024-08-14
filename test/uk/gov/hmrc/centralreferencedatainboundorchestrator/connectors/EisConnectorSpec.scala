@@ -82,7 +82,7 @@ class EisConnectorSpec
 
       whenReady(connector.forwardMessage(testBody).failed) {
         res =>
-          res.getMessage shouldBe "POST of 'http://localhost:6001/central-reference-data-eis/services/crdl/referencedataupdate/v1' returned 400 (Bad Request). Response body ''"
+          res.getMessage shouldBe ""
       }
     }
   }

@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import play.api.http.Status.ACCEPTED
 import play.api.libs.ws.XMLBodyWritables.writeableOf_NodeSeq
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EisResponseError
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
 
@@ -43,11 +44,9 @@ class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig) {
       .map { response =>
         response.status match {
           case ACCEPTED => Future.successful((): Unit)
-          case status =>
-            throw UpstreamErrorResponse.apply(
-              s"Non 202 response received from EIS: HTTP $status with body: ${response.body}",
-              status
-            )
+          case status => Future.failed(
+            EisResponseError(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
+          )
         }
       }
   }
