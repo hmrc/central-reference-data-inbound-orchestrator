@@ -18,6 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, post, urlEqualTo}
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -70,9 +71,8 @@ class EisConnectorSpec
   "eis returns ACCEPTED" should {
     "return true" in {
       stubResponse(Status.ACCEPTED)
-      whenReady(connector.forwardMessage(testBody)) { res =>
-        res shouldBe ((): Unit)
-      }
+
+      connector.forwardMessage(testBody).futureValue.status shouldBe Status.ACCEPTED
     }
   }
 
@@ -80,9 +80,10 @@ class EisConnectorSpec
     "return true" in {
       stubResponse(Status.BAD_REQUEST)
 
-      whenReady(connector.forwardMessage(testBody).failed) {
-        res =>
-          res.getMessage shouldBe ""
+      val result = connector.forwardMessage(testBody)
+
+      recoverToExceptionIf[Throwable](result).map { rt =>
+        rt.getMessage shouldBe ""
       }
     }
   }
