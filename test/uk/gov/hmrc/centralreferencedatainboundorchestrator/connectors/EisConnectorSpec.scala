@@ -18,37 +18,57 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, equalTo, post, urlEqualTo}
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import org.mockito.ArgumentMatchers.any
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterEach, stats}
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.Application
+import org.mockito.Mockito.{reset, verify, when}
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.{Application, Configuration}
 import play.api.http.Status
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.test.{HttpClientV2Support, WireMockSupport}
+import uk.gov.hmrc.http.test.{ExternalWireMockSupport, HttpClientV2Support, WireMockSupport}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.Elem
+import scala.concurrent.Future
 
 class EisConnectorSpec
   extends AnyWordSpec
-    , WireMockSupport
+    , ExternalWireMockSupport
     , Matchers
-    , HttpClientV2Support
     , ScalaFutures
-    , IntegrationPatience {
+    , IntegrationPatience
+    , GuiceOneAppPerSuite
+    , MockitoSugar 
+    , BeforeAndAfterEach {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  private lazy val app: Application =
-    GuiceApplicationBuilder()
-      .configure(
-        "microservice.services.eis-api.host" -> wireMockHost,
-        "microservice.services.eis-api.port" -> wireMockPort
-      ).build()
+  val appConfig: AppConfig             = mock[AppConfig]
+  val httpClientV2: HttpClientV2       = mock[HttpClientV2]
+  val requestBuilder: RequestBuilder   = mock[RequestBuilder]
+  
+  override def beforeEach(): Unit = {
+    super.beforeEach()
 
-  private lazy val connector = app.injector.instanceOf[EisConnector]
+    reset(appConfig, httpClientV2, requestBuilder)
+    
+    when(httpClientV2.post(any)(any)).thenReturn(requestBuilder)
+    when(requestBuilder.withBody(any)(any, any, any)).thenReturn(requestBuilder)
+    when(requestBuilder.setHeader(any)).thenReturn(requestBuilder)
+  }
+
+  val connector = new EisConnector(httpClientV2, appConfig)
 
   private val testBody: Elem =
     <MainMessage>
@@ -61,30 +81,32 @@ class EisConnectorSpec
       </Body>
     </MainMessage>
 
-  def stubResponse(status: Int): StubMapping =
-    wireMockServer.stubFor(
-      post(urlEqualTo("/central-reference-data-eis/services/crdl/referencedataupdate/v1"))
-        .withRequestBody(equalTo((testBody).toString))
-        .willReturn(aResponse().withStatus(status))
-    )
-
   "eis returns ACCEPTED" should {
     "return accepted" in {
-      stubResponse(Status.ACCEPTED)
 
-      connector.forwardMessage(testBody).futureValue.status shouldBe Status.ACCEPTED
+      val expectedResponse = Status.ACCEPTED
+
+      when(requestBuilder.execute[HttpResponse](any, any))
+        .thenReturn(Future.successful(HttpResponse(status = expectedResponse)))
+      
+      val result = await(connector.forwardMessage(testBody))
+
+      result.status shouldBe expectedResponse
     }
   }
 
   "eis returns BAD REQUEST" should {
     "return failed future with message" in {
-      stubResponse(Status.BAD_REQUEST)
+      val expectedResponse = Status.BAD_REQUEST
+      
+      when(requestBuilder.execute[HttpResponse](any, any))
+        .thenReturn(Future.successful(HttpResponse(status = expectedResponse)))
 
       val result = connector.forwardMessage(testBody)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
-        rt.getMessage shouldBe "sss"
-      }
+        rt.getMessage shouldBe "Non 202 response received from EIS: HTTP 400 with body: "
+      }.futureValue
     }
   }
 }
