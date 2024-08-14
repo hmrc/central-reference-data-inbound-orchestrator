@@ -49,7 +49,7 @@ class EisConnectorSpec
     , ScalaFutures
     , IntegrationPatience
     , GuiceOneAppPerSuite
-    , MockitoSugar 
+    , MockitoSugar
     , BeforeAndAfterEach {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -57,12 +57,12 @@ class EisConnectorSpec
   val appConfig: AppConfig             = mock[AppConfig]
   val httpClientV2: HttpClientV2       = mock[HttpClientV2]
   val requestBuilder: RequestBuilder   = mock[RequestBuilder]
-  
+
   override def beforeEach(): Unit = {
     super.beforeEach()
 
     reset(appConfig, httpClientV2, requestBuilder)
-    
+
     when(httpClientV2.post(any)(any)).thenReturn(requestBuilder)
     when(requestBuilder.withBody(any)(any, any, any)).thenReturn(requestBuilder)
     when(requestBuilder.setHeader(any)).thenReturn(requestBuilder)
@@ -88,7 +88,7 @@ class EisConnectorSpec
 
       when(requestBuilder.execute[HttpResponse](any, any))
         .thenReturn(Future.successful(HttpResponse(status = expectedResponse)))
-      
+
       val result = await(connector.forwardMessage(testBody))
 
       result.status shouldBe expectedResponse
@@ -98,7 +98,7 @@ class EisConnectorSpec
   "eis returns BAD REQUEST" should {
     "return failed future with message" in {
       val expectedResponse = Status.BAD_REQUEST
-      
+
       when(requestBuilder.execute[HttpResponse](any, any))
         .thenReturn(Future.successful(HttpResponse(status = expectedResponse)))
 
