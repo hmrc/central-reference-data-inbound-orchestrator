@@ -69,7 +69,7 @@ class EisConnectorSpec
     )
 
   "eis returns ACCEPTED" should {
-    "return true" in {
+    "return accepted" in {
       stubResponse(Status.ACCEPTED)
 
       connector.forwardMessage(testBody).futureValue.status shouldBe Status.ACCEPTED
@@ -77,13 +77,13 @@ class EisConnectorSpec
   }
 
   "eis returns BAD REQUEST" should {
-    "return true" in {
+    "return failed future with message" in {
       stubResponse(Status.BAD_REQUEST)
 
       val result = connector.forwardMessage(testBody)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
-        rt.getMessage shouldBe ""
+        rt.getMessage shouldBe "sss"
       }
     }
   }
