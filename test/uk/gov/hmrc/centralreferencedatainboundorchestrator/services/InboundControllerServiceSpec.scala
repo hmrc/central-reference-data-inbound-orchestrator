@@ -32,7 +32,7 @@ import scala.concurrent.Future
 class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
   lazy val mockMessageWrapperRepository: MessageWrapperRepository = mock[MessageWrapperRepository]
-  private val orchestrator = new InboundControllerService(mockMessageWrapperRepository)
+  private val controller = new InboundControllerService(mockMessageWrapperRepository)
 
   // This is the expected body we need to send to EIS, using this for test purposes
   // until we get a real sample input file.
@@ -61,7 +61,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
         .thenReturn(Future.successful(true))
 
-      val result = orchestrator.processMessage(validTestBody).futureValue
+      val result = controller.processMessage(validTestBody).futureValue
 
       result shouldBe true
     }
@@ -70,7 +70,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
-      val result = orchestrator.processMessage(validTestBody)
+      val result = controller.processMessage(validTestBody)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
         rt.getMessage shouldBe "failed"
@@ -81,11 +81,11 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
-      val result = orchestrator.processMessage(invalidTestBody)
+      val result = controller.processMessage(invalidTestBody)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
-        rt.getMessage shouldBe "Failed for unknown reason, potentially an empty UID or a missing Node."
-      }
+        rt.getMessage shouldBe "Failed for unknown reason, potentially an empty UID or a missing Node"
+      }.futureValue
     }
     
   }
