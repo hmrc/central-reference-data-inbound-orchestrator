@@ -13,6 +13,7 @@ The Central Reference Data Inbound Orchestrator responsibilities:
 - Run Unit Tests: `sbt test`
 - Run Integration Tests: `sbt it/test`
 - Run Unit and Integration Tests: `sbt test it/test`
+- Run Unit and Integration Tests with Code Coverage: `./run_tests_with_coverage.sh`
 
 Run Acceptance Tests: see [here](https://github.com/hmrc/central-reference-data-acceptance-tests)
 
