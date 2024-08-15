@@ -1,0 +1,1 @@
+sbt clean compile coverage test it/test coverageReport
