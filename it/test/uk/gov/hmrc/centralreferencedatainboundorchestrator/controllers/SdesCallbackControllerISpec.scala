@@ -44,6 +44,9 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
   private val validTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
 
+  private val invalidTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+    Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -64,7 +67,7 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
       response.status shouldBe ACCEPTED
     }
 
-    "return bad request if the request does not contain all of the headers" in {
+    "return unsupported media type if the request does not contain all of the headers" in {
       val response =
         wsClient
           .url(url)
@@ -72,5 +75,19 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
           .futureValue
 
       response.status shouldBe UNSUPPORTED_MEDIA_TYPE
+    }
+
+    "return bad request when an invalid request is received" in {
+
+      val response =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "Content-Type" -> "application/json"
+          )
+          .post(Json.toJson(invalidTestBody).toString)
+          .futureValue
+
+      response.status shouldBe BAD_REQUEST
     }
   }

@@ -67,6 +67,6 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
         fakeRequest
           .withBody(invalidTestBody)
       )
-      status(result) shouldBe INTERNAL_SERVER_ERROR
+      status(result) shouldBe BAD_REQUEST
     }
   }
