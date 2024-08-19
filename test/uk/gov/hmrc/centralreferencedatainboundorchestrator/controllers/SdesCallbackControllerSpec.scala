@@ -45,6 +45,9 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
   private val validTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
 
+  private val invalidTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+    Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+
   "POST /services/crdl/callback" should {
     "accept a valid message" in {
       when(mockSdesService.processCallback(any())(using any())).thenReturn(Future("some"))
@@ -55,5 +58,15 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
+    }
+
+    "fail if invalid message" in {
+      when(mockSdesService.processCallback(any())(using any())).thenReturn(Future("some"))
+
+      val result = controller.sdesCallback()(
+        fakeRequest
+          .withBody(invalidTestBody)
+      )
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
