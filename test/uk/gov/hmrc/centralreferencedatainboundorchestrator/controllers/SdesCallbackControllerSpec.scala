@@ -26,7 +26,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallbackResponse}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{InvalidSDESNotificationError, Property, SdesCallbackResponse}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -61,7 +61,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     }
 
     "fail if invalid message" in {
-      when(mockSdesService.processCallback(any())(using any())).thenReturn(Future("some"))
+      when(mockSdesService.processCallback(any())(using any())).thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
 
       val result = controller.sdesCallback()(
         fakeRequest

@@ -23,6 +23,7 @@ import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalactic.Prettifier.default
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
@@ -78,6 +79,19 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaF
       ).futureValue
 
       result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+    }
+
+    "should fail if SDES notification is not valid" in {
+      val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+
+      val result = sdesService.processCallback(
+        SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+      )
+
+      recoverToExceptionIf[Throwable](result).map { rt =>
+        rt.getMessage shouldBe "SDES notification not recognised: FileProcessingTest"
+      }.futureValue
     }
   }
 

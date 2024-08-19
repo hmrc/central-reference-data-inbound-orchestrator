@@ -28,3 +28,5 @@ case class EisResponseError(message: String) extends CRDLErrors(message)
 case class AVScanFailureError(message: String) extends CRDLErrors(message)
 
 case class NoMatchingUIDInMongoError(message: String) extends CRDLErrors(message)
+
+case class InvalidSDESNotificationError(message: String) extends CRDLErrors(message)

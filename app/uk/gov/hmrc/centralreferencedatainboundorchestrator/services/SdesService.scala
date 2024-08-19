@@ -48,6 +48,8 @@ class SdesService @Inject() (
           case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}") 
           case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
         }
+        
+      case invalidNotification => Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
     }
   }
 
