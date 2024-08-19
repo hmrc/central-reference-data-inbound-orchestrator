@@ -97,11 +97,9 @@ class EisConnectorSpec
       when(requestBuilder.execute[HttpResponse](any, any))
         .thenReturn(Future.successful(HttpResponse(status = expectedResponse)))
 
-      val result = connector.forwardMessage(testBody)
+      val result = await(connector.forwardMessage(testBody))
 
-      recoverToExceptionIf[Throwable](result).map { rt =>
-        rt.getMessage shouldBe "Non 202 response received from EIS: HTTP 400 with body: "
-      }.futureValue
+      result.status shouldBe expectedResponse
     }
   }
 }

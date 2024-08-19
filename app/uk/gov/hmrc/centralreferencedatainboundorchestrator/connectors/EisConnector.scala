@@ -30,7 +30,7 @@ import scala.xml.NodeSeq
 
 class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig) {
 
-  def forwardMessage(body: NodeSeq)(implicit
+  def forwardMessage(body: NodeSeq)(using
                                     ec: ExecutionContext,
                                     hc: HeaderCarrier
   ): Future[HttpResponse] = {
@@ -41,14 +41,6 @@ class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig) {
       .setHeader("Content-Type" -> "application/xml")
       .withBody(body)
       .execute[HttpResponse]
-      .flatMap { response =>
-        response.status match {
-          case ACCEPTED => Future.successful(response)
-          case status => Future.failed(
-            EisResponseError(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
-          )
-        }
       }
-  }
 }
 

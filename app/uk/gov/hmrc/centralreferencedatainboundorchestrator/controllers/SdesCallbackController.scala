@@ -20,13 +20,15 @@ import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{EisResponseError, InvalidXMLContentError, MongoReadError, MongoWriteError, NoMatchingUIDInMongoError, SdesCallbackResponse}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 @Singleton
-class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerComponents)(implicit val executionContext: ExecutionContext)
+class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerComponents)(using executionContext: ExecutionContext)
   extends BackendController(cc):
   
   def sdesCallback: Action[SdesCallbackResponse] = Action.async(parse.json[SdesCallbackResponse]) { implicit request =>

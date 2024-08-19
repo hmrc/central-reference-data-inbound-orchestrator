@@ -17,26 +17,28 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
+import play.api.http.Status.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
-import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class SdesService @Inject() (
                               messageWrapperRepository: MessageWrapperRepository,
                               eisConnector: EisConnector
-                            )(implicit executionContext: ExecutionContext) extends Logging:
+                            )(using executionContext: ExecutionContext) extends Logging:
 
-  def processCallback(sdesCallback: SdesCallbackResponse): Future[HttpResponse] = {
+  def processCallback(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier): Future[String] = {
     sdesCallback.notification match {
       case "FileReceived" =>
         logger.info("AV Scan passed Successfully")
         messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
-          case Some(messageWrapper) => eisConnector.forwardMessage(scala.xml.XML.loadString(messageWrapper.payload))
+          case Some(messageWrapper) => eisConnector.forwardMessage(scala.xml.XML.loadString(messageWrapper.payload)).flatMap(response => resultFromStatus(response, sdesCallback))
           case None => Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
         } 
 
@@ -46,5 +48,14 @@ class SdesService @Inject() (
           case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}") 
           case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
         }
+    }
+  }
+
+  private def resultFromStatus(response: HttpResponse, sdesCallback: SdesCallbackResponse): Future[String] = {
+    response.status match {
+      case ACCEPTED => Future.successful(s"Message with UID: ${sdesCallback.correlationID}, successfully sent to EIS with ${response.status}")
+      case status => Future.failed(
+        EisResponseError(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
+      )
     }
   }

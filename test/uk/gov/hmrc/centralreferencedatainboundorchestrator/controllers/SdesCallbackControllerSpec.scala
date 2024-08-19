@@ -18,7 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.apache.pekko.stream.Materializer
-import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -28,11 +28,14 @@ import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallbackResponse}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
+import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
 
 class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
+
+  given HeaderCarrier = HeaderCarrier()
 
   private val fakeRequest = FakeRequest("POST", "/services/crdl/callback")
   lazy val mockSdesService: SdesService = mock[SdesService]
@@ -44,7 +47,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
 
   "POST /services/crdl/callback" should {
     "accept a valid message" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.any())).thenReturn(Future("some"))
+      when(mockSdesService.processCallback(any())(using any())).thenReturn(Future("some"))
 
       
       val result = controller.sdesCallback()(
