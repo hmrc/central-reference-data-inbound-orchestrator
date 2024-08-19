@@ -18,22 +18,25 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
+import uk.gov.hmrc.http.HttpResponse
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class SdesService @Inject() (
-                              messageWrapperRepository: MessageWrapperRepository
+                              messageWrapperRepository: MessageWrapperRepository,
+                              eisConnector: EisConnector
                             )(implicit executionContext: ExecutionContext) extends Logging:
 
-  def processCallback(sdesCallback: SdesCallbackResponse): Future[String] = {
+  def processCallback(sdesCallback: SdesCallbackResponse): Future[HttpResponse] = {
     sdesCallback.notification match {
       case "FileReceived" =>
         logger.info("AV Scan passed Successfully")
         messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
-          case Some(value) => ???
+          case Some(messageWrapper) => eisConnector.forwardMessage(scala.xml.XML.loadString(messageWrapper.payload))
           case None => Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
         } 
 

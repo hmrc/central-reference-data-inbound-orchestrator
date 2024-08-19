@@ -17,7 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import play.api.mvc.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{InvalidXMLContentError, MongoReadError, MongoWriteError, NoMatchingUIDInMongoError, SdesCallbackResponse}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{EisResponseError, InvalidXMLContentError, MongoReadError, MongoWriteError, NoMatchingUIDInMongoError, SdesCallbackResponse}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -34,6 +34,7 @@ class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerC
       case Success(_) => Success(Accepted)
       case Failure(err: Throwable) => err match
         case NoMatchingUIDInMongoError(_) => Success(NotFound)
+        case EisResponseError(_) => Success(BadGateway)
         case _ => Success(InternalServerError)
     }
   }
