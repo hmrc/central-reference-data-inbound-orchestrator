@@ -24,3 +24,6 @@ class AppConfig @Inject()(config: Configuration):
 
   val appName: String = config.get[String]("appName")
   val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInDays")
+  val eisPath: String = config.get[String]("microservice.services.eis-api.path")
+  val eisHost: String = config.get[String]("microservice.services.eis-api.host")
+  val eisPort: Int = config.get[Int]("microservice.services.eis-api.port")
