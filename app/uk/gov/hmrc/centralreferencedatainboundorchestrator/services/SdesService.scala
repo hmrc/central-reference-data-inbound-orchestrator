@@ -55,8 +55,14 @@ class SdesService @Inject() (
 
   private def resultFromStatus(response: HttpResponse, sdesCallback: SdesCallbackResponse): Future[String] = {
     response.status match {
-      case ACCEPTED => Future.successful(s"Message with UID: ${sdesCallback.correlationID}, successfully sent to EIS with ${response.status}")
-      case status => Future.failed(
+      case ACCEPTED =>
+        messageWrapperRepository.updateStatus(sdesCallback.correlationID, MessageStatus.Sent) flatMap {
+          case true => Future.successful(s"Message with UID: ${sdesCallback.correlationID}, successfully sent to EIS with ${response.status} & status updated to sent")
+          case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to sent with uid: ${sdesCallback.correlationID}"))
+        }
+      case status =>
+        logger.info(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
+        Future.failed(
         EisResponseError(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
       )
     }

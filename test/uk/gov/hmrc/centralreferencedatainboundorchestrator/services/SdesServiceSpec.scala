@@ -57,6 +57,9 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaF
       when(mockMessageWrapperRepository.findByUid(any())(using any()))
         .thenReturn(Future.successful(Some(messageWrapper(uid))))
 
+      when(mockMessageWrapperRepository.updateStatus(any(), any())(using any()))
+        .thenReturn(Future.successful(true))
+
       when(mockEisConnector.forwardMessage(any())(using any(), any()))
         .thenReturn(Future.successful(HttpResponse(ACCEPTED, "response body")))
 
@@ -65,7 +68,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaF
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       ).futureValue
 
-      result shouldBe "Message with UID: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d, successfully sent to EIS with 202"
+      result shouldBe "Message with UID: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d, successfully sent to EIS with 202 & status updated to sent"
     }
 
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
