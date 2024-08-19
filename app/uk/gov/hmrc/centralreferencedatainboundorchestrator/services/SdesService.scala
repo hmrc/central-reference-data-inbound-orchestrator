@@ -61,7 +61,6 @@ class SdesService @Inject() (
           case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to sent with uid: ${sdesCallback.correlationID}"))
         }
       case status =>
-        logger.info(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
         Future.failed(
         EisResponseError(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
       )
