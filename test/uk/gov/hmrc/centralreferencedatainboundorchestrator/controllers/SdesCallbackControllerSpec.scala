@@ -19,6 +19,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -26,13 +27,16 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallbackResponse}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{InvalidSDESNotificationError, Property, SdesCallbackResponse}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
+import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
 
 class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
+
+  given HeaderCarrier = HeaderCarrier()
 
   private val fakeRequest = FakeRequest("POST", "/services/crdl/callback")
   lazy val mockSdesService: SdesService = mock[SdesService]
@@ -42,9 +46,12 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
   private val validTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
 
+  private val invalidTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+    Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+
   "POST /services/crdl/callback" should {
     "accept a valid message" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.any())).thenReturn(Future("some"))
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future("some"))
 
       
       val result = controller.sdesCallback()(
@@ -52,5 +59,15 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
+    }
+
+    "fail if invalid message" in {
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(invalidTestBody))(using any())).thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
+
+      val result = controller.sdesCallback()(
+        fakeRequest
+          .withBody(invalidTestBody)
+      )
+      status(result) shouldBe BAD_REQUEST
     }
   }

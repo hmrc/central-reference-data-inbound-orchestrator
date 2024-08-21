@@ -28,12 +28,12 @@ import uk.gov.hmrc.http.HttpReads.Implicits.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.NodeSeq
 
-class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig) {
+class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig):
 
-  def forwardMessage(body: NodeSeq)(implicit
+  def forwardMessage(body: NodeSeq)(using
                                     ec: ExecutionContext,
                                     hc: HeaderCarrier
-  ): Future[HttpResponse] = {
+  ): Future[HttpResponse] = 
     val url = s"http://${appConfig.eisHost}:${appConfig.eisPort}${appConfig.eisPath}/services/crdl/referencedataupdate/v1"
     httpClient
       .post(url"$url")
@@ -41,14 +41,3 @@ class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig) {
       .setHeader("Content-Type" -> "application/xml")
       .withBody(body)
       .execute[HttpResponse]
-      .flatMap { response =>
-        response.status match {
-          case ACCEPTED => Future.successful(response)
-          case status => Future.failed(
-            EisResponseError(s"Non 202 response received from EIS: HTTP $status with body: ${response.body}")
-          )
-        }
-      }
-  }
-}
-

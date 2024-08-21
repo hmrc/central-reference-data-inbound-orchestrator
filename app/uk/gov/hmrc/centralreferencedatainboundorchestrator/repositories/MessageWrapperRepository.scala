@@ -78,7 +78,7 @@ class MessageWrapperRepository @Inject()(
       .recoverWith {
         case e =>
           logger.info(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}")
-          Future.failed(MongoReadError(s"failed to retrieve message wrapper with uid with uid: $uid in $collectionName table with ${e.getMessage}"))
+          Future.failed(MongoReadError(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}"))
       }
   
   def updateStatus(uid: String, status: MessageStatus)(using ec: ExecutionContext): Future[Boolean] =
