@@ -22,6 +22,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import scala.xml.XML.*
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,20 +37,29 @@ class SdesService @Inject() (
   def processCallback(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier): Future[String] = {
     sdesCallback.notification match {
       case "FileReceived" =>
-        logger.info("AV Scan passed Successfully")
-        messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
-          case Some(messageWrapper) => eisConnector.forwardMessage(scala.xml.XML.loadString(messageWrapper.payload)).flatMap(response => resultFromStatus(response, sdesCallback))
-          case None => Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
-        } 
+        forwardMessage(sdesCallback)
 
       case "FileProcessingFailure" =>
-        logger.info("AV Scan failed")
-        messageWrapperRepository.updateStatus(sdesCallback.correlationID, MessageStatus.Failed) flatMap {
-          case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}") 
-          case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
-        }
-        
-      case invalidNotification => Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
+        updateMessageToFailed(sdesCallback)
+
+      case invalidNotification =>
+        Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
+    }
+  }
+
+  private def updateMessageToFailed(sdesCallback: SdesCallbackResponse) = {
+    logger.info("AV Scan failed")
+    messageWrapperRepository.updateStatus(sdesCallback.correlationID, MessageStatus.Failed) flatMap {
+      case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}")
+      case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
+    }
+  }
+
+  private def forwardMessage(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier) = {
+    logger.info("AV Scan passed Successfully")
+    messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
+      case Some(messageWrapper) => eisConnector.forwardMessage(loadString(messageWrapper.payload)).flatMap(response => resultFromStatus(response, sdesCallback))
+      case None => Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
     }
   }
 

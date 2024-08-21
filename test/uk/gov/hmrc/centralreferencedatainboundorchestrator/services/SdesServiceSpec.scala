@@ -18,6 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.http.Status.*
 import org.apache.pekko.stream.Materializer
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
@@ -54,10 +55,10 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaF
   "SdesService" should {
     "should return av scan passed when accepting a FileReceived notification" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.findByUid(any())(using any()))
+      when(mockMessageWrapperRepository.findByUid(ArgumentMatchers.eq(uid))(using any()))
         .thenReturn(Future.successful(Some(messageWrapper(uid))))
 
-      when(mockMessageWrapperRepository.updateStatus(any(), any())(using any()))
+      when(mockMessageWrapperRepository.updateStatus(ArgumentMatchers.eq(uid), any())(using any()))
         .thenReturn(Future.successful(true))
 
       when(mockEisConnector.forwardMessage(any())(using any(), any()))
@@ -73,11 +74,11 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaF
 
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(any(), any())(using any()))
+      when(mockMessageWrapperRepository.updateStatus(ArgumentMatchers.eq(uid), any())(using any()))
         .thenReturn(Future.successful(true))
 
       val result = sdesService.processCallback(
-        SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+        SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       ).futureValue
 
@@ -88,7 +89,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, ScalaF
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
 
       val result = sdesService.processCallback(
-        SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+        SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       )
 

@@ -18,6 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.apache.pekko.stream.Materializer
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
@@ -50,7 +51,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
 
   "POST /services/crdl/callback" should {
     "accept a valid message" in {
-      when(mockSdesService.processCallback(any())(using any())).thenReturn(Future("some"))
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future("some"))
 
       
       val result = controller.sdesCallback()(
@@ -61,7 +62,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     }
 
     "fail if invalid message" in {
-      when(mockSdesService.processCallback(any())(using any())).thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(invalidTestBody))(using any())).thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
 
       val result = controller.sdesCallback()(
         fakeRequest
