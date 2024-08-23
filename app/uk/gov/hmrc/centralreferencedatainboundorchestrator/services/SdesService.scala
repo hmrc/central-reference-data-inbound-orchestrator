@@ -59,7 +59,9 @@ class SdesService @Inject() (
     logger.info("AV Scan passed Successfully")
     messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
       case Some(messageWrapper) => eisConnector.forwardMessage(loadString(messageWrapper.payload)).flatMap(response => resultFromStatus(response, sdesCallback))
-      case None => Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
+      case None => 
+        logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallback.correlationID}")
+        Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
     }
   }
 
