@@ -33,14 +33,14 @@ import java.time.temporal.ChronoUnit
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MessageWrapperRepositorySpec
+class MessageWrapperRepositoryISpec
   extends AnyFreeSpec
     , Matchers
     , DefaultPlayMongoRepositorySupport[MessageWrapper]
     , ScalaFutures
     , IntegrationPatience
     , OptionValues
-    , MockitoSugar {
+    , MockitoSugar:
 
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
 
@@ -118,4 +118,3 @@ class MessageWrapperRepositorySpec
       fetchedRecord.value.status mustEqual Received
     }
   }
-}
