@@ -34,4 +34,3 @@ class AppConfig @Inject()(config: Configuration):
   val pollerRetryAfter: Duration = config.get[Duration]("poller.in-progress-retry-after")
   val maxRetryCount: Int = config.get[Int]("poller.max-retry-count")
   val startScheduler: Boolean = config.getOptional[Boolean]("poller.start-scheduler").getOrElse(false)
-  val workItemRetentionPeriod: FiniteDuration = config.get[FiniteDuration]("poller.work-item-retention-period")

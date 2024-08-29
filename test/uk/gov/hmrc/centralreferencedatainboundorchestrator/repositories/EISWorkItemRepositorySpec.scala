@@ -17,7 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
-import org.mockito.Mockito.*
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.mongodb.scala.FindObservable
 import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.BeforeAndAfterEach
@@ -32,7 +32,6 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.*
 
 class EISWorkItemRepositorySpec extends AnyWordSpec,
   MockitoSugar,
@@ -41,11 +40,8 @@ class EISWorkItemRepositorySpec extends AnyWordSpec,
   Matchers:
 
   val appConfig: AppConfig = mock[AppConfig]
-
-  when(appConfig.workItemRetentionPeriod).thenReturn(5.days)
-
   val repository: EISWorkItemRepository = EISWorkItemRepository(mongoComponent, appConfig)
-  
+
   def testRequest: EISRequest = EISRequest("payload", UUID.randomUUID().toString)
 
   "EIS Work Item Repository" should {
