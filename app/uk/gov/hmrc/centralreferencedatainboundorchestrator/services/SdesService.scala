@@ -47,6 +47,7 @@ class SdesService @Inject() (
         updateMessageToFailed(sdesCallback)
 
       case invalidNotification =>
+        logger.warn(s"SDES notification not recognised: $invalidNotification")
         Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
     }
   }
@@ -69,7 +70,7 @@ class SdesService @Inject() (
   }
 
   private def updateMessageToFailed(sdesCallback: SdesCallbackResponse) = {
-    logger.info("AV Scan failed")
+    logger.info(s"AV Scan failed for uid: ${sdesCallback.correlationID}")
     messageWrapperRepository.updateStatus(sdesCallback.correlationID, Failed) flatMap {
       case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}")
       case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
@@ -77,7 +78,7 @@ class SdesService @Inject() (
   }
 
   private def forwardMessage(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier) = {
-    logger.info("AV Scan passed Successfully")
+    logger.info(s"AV Scan passed Successfully for uid: ${sdesCallback.correlationID}")
     messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
       case Some(messageWrapper) =>
         workItemRepo.set(EISRequest(messageWrapper.payload, sdesCallback.correlationID))
