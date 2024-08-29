@@ -70,10 +70,8 @@ class SdesService @Inject() (
   }
 
   private def updateMessageToFailed(sdesCallback: SdesCallbackResponse) = {
-    logger.info("AV Scan failed")
-    messageWrapperRepository.updateStatus(sdesCallback.correlationID, Failed) flatMap {
     logger.info(s"AV Scan failed for uid: ${sdesCallback.correlationID}")
-    messageWrapperRepository.updateStatus(sdesCallback.correlationID, MessageStatus.Failed) flatMap {
+    messageWrapperRepository.updateStatus(sdesCallback.correlationID, Failed) flatMap {
       case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}")
       case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
     }
