@@ -17,7 +17,6 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
 import com.google.inject.{Inject, Singleton}
-import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, Updates}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
@@ -25,6 +24,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import org.mongodb.scala.*
+import org.mongodb.scala.result.DeleteResult
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
 
 import java.time.Instant
@@ -80,7 +80,10 @@ class MessageWrapperRepository @Inject()(
           logger.error(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}")
           Future.failed(MongoReadError(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}"))
       }
-  
+
+  def deleteAll(): Future[DeleteResult] =
+    collection.deleteMany(Filters.empty()).toFuture()
+
   def updateStatus(uid: String, status: MessageStatus)(using ec: ExecutionContext): Future[Boolean] =
     collection.updateOne(
         Filters.equal("uid", uid),

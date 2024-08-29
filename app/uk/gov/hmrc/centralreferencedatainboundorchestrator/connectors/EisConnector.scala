@@ -33,7 +33,7 @@ class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig):
   def forwardMessage(body: NodeSeq)(using
                                     ec: ExecutionContext,
                                     hc: HeaderCarrier
-  ): Future[HttpResponse] = 
+  ): Future[Boolean] = 
     val url = s"http://${appConfig.eisHost}:${appConfig.eisPort}${appConfig.eisPath}/services/crdl/referencedataupdate/v1"
     httpClient
       .post(url"$url")
@@ -41,3 +41,4 @@ class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig):
       .setHeader("Content-Type" -> "application/xml")
       .withBody(body)
       .execute[HttpResponse]
+      .map(_.status == ACCEPTED)

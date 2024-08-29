@@ -17,6 +17,8 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.config
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.FiniteDuration
+import java.time.Duration
 import play.api.Configuration
 
 @Singleton
@@ -27,3 +29,8 @@ class AppConfig @Inject()(config: Configuration):
   val eisPath: String = config.get[String]("microservice.services.eis-api.path")
   val eisHost: String = config.get[String]("microservice.services.eis-api.host")
   val eisPort: Int = config.get[Int]("microservice.services.eis-api.port")
+  val pollerInitialDelay: FiniteDuration = config.get[FiniteDuration]("poller.initial-delay")
+  val pollerInterval: FiniteDuration = config.get[FiniteDuration]("poller.interval")
+  val pollerRetryAfter: Duration = config.get[Duration]("poller.in-progress-retry-after")
+  val maxRetryCount: Int = config.get[Int]("poller.max-retry-count")
+  val startScheduler: Boolean = config.getOptional[Boolean]("poller.start-scheduler").getOrElse(false)

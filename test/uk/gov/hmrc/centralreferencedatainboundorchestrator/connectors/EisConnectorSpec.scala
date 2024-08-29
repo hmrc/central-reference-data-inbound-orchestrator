@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
-import org.mockito.ArgumentMatchers.any
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import org.mockito.ArgumentMatchers.{eq => eqTo, any}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -26,7 +28,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.mockito.Mockito.{reset, when}
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status
+import play.api.http.Status.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
@@ -49,21 +51,16 @@ class EisConnectorSpec
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val appConfig: AppConfig             = mock[AppConfig]
-  val httpClientV2: HttpClientV2       = mock[HttpClientV2]
-  val requestBuilder: RequestBuilder   = mock[RequestBuilder]
+  private val appConfig: AppConfig = mock[AppConfig]
+  private val httpClientV2: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
+  when(appConfig.eisPath).thenReturn("")
+  when(appConfig.eisHost).thenReturn(externalWireMockHost)
+  when(appConfig.eisPort).thenReturn(externalWireMockPort)
 
-    reset(appConfig, httpClientV2, requestBuilder)
+  private val path = "/services/crdl/referencedataupdate/v1"
 
-    when(httpClientV2.post(any)(any)).thenReturn(requestBuilder)
-    when(requestBuilder.withBody(any)(any, any, any)).thenReturn(requestBuilder)
-    when(requestBuilder.setHeader(any)).thenReturn(requestBuilder)
-  }
-
-  val connector = new EisConnector(httpClientV2, appConfig)
+  private val connector = new EisConnector(httpClientV2, appConfig)
 
   private val testBody: Elem =
     <MainMessage>
@@ -76,30 +73,50 @@ class EisConnectorSpec
       </Body>
     </MainMessage>
 
-  "eis returns ACCEPTED" should {
-    "return accepted" in {
+  "EIS Connector" should {
+    "return successfully if the service is running" in {
 
-      val expectedResponse = Status.ACCEPTED
+      val expectedResponse = ACCEPTED
 
-      when(requestBuilder.execute[HttpResponse](any, any))
-        .thenReturn(Future.successful(HttpResponse(status = expectedResponse)))
+      stubFor(
+        post(urlEqualTo("/services/crdl/referencedataupdate/v1"))
+          .withRequestBody(equalToXml(testBody.toString))
+          .willReturn(
+            aResponse().withStatus(ACCEPTED)
+          )
+      )
 
       val result = await(connector.forwardMessage(testBody))
 
-      result.status shouldBe expectedResponse
+      result shouldBe true
     }
-  }
 
-  "eis returns BAD REQUEST" should {
-    "return failed future with message" in {
-      val expectedResponse = Status.BAD_REQUEST
-
-      when(requestBuilder.execute[HttpResponse](any, any))
-        .thenReturn(Future.successful(HttpResponse(status = expectedResponse)))
+    "eis returns BAD REQUEST" in {
+      stubFor(
+        post(urlEqualTo(path))
+          .withRequestBody(equalToXml(testBody.toString))
+          .willReturn(
+            aResponse().withStatus(BAD_REQUEST)
+          )
+      )
 
       val result = await(connector.forwardMessage(testBody))
 
-      result.status shouldBe expectedResponse
+      result shouldBe false
+    }
+
+    "eis returns INTERNAL SERVER ERROR" in {
+      stubFor(
+        post(urlEqualTo(path))
+          .withRequestBody(equalToXml(testBody.toString))
+          .willReturn(
+            aResponse().withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
+
+      val result = await(connector.forwardMessage(testBody))
+
+      result shouldBe false
     }
   }
 }
