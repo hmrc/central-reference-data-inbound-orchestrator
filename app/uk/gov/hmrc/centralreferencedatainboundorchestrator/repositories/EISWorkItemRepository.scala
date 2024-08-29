@@ -21,10 +21,13 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
 import uk.gov.hmrc.mongo.MongoComponent
 import org.mongodb.scala.*
 import org.mongodb.scala.result.DeleteResult
+import org.mongodb.scala.model.*
 import uk.gov.hmrc.mongo.workitem.*
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.ToDo
 import org.mongodb.scala.model.Filters
+
 import java.time.{Clock, Duration, Instant}
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,7 +39,13 @@ class EISWorkItemRepository @Inject()(
   collectionName = "eis-request",
   mongoComponent = mongoComponent,
   itemFormat = EISRequest.EISRequestFormat,
-  workItemFields = WorkItemFields.default
+  workItemFields = WorkItemFields.default,
+  extraIndexes = Seq(
+    IndexModel(
+      Indexes.ascending(WorkItemFields.default.updatedAt),
+      IndexOptions().expireAfter(appConfig.workItemRetentionPeriod.toMillis, TimeUnit.MILLISECONDS)
+    )
+  )
 ):
   override def inProgressRetryAfter: Duration = appConfig.pollerRetryAfter
 
