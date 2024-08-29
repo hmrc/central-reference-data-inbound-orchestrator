@@ -83,6 +83,8 @@ class SdesService @Inject() (
       case Some(messageWrapper) =>
         workItemRepo.set(EISRequest(messageWrapper.payload, sdesCallback.correlationID))
           .map(_ => s"Message with UID: ${sdesCallback.correlationID}, successfully queued")
-      case None => Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
+      case None =>
+        logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallback.correlationID}")
+        Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
     }
   }
