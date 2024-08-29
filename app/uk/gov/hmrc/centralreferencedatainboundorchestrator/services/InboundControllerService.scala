@@ -42,7 +42,7 @@ class InboundControllerService @Inject()(
   private def getUID(xml: NodeSeq): Future[String] =
     Try((xml \\ "IncludedBinaryObject").text.trim) match {
       case Success(uid) if uid != "" =>
-        logger.info("Successfully extracted UID")
+        logger.info(s"Successfully extracted UID: $uid")
         Future.successful(uid)
       case Failure(ex) =>
         logger.error("Failed to find UID in xml")
