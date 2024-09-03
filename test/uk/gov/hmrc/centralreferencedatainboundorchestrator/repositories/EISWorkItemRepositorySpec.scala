@@ -16,18 +16,13 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import org.mockito.Mockito.*
-import org.mongodb.scala.FindObservable
-import org.mongodb.scala.SingleObservableFuture
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
-import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import java.util.UUID

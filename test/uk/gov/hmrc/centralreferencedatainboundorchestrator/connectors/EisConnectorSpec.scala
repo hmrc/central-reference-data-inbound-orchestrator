@@ -17,27 +17,23 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.mockito.ArgumentMatchers.{eq => eqTo, any}
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpec
-import org.mockito.Mockito.{reset, when}
+import org.mockito.Mockito.when
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.Elem
-import scala.concurrent.Future
 
 class EisConnectorSpec
   extends AnyWordSpec

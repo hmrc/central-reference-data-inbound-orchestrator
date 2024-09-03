@@ -20,8 +20,7 @@ import com.google.inject.Inject
 import play.api.http.Status.ACCEPTED
 import play.api.libs.ws.XMLBodyWritables.writeableOf_NodeSeq
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EisResponseError
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 
