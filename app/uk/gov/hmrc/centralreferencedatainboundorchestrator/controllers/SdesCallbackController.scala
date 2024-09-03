@@ -20,8 +20,6 @@ import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -36,7 +34,6 @@ class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerC
       case Success(_) => Success(Accepted)
       case Failure(err: Throwable) => err match
         case NoMatchingUIDInMongoError(_) => Success(NotFound)
-        case EisResponseError(_) => Success(BadGateway) // NEVER RETURNED
         case InvalidSDESNotificationError(_) => Success(BadRequest)
         case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
         case _ => Success(InternalServerError)

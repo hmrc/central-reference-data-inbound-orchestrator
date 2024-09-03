@@ -1,7 +1,7 @@
 import uk.gov.hmrc.DefaultBuildSettings
 
 ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / scalaVersion := "3.4.2"
 
 lazy val microservice = Project("central-reference-data-inbound-orchestrator", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)

@@ -27,7 +27,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Application, Logger, LoggerLike, MarkerContext}
+import play.api.{Application, Logger}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.module.OrchestratorModule
@@ -38,10 +38,8 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.play.bootstrap.tools.LogCapturing
 
 import java.time.{Duration, Instant}
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.*
 
 class OrchestratorPollerSpec extends AnyWordSpec,
   GuiceOneAppPerSuite, BeforeAndAfterEach,
@@ -145,7 +143,7 @@ class OrchestratorPollerSpec extends AnyWordSpec,
         syncLogs()
         logEvents.count(event =>
           event.getLevel == Level.WARN &&
-            event.getFormattedMessage == s"failed to send ${wi.id}"
+            event.getFormattedMessage == s"failed to send work item `${wi.id}` for correlation Id `correlationID`"
         ) shouldBe 1
       }
 
@@ -175,9 +173,10 @@ class OrchestratorPollerSpec extends AnyWordSpec,
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
         syncLogs()
+        logEvents.foreach(println)
         logEvents.count(event =>
           event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == s"failed to send ${wi.id} 4 times."
+            event.getFormattedMessage == s"failed to send work item `${wi.id}` 4 times. For correlation Id `correlationID`"
         ) shouldBe 1
       }
 

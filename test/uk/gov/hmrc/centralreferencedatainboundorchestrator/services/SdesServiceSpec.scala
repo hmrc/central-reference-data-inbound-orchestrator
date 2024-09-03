@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
-import play.api.http.Status.*
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
@@ -26,25 +25,22 @@ import org.scalactic.Prettifier.default
 import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import org.scalatestplus.mockito.MockitoSugar.mock
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 import org.bson.types.ObjectId
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.exceptions.TestFailedException
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 
 import java.time.LocalDateTime
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
-import scala.xml.{Elem, XML}
+import scala.xml.Elem
 
 class SdesServiceSpec extends AnyWordSpec,
   GuiceOneAppPerSuite, BeforeAndAfterEach, Matchers, ScalaFutures:

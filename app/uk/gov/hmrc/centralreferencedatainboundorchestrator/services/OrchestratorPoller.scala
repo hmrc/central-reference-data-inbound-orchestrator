@@ -24,11 +24,8 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkI
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 
-import java.time.temporal.{ChronoUnit, TemporalAmount}
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import scala.jdk.javaapi.DurationConverters.toScala
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -75,10 +72,10 @@ class OrchestratorPoller @Inject()(
               sdesService.updateStatus(true, wi.item.correlationID)
               Success(workItemRepo.completeAndDelete(wi.id))
             case Success(false) if wi.failureCount < appConfig.maxRetryCount =>
-              logger.warn(s"failed to send ${wi.id}")
+              logger.warn(s"failed to send work item `${wi.id}` for correlation Id `${wi.item.correlationID}`")
               Success(failedAttempt(wi))
             case Success(false) =>
-              logger.error(s"failed to send ${wi.id} ${wi.failureCount + 1} times.")
+              logger.error(s"failed to send work item `${wi.id}` ${wi.failureCount + 1} times. For correlation Id `${wi.item.correlationID}`")
               Success(failedAttempt(wi))
             case Failure(err) =>
               logger.error(s"We got an error $err")

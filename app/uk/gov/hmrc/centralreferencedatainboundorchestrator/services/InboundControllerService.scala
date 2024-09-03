@@ -23,7 +23,6 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 
-import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
