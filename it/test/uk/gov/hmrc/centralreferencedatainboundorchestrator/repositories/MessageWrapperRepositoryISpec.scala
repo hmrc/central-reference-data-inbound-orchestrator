@@ -47,7 +47,7 @@ class MessageWrapperRepositoryISpec
   private val messageWrapper = MessageWrapper("id", "<Body/>", Received)
 
   private val mockAppConfig = mock[AppConfig]
-  when(mockAppConfig.cacheTtl) thenReturn 1.toLong
+  when(mockAppConfig.cacheTtl).thenReturn(1.toLong)
 
   val messageRepository = new MessageWrapperRepository(
     mongoComponent = mongoComponent,
@@ -59,7 +59,7 @@ class MessageWrapperRepositoryISpec
 
     "must insert a message wrapper successfully" in {
 
-      val expectedResult = messageWrapper copy (lastUpdated = instant, receivedTimestamp = instant)
+      val expectedResult = messageWrapper.copy(lastUpdated = instant, receivedTimestamp = instant)
 
       val insertResult     = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val fetchedRecord    = find(Filters.equal("uid", messageWrapper.uid)).futureValue.headOption.value
@@ -73,7 +73,7 @@ class MessageWrapperRepositoryISpec
 
     "must be able to retrieve a message wrapper successfully using a uid" in {
 
-      val expectedResult = messageWrapper copy (lastUpdated = instant, receivedTimestamp = instant)
+      val expectedResult = messageWrapper.copy(lastUpdated = instant, receivedTimestamp = instant)
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue

@@ -50,9 +50,9 @@ class EisConnectorSpec
   private val appConfig: AppConfig = mock[AppConfig]
   private val httpClientV2: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
+  
+  when(appConfig.eisUrl).thenReturn(s"http://$externalWireMockHost:$externalWireMockPort")
   when(appConfig.eisPath).thenReturn("")
-  when(appConfig.eisHost).thenReturn(externalWireMockHost)
-  when(appConfig.eisPort).thenReturn(externalWireMockPort)
 
   private val path = "/services/crdl/referencedataupdate/v1"
 
