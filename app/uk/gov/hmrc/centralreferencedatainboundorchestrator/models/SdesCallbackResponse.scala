@@ -30,10 +30,8 @@ case class SdesCallbackResponse(
                          availableUntil: Option[LocalDateTime] = None,
                          properties: List[Property] = Nil,
                          failureReason: Option[String] = None
-                       ) extends PropertyExtractor
+                       )
 
 object SdesCallbackResponse {
-  implicit val format: OFormat[SdesCallbackResponse] = Json.format[SdesCallbackResponse]
-
-  given Writes[SdesCallbackResponse] = Json.writes[SdesCallbackResponse]
+  given format: OFormat[SdesCallbackResponse] = Json.format[SdesCallbackResponse]
 }
