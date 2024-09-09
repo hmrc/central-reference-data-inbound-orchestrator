@@ -39,3 +39,10 @@ class TestController @Inject() (
   def clearAllWorkItems(): Action[AnyContent] = Action.async { implicit request =>
     eisWorkItemRepository.deleteAll().map(_ => Accepted)
   }
+
+  def findById(uid: String): Action[AnyContent] = Action.async { implicit request =>
+    messageWrapperRepository.findByUid(uid).map {
+      case Some(messageWrapper) => Accepted(messageWrapper.status.toString)
+      case None => NotFound
+    }
+  }

@@ -13,5 +13,6 @@
 # Test only routes
 DELETE  /test-only/message-wrappers             uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers.TestController.clearAllWrappers()
 DELETE  /test-only/eis-work-items               uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers.TestController.clearAllWorkItems()
+GET     /test-only/message-wrappers/:id         uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers.TestController.findById(id)
 
 ->         /                          prod.Routes
