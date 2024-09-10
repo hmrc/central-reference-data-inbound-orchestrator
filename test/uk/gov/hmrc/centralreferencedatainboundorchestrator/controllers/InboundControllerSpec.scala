@@ -44,7 +44,6 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
   private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundService, mockAuditHandler)
   given mat: Materializer = app.injector.instanceOf[Materializer]
 
-  private val testCorrelationId = "c04a1612-705d-4373-8840-9d137b14b30a"
   private val auditSuccess = Future.successful(Success)
 
   // This is the expected body we need to send to EIS, using this for test purposes
@@ -62,8 +61,6 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockAuditHandler)
-    when(mockInboundService.getUID(any))
-      .thenReturn(Future.successful(testCorrelationId))
 
     when(mockAuditHandler.auditNewMessageWrapper(any)(any))
       .thenReturn(auditSuccess)
