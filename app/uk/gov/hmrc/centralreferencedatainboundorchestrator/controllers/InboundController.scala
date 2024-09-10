@@ -19,6 +19,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.reporting.{AuditEvent, AuditHandler}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -34,13 +35,23 @@ import scala.xml.NodeSeq
 @Singleton
 class InboundController @Inject()(
                                    cc: ControllerComponents,
-                                   inboundControllerService: InboundControllerService)
+                                   inboundControllerService: InboundControllerService,
+                                   auditHandler: AuditHandler)
                                  (using ec: ExecutionContext)
   extends BackendController(cc) with Logging:
 
   private val FileIncludedHeader = "x-files-included"
 
+  val MESSAGE_ID        = "http_x_correlation_id"
+  private def getMessageId(implicit request: Request[_]): String = request.headers.get(MESSAGE_ID).getOrElse("NULL")
+
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
+    auditHandler.audit(
+      AuditEvent.receivedEvent(
+        getMessageId,
+        request.body.toString()
+      )
+    )
     if hasFilesHeader && validateRequestBody(request.body) then
       inboundControllerService.processMessage(request.body) transform {
         case Success(_) => Success(Accepted)

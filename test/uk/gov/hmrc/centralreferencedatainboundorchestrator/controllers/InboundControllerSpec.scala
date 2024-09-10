@@ -26,6 +26,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.reporting.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,9 +36,10 @@ import scala.xml.*
 class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
 
   lazy val mockInboundService: InboundControllerService = mock[InboundControllerService]
+  lazy val mockAuditHandler: AuditHandler = mock[AuditHandler]
 
   private val fakeRequest = FakeRequest("POST", "/")
-  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundService)
+  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundService, mockAuditHandler)
   given mat: Materializer = app.injector.instanceOf[Materializer]
 
   // This is the expected body we need to send to EIS, using this for test purposes
