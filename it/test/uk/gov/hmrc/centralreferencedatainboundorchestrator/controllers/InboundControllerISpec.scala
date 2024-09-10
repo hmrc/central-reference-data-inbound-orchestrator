@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import helpers.InboundSoapMessage
 import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -29,6 +30,7 @@ import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.WSClient
 import play.api.test.Helpers.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
+import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.mongo.test.MongoSupport
 
 class InboundControllerISpec extends AnyWordSpec,
@@ -36,6 +38,7 @@ class InboundControllerISpec extends AnyWordSpec,
   ScalaFutures,
   IntegrationPatience,
   MongoSupport,
+  ExternalWireMockSupport,
   GuiceOneServerPerSuite,
   BeforeAndAfterEach,
   BeforeAndAfterAll:
@@ -47,7 +50,10 @@ class InboundControllerISpec extends AnyWordSpec,
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .configure(
-        "mongodb.uri"            -> s"$mongoUri"
+        "auditing.consumer.baseUri.host"  -> externalWireMockHost,
+        "auditing.consumer.baseUri.port"  -> s"$externalWireMockPort",
+        "auditing.enabled"                -> "true",
+        "mongodb.uri"                     -> s"$mongoUri"
       )
       .build()
 
@@ -64,6 +70,15 @@ class InboundControllerISpec extends AnyWordSpec,
 
   "POST / endpoint" should {
     "return Accepted with a valid request" in {
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody("""{"x":2}""")
+          )
+      )
+
       val response =
         wsClient
           .url(url)
@@ -78,6 +93,15 @@ class InboundControllerISpec extends AnyWordSpec,
     }
 
     "return bad request if the request does not contain all of the headers" in {
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody("""{"x":2}""")
+          )
+      )
+
       val response =
         wsClient
           .url(url)
@@ -91,6 +115,15 @@ class InboundControllerISpec extends AnyWordSpec,
     }
 
     "return Internal server error when two valid request with the same UID" in {
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody("""{"x":2}""")
+          )
+      )
+
       val response =
         wsClient
           .url(url)
