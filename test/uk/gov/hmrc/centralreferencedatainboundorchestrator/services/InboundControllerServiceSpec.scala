@@ -75,7 +75,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
         rt.getMessage shouldBe "failed"
       }
     }
-
+    
     "Throw an exception if UID is missing in XML" in {
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
