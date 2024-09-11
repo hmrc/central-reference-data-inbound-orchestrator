@@ -67,7 +67,7 @@ class SdesCallbackResponseSpec extends AnyWordSpec, Matchers{
       "failureReason" -> Some("Some Failure")
   )
 
-  "Sdes Response" should {
+  "SDES Response" should {
     "serialise properly" in {
       val actual = Json.toJson(testResponse)
 
