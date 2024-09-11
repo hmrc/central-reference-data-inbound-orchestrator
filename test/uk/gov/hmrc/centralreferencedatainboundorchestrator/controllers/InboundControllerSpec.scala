@@ -104,6 +104,21 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
+    "return internal server error if reading process message fails" in {
+      when(mockInboundService.processMessage(any()))
+        .thenReturn(Future.failed(MongoReadError("failed")))
+
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
     "return bad request if UID is missing in XML" in {
       when(mockInboundService.processMessage(any()))
         .thenReturn(Future.failed(InvalidXMLContentError("failed")))
@@ -118,4 +133,20 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
       )
       status(result) shouldBe BAD_REQUEST
     }
+
+    "fail if Any other Error" in {
+      when(mockInboundService.processMessage(any()))
+        .thenReturn(Future.failed(Throwable("failed")))
+
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
   }

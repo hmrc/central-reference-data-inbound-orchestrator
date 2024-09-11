@@ -27,7 +27,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{InvalidSDESNotificationError, Property, SdesCallbackResponse}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{AVScanFailureError, InvalidSDESNotificationError, MongoReadError, MongoWriteError, NoMatchingUIDInMongoError, Property, SdesCallbackResponse}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -47,6 +47,9 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
 
   private val invalidTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
+    Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+
+  private val invalidUID: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
 
   "POST /services/crdl/callback" should {
@@ -69,5 +72,45 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(invalidTestBody)
       )
       status(result) shouldBe BAD_REQUEST
+    }
+
+    "fail if no UID present" in {
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(invalidUID))(using any())).thenReturn(Future.failed(NoMatchingUIDInMongoError("not found")))
+
+      val result = controller.sdesCallback()(
+        fakeRequest
+          .withBody(invalidUID)
+      )
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "fail if Mongo Read Error" in {
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future.failed(MongoReadError("failed")))
+
+      val result = controller.sdesCallback()(
+        fakeRequest
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "fail if Mongo Write Error" in {
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future.failed(MongoWriteError("failed")))
+
+      val result = controller.sdesCallback()(
+        fakeRequest
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "fail if Any other Error" in {
+      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future.failed(Throwable("Internal Server Error")))
+
+      val result = controller.sdesCallback()(
+        fakeRequest
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
