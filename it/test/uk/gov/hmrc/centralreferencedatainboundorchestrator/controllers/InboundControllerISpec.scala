@@ -74,8 +74,7 @@ class InboundControllerISpec extends AnyWordSpec,
         post(urlEqualTo("/write/audit"))
           .willReturn(
             aResponse()
-              .withStatus(OK)
-              .withBody("""{"x":2}""")
+              .withStatus(NO_CONTENT)
           )
       )
 
@@ -97,8 +96,7 @@ class InboundControllerISpec extends AnyWordSpec,
         post(urlEqualTo("/write/audit"))
           .willReturn(
             aResponse()
-              .withStatus(OK)
-              .withBody("""{"x":2}""")
+              .withStatus(NO_CONTENT)
           )
       )
 
@@ -119,8 +117,7 @@ class InboundControllerISpec extends AnyWordSpec,
         post(urlEqualTo("/write/audit"))
           .willReturn(
             aResponse()
-              .withStatus(OK)
-              .withBody("""{"x":2}""")
+              .withStatus(NO_CONTENT)
           )
       )
 
