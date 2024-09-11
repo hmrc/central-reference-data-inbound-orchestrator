@@ -68,13 +68,13 @@ class SdesCallbackResponseSpec extends AnyWordSpec, Matchers{
   )
 
   "SDES Response" should {
-    "serialise properly" in {
+    "Serialise properly" in {
       val actual = Json.toJson(testResponse)
 
       actual shouldBe testJson
     }
 
-    "deserialize properly" in {
+    "Deserialize properly" in {
       val actual = testJson.validate[SdesCallbackResponse]
       actual shouldBe JsSuccess(testResponse)
     }
