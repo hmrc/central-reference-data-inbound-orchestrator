@@ -19,7 +19,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.reporting.{AuditEvent, AuditHandler}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -42,16 +42,8 @@ class InboundController @Inject()(
 
   private val FileIncludedHeader = "x-files-included"
 
-  val MESSAGE_ID        = "http_x_correlation_id"
-  private def getMessageId(implicit request: Request[_]): String = request.headers.get(MESSAGE_ID).getOrElse("NULL")
-
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
-    auditHandler.audit(
-      AuditEvent.receivedEvent(
-        getMessageId,
-        request.body.toString()
-      )
-    )
+    auditHandler.auditNewMessageWrapper(request.body.toString)
     if hasFilesHeader && validateRequestBody(request.body) then
       inboundControllerService.processMessage(request.body) transform {
         case Success(_) => Success(Accepted)
@@ -63,7 +55,6 @@ class InboundController @Inject()(
     else
       Future.successful(BadRequest)
   }
-
 
   private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =
     request.headers.get(FileIncludedHeader).exists(_.toBooleanOption.getOrElse(false))

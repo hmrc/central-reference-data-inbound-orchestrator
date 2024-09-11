@@ -14,28 +14,33 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.centralreferencedatainboundorchestrator.reporting
+package uk.gov.hmrc.centralreferencedatainboundorchestrator.audit
 
 import com.google.inject.Inject
+import play.api.libs.json.{JsObject, JsString}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
-  def audit(auditEvent: AuditEvent)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def auditNewMessageWrapper(payload: String)
+                            (implicit hc: HeaderCarrier): Future[AuditResult] = {
     val extendedDataEvent = ExtendedDataEvent(
       auditSource = appConfig.appName,
-      auditType = auditEvent.auditType,
-      detail = auditEvent.detail,
-      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags(auditEvent.transactionName, "/")
+      auditType = "InboundMessageReceived",
+      detail = JsObject(
+        Seq(
+          "payload"     -> JsString(payload)
+        )
+      ),
+      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/")
     )
 
-    auditConnector.sendExtendedEvent(extendedDataEvent).map(_ => (): Unit)
+    auditConnector.sendExtendedEvent(extendedDataEvent)
   }
-
 }
