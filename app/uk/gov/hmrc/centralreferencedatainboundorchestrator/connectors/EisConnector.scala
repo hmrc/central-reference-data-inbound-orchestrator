@@ -38,6 +38,7 @@ class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig):
       .post(url"$url")
       .setHeader("Accept" -> "application/xml")
       .setHeader("Content-Type" -> "application/xml")
+      .setHeader("Authorization" -> appConfig.eisBearerToken)
       .withBody(body)
       .execute[HttpResponse]
       .map(_.status == ACCEPTED)

@@ -53,6 +53,7 @@ class EisConnectorSpec
   
   when(appConfig.eisUrl).thenReturn(s"http://$externalWireMockHost:$externalWireMockPort")
   when(appConfig.eisPath).thenReturn("")
+  when(appConfig.eisBearerToken).thenReturn("test")
 
   private val path = "/services/crdl/referencedataupdate/v1"
 
