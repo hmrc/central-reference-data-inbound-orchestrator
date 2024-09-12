@@ -133,6 +133,28 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
 
+
+    "updateMessageToFailed should return MongoWriteError" in {
+      val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Failed))(using any()))
+        .thenReturn(Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: $uid")))
+
+      val result = sdesService.processCallback(
+        SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+      )
+
+      recoverToExceptionIf[MongoWriteError](result).map { rt =>
+        rt.getMessage shouldBe "failed to update message wrappers status to failed with uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+      }.futureValue
+
+      verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
+      verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
+      verify(mockEISWorkItemRepository, times(0)).set(any)
+      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+    }
+
+
     "should fail if SDES notification is not valid" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
 
