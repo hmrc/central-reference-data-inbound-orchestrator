@@ -97,5 +97,4 @@ class MessageWrapperRepository @Inject()(
         case e =>
           logger.error(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}")
           Future.failed(MongoWriteError(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"))
-
       }
