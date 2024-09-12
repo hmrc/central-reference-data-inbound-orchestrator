@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageStatus, MongoReadError}
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import java.util.UUID
@@ -52,4 +54,5 @@ class MessageWrapperRepositorySpec extends AnyWordSpec,
       countOfDocsAfter shouldBe 0
     }
   }
+
 
