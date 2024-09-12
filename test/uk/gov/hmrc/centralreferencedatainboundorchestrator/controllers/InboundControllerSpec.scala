@@ -18,7 +18,8 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.*
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -26,19 +27,24 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.xml.*
 
-class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
+class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEach, Matchers:
 
   lazy val mockInboundService: InboundControllerService = mock[InboundControllerService]
+  lazy val mockAuditHandler: AuditHandler = mock[AuditHandler]
 
   private val fakeRequest = FakeRequest("POST", "/")
-  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundService)
+  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundService, mockAuditHandler)
   given mat: Materializer = app.injector.instanceOf[Materializer]
+
+  private val auditSuccess = Future.successful(Success)
 
   // This is the expected body we need to send to EIS, using this for test purposes
   // until we get a real sample input file.
@@ -51,6 +57,14 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
       	<MessageSender>CS/RD2</MessageSender>
       </Body>
     </MainMessage>
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockAuditHandler)
+
+    when(mockAuditHandler.auditNewMessageWrapper(any)(any))
+      .thenReturn(auditSuccess)
+  }
 
   "POST /" should {
     "accept a valid message" in {
@@ -66,6 +80,8 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
           .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "return Bad Request if the x-files-included header is not present" in {
@@ -77,6 +93,8 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
           .withBody(validTestBody)
       )
       status(result) shouldBe BAD_REQUEST
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "return Bad Request if there is no XML content" in {
@@ -102,6 +120,8 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "return bad request if UID is missing in XML" in {
@@ -117,5 +137,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
           .withBody(validTestBody)
       )
       status(result) shouldBe BAD_REQUEST
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
   }
