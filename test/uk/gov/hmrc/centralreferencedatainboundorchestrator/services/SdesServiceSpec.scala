@@ -258,6 +258,7 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEISWorkItemRepository, times(0)).set(any)
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
+
   }
 
 
