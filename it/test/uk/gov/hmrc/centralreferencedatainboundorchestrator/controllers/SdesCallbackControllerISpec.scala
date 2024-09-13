@@ -31,11 +31,15 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, Sde
 
 import java.time.LocalDateTime
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallbackResponse.*
+import uk.gov.hmrc.http.test.ExternalWireMockSupport
+import uk.gov.hmrc.mongo.test.MongoSupport
 
 class SdesCallbackControllerISpec extends AnyWordSpec,
   Matchers,
   ScalaFutures,
   IntegrationPatience,
+  MongoSupport,
+  ExternalWireMockSupport,
   GuiceOneServerPerSuite:
 
   private val wsClient = app.injector.instanceOf[WSClient]
@@ -51,6 +55,12 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
+      .configure(
+        "auditing.consumer.baseUri.host" -> externalWireMockHost,
+        "auditing.consumer.baseUri.port" -> s"$externalWireMockPort",
+        "auditing.enabled" -> "true",
+        "mongodb.uri" -> s"$mongoUri"
+      )
       .build()
 
   "POST /services/crdl/callback endpoint" should {
