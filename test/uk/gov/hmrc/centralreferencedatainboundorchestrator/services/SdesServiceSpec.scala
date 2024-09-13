@@ -216,6 +216,48 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEISWorkItemRepository, times(0)).set(any)
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
+
+    "should return exception MongoWriteError when accepting a FileProcessingFailure notification but Mongo fails to write" in {
+      val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Failed))(using any()))
+        .thenReturn(Future.successful(false))
+
+      val result = sdesService.processCallback(
+        SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+      )
+
+      recoverToExceptionIf[MongoWriteError](result).map { mwe =>
+        mwe.message shouldBe s"failed to update message wrappers status to failed with uid: $uid"
+      }.futureValue
+
+      verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
+      verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
+      verify(mockEISWorkItemRepository, times(0)).set(any)
+      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+    }
+
+    "should return exception NoMatchingUIDInMongoError when forwarding a message but Mongo fails to find UID in Mongo Matching" in {
+      val uid = UUID.randomUUID().toString
+      val message = messageWrapper(uid)
+
+      when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
+        .thenReturn(Future.successful(None))
+
+      val result = sdesService.processCallback(
+        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+      )
+
+      recoverToExceptionIf[NoMatchingUIDInMongoError](result).map { mwe =>
+        mwe.message shouldBe s"Failed to find a UID in Mongo matching: $uid"
+      }.futureValue
+
+      verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
+      verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
+      verify(mockEISWorkItemRepository, times(0)).set(any)
+      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+    }
   }
 
 
