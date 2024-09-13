@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, stubFor, urlEqualTo}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -55,6 +56,14 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
   "POST /services/crdl/callback endpoint" should {
     "return created with a valid request" in {
 
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
       val response =
         wsClient
           .url(url)
@@ -68,6 +77,15 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
     }
 
     "return unsupported media type if the request does not contain all of the headers" in {
+
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
       val response =
         wsClient
           .url(url)
@@ -78,6 +96,14 @@ class SdesCallbackControllerISpec extends AnyWordSpec,
     }
 
     "return bad request when an invalid request is received" in {
+
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
 
       val response =
         wsClient

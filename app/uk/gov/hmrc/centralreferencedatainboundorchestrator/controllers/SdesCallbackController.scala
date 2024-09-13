@@ -17,6 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import play.api.mvc.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -26,10 +27,11 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 @Singleton
-class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerComponents)(using executionContext: ExecutionContext)
+class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerComponents,auditHandler: AuditHandler)(using executionContext: ExecutionContext)
   extends BackendController(cc):
   
   def sdesCallback: Action[SdesCallbackResponse] = Action.async(parse.json[SdesCallbackResponse]) { implicit request =>
+    auditHandler.auditNewMessageWrapper(request.body.toString)
     sdesService.processCallback(request.body) transform {
       case Success(_) => Success(Accepted)
       case Failure(err: Throwable) => err match

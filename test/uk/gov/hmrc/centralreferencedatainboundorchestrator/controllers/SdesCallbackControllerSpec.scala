@@ -20,28 +20,34 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{reset, times, verify, when}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{InvalidSDESNotificationError, MongoReadError, MongoWriteError, NoMatchingUIDInMongoError, Property, SdesCallbackResponse}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
+import scala.util.Success
 
-class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers:
+class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, BeforeAndAfterEach:
 
   given HeaderCarrier = HeaderCarrier()
 
   private val fakeRequest = FakeRequest("POST", "/services/crdl/callback")
   lazy val mockSdesService: SdesService = mock[SdesService]
-  private val controller = new SdesCallbackController(mockSdesService, Helpers.stubControllerComponents())
+  lazy val mockAuditHandler: AuditHandler = mock[AuditHandler]
+  private val controller = new SdesCallbackController(mockSdesService, Helpers.stubControllerComponents(),mockAuditHandler)
   given mat: Materializer = app.injector.instanceOf[Materializer]
+
+  private val auditSuccess = Future.successful(Success)
 
   private val validTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
@@ -51,6 +57,15 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
 
   private val invalidUID: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockAuditHandler)
+
+    when(mockAuditHandler.auditNewMessageWrapper(any)(any))
+      .thenReturn(auditSuccess)
+  }
 
   "POST /services/crdl/callback" should {
     "accept a valid message" in {
@@ -62,6 +77,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "fail if invalid message" in {
@@ -72,6 +88,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(invalidTestBody)
       )
       status(result) shouldBe BAD_REQUEST
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "fail if no UID present" in {
@@ -82,6 +99,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(invalidUID)
       )
       status(result) shouldBe NOT_FOUND
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "fail if Mongo Read Error" in {
@@ -92,6 +110,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "fail if Mongo Write Error" in {
@@ -102,6 +121,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "fail if Any other Error" in {
@@ -112,6 +132,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
     
   }
