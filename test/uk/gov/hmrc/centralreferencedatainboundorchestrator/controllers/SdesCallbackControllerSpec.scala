@@ -61,10 +61,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockAuditHandler)
-
-    when(mockAuditHandler.auditNewMessageWrapper(any)(any))
-      .thenReturn(auditSuccess)
+    reset(mockSdesService)
   }
 
   "POST /services/crdl/callback" should {
@@ -77,7 +74,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if invalid message" in {
@@ -88,7 +85,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(invalidTestBody)
       )
       status(result) shouldBe BAD_REQUEST
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if no UID present" in {
@@ -99,7 +96,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(invalidUID)
       )
       status(result) shouldBe NOT_FOUND
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if Mongo Read Error" in {
@@ -110,7 +107,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if Mongo Write Error" in {
@@ -121,7 +118,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if Any other Error" in {
@@ -132,7 +129,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
     
   }

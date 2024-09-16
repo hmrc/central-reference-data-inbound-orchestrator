@@ -17,6 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
@@ -33,6 +34,7 @@ class SdesService @Inject() (
   messageWrapperRepository: MessageWrapperRepository,
   workItemRepo: EISWorkItemRepository,
   eisConnector: EisConnector,
+  auditHandler: AuditHandler,
   appConfig: AppConfig
 )(using executionContext: ExecutionContext) extends Logging:
 
@@ -84,5 +86,18 @@ class SdesService @Inject() (
       case None =>
         logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallback.correlationID}")
         Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
+    }
+  }
+
+  def auditMessageWrapperAndSdesPayload(sdesCallbackResponse: SdesCallbackResponse)(using hc: HeaderCarrier)= {
+    messageWrapperRepository.findByUid(sdesCallbackResponse.correlationID).flatMap {
+      case Some(messageWrapper) =>
+        //logger.info("found message in db")
+//        auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString, Some(messageWrapper))
+//          .map(_ => s"Message with UID: ${sdesCallbackResponse.correlationID}, successfully found in Mongo DB")
+        auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString, Some(messageWrapper))
+      case None =>
+        logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallbackResponse.correlationID}")
+        Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo DB: ${sdesCallbackResponse.correlationID}"))
     }
   }

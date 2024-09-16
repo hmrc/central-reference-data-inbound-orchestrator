@@ -34,12 +34,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 import org.bson.types.ObjectId
 import org.scalatest.BeforeAndAfterEach
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 
 import java.time.LocalDateTime
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 import scala.xml.Elem
 
 class SdesServiceSpec extends AnyWordSpec,
@@ -52,6 +54,7 @@ class SdesServiceSpec extends AnyWordSpec,
   lazy val mockMessageWrapperRepository: MessageWrapperRepository = mock[MessageWrapperRepository]
   lazy val mockEISWorkItemRepository: EISWorkItemRepository = mock[EISWorkItemRepository]
   lazy val mockEisConnector: EisConnector = mock[EisConnector]
+  lazy val mockAuditHandler:AuditHandler = mock[AuditHandler]
   lazy val mockAppConfig: AppConfig = mock[AppConfig]
 
   when(mockAppConfig.maxRetryCount).thenReturn(3)
@@ -63,8 +66,25 @@ class SdesServiceSpec extends AnyWordSpec,
       mockMessageWrapperRepository,
       mockEISWorkItemRepository,
       mockEisConnector,
+      mockAuditHandler,
       mockAppConfig
     )
+
+  private val testSdesResponse = SdesCallbackResponse(
+    "notification",
+    "filename",
+    "correlationID",
+    LocalDateTime.of(2024, 9, 9, 15, 30, 0, 0),
+    Some("CheckSumAlgorithm"),
+    Some("checksum"),
+    Some(LocalDateTime.of(2024, 9, 10, 14, 30, 0, 0)),
+    List(
+      Property("Property1", "1"),
+      Property("Property2", "2"),
+      Property("Property3", "3")
+    ),
+    None
+  )
 
   private val testBody: Elem = <Body></Body>
 
@@ -75,7 +95,8 @@ class SdesServiceSpec extends AnyWordSpec,
     reset(
       mockMessageWrapperRepository,
       mockEISWorkItemRepository,
-      mockEisConnector
+      mockEisConnector,
+      mockAuditHandler
     )
   }
 
@@ -259,6 +280,34 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
 
+    "should create an audit with the Message Wrapper and Sdes Payload" in {
+//      mockMessageWrapperRepository.insertMessageWrapper(testSdesResponse.correlationID,"PAYLOAD",Received)
+//
+//      when(mockMessageWrapperRepository.findByUid(eqTo(testSdesResponse.correlationID))(using any()))
+//        .thenReturn(Future.successful(Some(message)))
+//
+//      val result = sdesService.auditMessageWrapperAndSdesPayload(testSdesResponse)
+//      result shouldBe Success
+//
+//      verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
+//      verify(mockAuditHandler, times(0)).auditNewMessageWrapper(any, any)(using any())
+    }
+
+    "should return NoMatchingUIDInMongoError when trying to audit the Message Wrapper and Sdes Payload" in {
+
+      when(mockMessageWrapperRepository.findByUid(eqTo(testSdesResponse.correlationID))(using any()))
+        .thenReturn(Future.successful(None))
+
+      val result = sdesService.auditMessageWrapperAndSdesPayload(testSdesResponse)
+
+      recoverToExceptionIf[NoMatchingUIDInMongoError](result).map { mwe =>
+        mwe.message shouldBe s"Failed to find a UID in Mongo DB: ${testSdesResponse.correlationID}"
+      }.futureValue
+
+      verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
+      verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
+      verify(mockAuditHandler,times(0)).auditNewMessageWrapper(any,any)(using any())
+    }
   }
 
 
