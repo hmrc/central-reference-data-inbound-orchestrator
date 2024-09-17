@@ -48,9 +48,7 @@ class InboundController @Inject()(
       inboundControllerService.processMessage(request.body) transform {
         case Success(_) => Success(Accepted)
         case Failure(err: Throwable) => err match
-          case InvalidXMLContentError(_) =>
-            logger.info("Failed to validate schema of message - potentially an error report")
-            Success(BadRequest)
+          case InvalidXMLContentError(_) => Success(BadRequest)
           case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
           case _ => Success(InternalServerError)
       }
