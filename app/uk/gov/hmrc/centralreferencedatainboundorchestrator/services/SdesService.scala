@@ -89,15 +89,12 @@ class SdesService @Inject() (
     }
   }
 
-  def auditMessageWrapperAndSdesPayload(sdesCallbackResponse: SdesCallbackResponse)(using hc: HeaderCarrier)= {
+  def auditMessageWrapperAndSdesPayload(sdesCallbackResponse: SdesCallbackResponse)(using hc: HeaderCarrier) = {
     messageWrapperRepository.findByUid(sdesCallbackResponse.correlationID).flatMap {
       case Some(messageWrapper) =>
-        //logger.info("found message in db")
-//        auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString, Some(messageWrapper))
-//          .map(_ => s"Message with UID: ${sdesCallbackResponse.correlationID}, successfully found in Mongo DB")
         auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString, Some(messageWrapper))
       case None =>
         logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallbackResponse.correlationID}")
-        Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo DB: ${sdesCallbackResponse.correlationID}"))
+        auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString)
     }
   }

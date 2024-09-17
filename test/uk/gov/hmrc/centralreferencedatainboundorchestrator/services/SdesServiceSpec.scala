@@ -36,6 +36,7 @@ import org.bson.types.ObjectId
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import java.time.LocalDateTime
 import java.time.Instant
@@ -69,22 +70,6 @@ class SdesServiceSpec extends AnyWordSpec,
       mockAuditHandler,
       mockAppConfig
     )
-
-  private val testSdesResponse = SdesCallbackResponse(
-    "notification",
-    "filename",
-    "correlationID",
-    LocalDateTime.of(2024, 9, 9, 15, 30, 0, 0),
-    Some("CheckSumAlgorithm"),
-    Some("checksum"),
-    Some(LocalDateTime.of(2024, 9, 10, 14, 30, 0, 0)),
-    List(
-      Property("Property1", "1"),
-      Property("Property2", "2"),
-      Property("Property3", "3")
-    ),
-    None
-  )
 
   private val testBody: Elem = <Body></Body>
 
@@ -281,32 +266,40 @@ class SdesServiceSpec extends AnyWordSpec,
     }
 
     "should create an audit with the Message Wrapper and Sdes Payload" in {
-//      mockMessageWrapperRepository.insertMessageWrapper(testSdesResponse.correlationID,"PAYLOAD",Received)
-//
-//      when(mockMessageWrapperRepository.findByUid(eqTo(testSdesResponse.correlationID))(using any()))
-//        .thenReturn(Future.successful(Some(message)))
-//
-//      val result = sdesService.auditMessageWrapperAndSdesPayload(testSdesResponse)
-//      result shouldBe Success
-//
-//      verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
-//      verify(mockAuditHandler, times(0)).auditNewMessageWrapper(any, any)(using any())
+      val uid = UUID.randomUUID().toString
+      val message = messageWrapper(uid)
+
+      when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
+        .thenReturn(Future.successful(Some(message)))
+
+      when(mockAuditHandler.auditNewMessageWrapper(any,any)(using any()))
+        .thenReturn(Future.successful(AuditResult.Success))
+
+      val result = sdesService.auditMessageWrapperAndSdesPayload(
+        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+      ).futureValue
+
+      verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any, any)(using any())
     }
 
-    "should return NoMatchingUIDInMongoError when trying to audit the Message Wrapper and Sdes Payload" in {
+    "should audit the Sdes Payload only" in {
+      val uid = UUID.randomUUID().toString
 
-      when(mockMessageWrapperRepository.findByUid(eqTo(testSdesResponse.correlationID))(using any()))
+      when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
         .thenReturn(Future.successful(None))
 
-      val result = sdesService.auditMessageWrapperAndSdesPayload(testSdesResponse)
+      when(mockAuditHandler.auditNewMessageWrapper(any, any)(using any()))
+        .thenReturn(Future.successful(AuditResult.Success))
 
-      recoverToExceptionIf[NoMatchingUIDInMongoError](result).map { mwe =>
-        mwe.message shouldBe s"Failed to find a UID in Mongo DB: ${testSdesResponse.correlationID}"
-      }.futureValue
+      val result = sdesService.auditMessageWrapperAndSdesPayload(
+        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+      )
 
-      verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
-      verify(mockAuditHandler,times(0)).auditNewMessageWrapper(any,any)(using any())
+      verify(mockAuditHandler,times(1)).auditNewMessageWrapper(any)(using any())
     }
   }
 
