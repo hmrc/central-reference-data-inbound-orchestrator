@@ -53,7 +53,6 @@ class InboundController @Inject()(
           case _ => Success(InternalServerError)
       }
     else
-      logger.error("Failed to validate schema of message - potentially an error report")
       Future.successful(BadRequest)
   }
 
@@ -69,5 +68,7 @@ class InboundController @Inject()(
       validator.validate(new StreamSource(new StringReader(body.toString)))
     } match {
       case Success(_) => true
-      case _ => false
+      case _ =>
+        logger.error(s"Failed to validate schema of message - potentially an error report with body: $body")
+        false
     }
