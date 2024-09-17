@@ -24,6 +24,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import scala.xml.XML.*
 import javax.inject.{Inject, Singleton}
@@ -89,7 +90,7 @@ class SdesService @Inject() (
     }
   }
 
-  def auditMessageWrapperAndSdesPayload(sdesCallbackResponse: SdesCallbackResponse)(using hc: HeaderCarrier) = {
+  def auditMessageWrapperAndSdesPayload(sdesCallbackResponse: SdesCallbackResponse)(using hc: HeaderCarrier): Future[AuditResult] = {
     messageWrapperRepository.findByUid(sdesCallbackResponse.correlationID).flatMap {
       case Some(messageWrapper) =>
         auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString, Some(messageWrapper))

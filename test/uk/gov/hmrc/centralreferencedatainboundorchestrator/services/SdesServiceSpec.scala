@@ -284,7 +284,7 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any, any)(using any())
     }
 
-    "should audit the Sdes Payload only" in {
+    "should audit the Sdes Payload Only" in {
       val uid = UUID.randomUUID().toString
 
       when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
@@ -296,10 +296,14 @@ class SdesServiceSpec extends AnyWordSpec,
       val result = sdesService.auditMessageWrapperAndSdesPayload(
         SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
-      )
+      ).futureValue
+
+//      recoverToExceptionIf[NoMatchingUIDInMongoError](result).map { mwe =>
+//        mwe.message shouldBe s"Failed to find a UID in Mongo DB: ${uid}"
+//      }.futureValue
 
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
-      verify(mockAuditHandler,times(1)).auditNewMessageWrapper(any)(using any())
+      verify(mockAuditHandler,times(1)).auditNewMessageWrapper(any,any)(using any())
     }
   }
 

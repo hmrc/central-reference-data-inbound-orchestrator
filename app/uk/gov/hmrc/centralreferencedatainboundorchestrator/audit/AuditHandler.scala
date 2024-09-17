@@ -50,7 +50,8 @@ class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConf
       detail = detailJsObject,
       tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/")
     )
-    
-    auditConnector.sendExtendedEvent(extendedDataEvent)
+
+    // handle this 
+    auditConnector.sendExtendedEvent(extendedDataEvent) 
   }
 }
