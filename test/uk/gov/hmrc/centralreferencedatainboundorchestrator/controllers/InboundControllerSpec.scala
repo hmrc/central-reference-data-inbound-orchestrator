@@ -62,7 +62,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
     super.beforeEach()
     reset(mockAuditHandler)
 
-    when(mockAuditHandler.auditNewMessageWrapper(any, any)(any))
+    when(mockAuditHandler.auditNewMessageWrapper(any)(any))
       .thenReturn(auditSuccess)
   }
 
@@ -81,7 +81,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       )
       status(result) shouldBe ACCEPTED
 
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any,any)(any)
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "return Bad Request if the x-files-included header is not present" in {
@@ -94,7 +94,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       )
       status(result) shouldBe BAD_REQUEST
 
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any,any)(any)
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "return Bad Request if there is no XML content" in {
@@ -121,7 +121,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
 
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any,any)(any)
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "return internal server error if reading process message fails" in {
@@ -137,7 +137,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any,any)(any)
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
       
     }
 
@@ -155,7 +155,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       )
       status(result) shouldBe BAD_REQUEST
 
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any,any)(any)
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
 
     "fail if Any other Error" in {
@@ -171,7 +171,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any,any)(any)
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
     
     

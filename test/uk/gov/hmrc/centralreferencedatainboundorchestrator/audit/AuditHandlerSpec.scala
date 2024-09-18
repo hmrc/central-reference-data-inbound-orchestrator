@@ -51,8 +51,6 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
   val testMessageWrapper: MessageWrapper = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received)
 
   val successfulAudit: Future[AuditResult] = Future.successful(Success)
-  val disabledAudit: Future[AuditResult] = Future.successful(Disabled)
-  val failedAudit: Future[AuditResult] = Future.successful(Failure("failed"))
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -80,38 +78,12 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
       when(mockAuditConnector.sendExtendedEvent(any)(any, any))
         .thenReturn(successfulAudit)
 
-      val result = handler.auditNewMessageWrapper(testPayload,Some(testMessageWrapper)).futureValue
+      val result = handler.auditAvScanning(testPayload).futureValue
 
       result shouldBe Success
 
       verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
     }
 
-    "should return disabled when audit handler is Disabled" in {
-
-      when(mockAuditConnector.sendExtendedEvent(any)(any, any))
-        .thenReturn(disabledAudit)
-
-      val result = handler.auditNewMessageWrapper(testPayload, Some(testMessageWrapper))
-
-      recoverToExceptionIf[AuditResult.Failure](result).map { mwe =>
-        mwe.getMessage shouldBe "Event was actively rejected"
-      }.futureValue
-
-      verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
-    }
-
-    "should send Failure with a message and an Option(throwable)" in {
-
-      when(mockAuditConnector.sendExtendedEvent(any)(any, any))
-        .thenReturn(failedAudit)
-
-      val result = handler.auditNewMessageWrapper(testPayload, Some(testMessageWrapper))
-
-      recoverToExceptionIf[AuditResult.Failure](result).map { mwe =>
-        mwe.getMessage shouldBe "Audit Request Failed: failed with error: None"
-      }.futureValue
-
-      verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
-    }
+ 
   }

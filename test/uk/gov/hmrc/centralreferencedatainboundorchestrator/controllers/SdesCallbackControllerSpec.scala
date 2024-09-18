@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{reset, times, verify, when}
+import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -29,13 +28,13 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{InvalidSDESNotificationError, MongoReadError, MongoWriteError, NoMatchingUIDInMongoError, Property, SdesCallbackResponse}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.SdesService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Success
 
 class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Matchers, BeforeAndAfterEach:
 
@@ -46,9 +45,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
   lazy val mockAuditHandler: AuditHandler = mock[AuditHandler]
   private val controller = new SdesCallbackController(mockSdesService, Helpers.stubControllerComponents(),mockAuditHandler)
   given mat: Materializer = app.injector.instanceOf[Materializer]
-
-  private val auditSuccess = Future.successful(Success)
-
+  
   private val validTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
     Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
 
@@ -74,7 +71,6 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
-      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if invalid message" in {
@@ -85,7 +81,6 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(invalidTestBody)
       )
       status(result) shouldBe BAD_REQUEST
-      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if no UID present" in {
@@ -96,7 +91,6 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(invalidUID)
       )
       status(result) shouldBe NOT_FOUND
-      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if Mongo Read Error" in {
@@ -107,7 +101,6 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if Mongo Write Error" in {
@@ -118,7 +111,6 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
 
     "fail if Any other Error" in {
@@ -129,7 +121,6 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockSdesService, times(1)).auditMessageWrapperAndSdesPayload(any)(using any())
     }
     
   }

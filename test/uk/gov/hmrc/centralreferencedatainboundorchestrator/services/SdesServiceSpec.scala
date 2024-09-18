@@ -264,48 +264,6 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEISWorkItemRepository, times(0)).set(any)
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
-
-    "should create an audit with the Message Wrapper and Sdes Payload" in {
-      val uid = UUID.randomUUID().toString
-      val message = messageWrapper(uid)
-
-      when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
-        .thenReturn(Future.successful(Some(message)))
-
-      when(mockAuditHandler.auditNewMessageWrapper(any,any)(using any()))
-        .thenReturn(Future.successful(AuditResult.Success))
-
-      val result = sdesService.auditMessageWrapperAndSdesPayload(
-        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
-      ).futureValue
-
-      result shouldBe Success
-
-      verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any, any)(using any())
-    }
-
-    "should audit the Sdes Payload Only" in {
-      val uid = UUID.randomUUID().toString
-
-      when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
-        .thenReturn(Future.successful(None))
-
-      when(mockAuditHandler.auditNewMessageWrapper(any, any)(using any()))
-        .thenReturn(Future.successful(AuditResult.Success))
-
-      val result = sdesService.auditMessageWrapperAndSdesPayload(
-        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
-      ).futureValue
-
-      result shouldBe Success
-
-      verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
-      verify(mockAuditHandler,times(1)).auditNewMessageWrapper(any,any)(using any())
-    }
-    
   }
 
 

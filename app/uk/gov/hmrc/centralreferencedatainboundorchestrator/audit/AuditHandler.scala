@@ -29,20 +29,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
-  def auditNewMessageWrapper(payload: String,sdesMessageWrapper:Option[MessageWrapper] = None)
+  def auditNewMessageWrapper(payload: String)
                             (implicit hc: HeaderCarrier): Future[AuditResult] = {
-   val detailJsObject = sdesMessageWrapper match
-      case Some(value) => JsObject(
-        Seq(
-          "messageWrapper" -> JsString(sdesMessageWrapper.get.payload),
-          "payload"     -> JsString(payload)
-        )
-      )
-      case None =>  JsObject(
-        Seq(
-          "payload"     -> JsString(payload)
-        )
-      )
+    
+   val detailJsObject = JsObject(
+     Seq(
+       "messageWrapper"     -> JsString(payload)
+     )
+   )
       
     val extendedDataEvent = ExtendedDataEvent(
       auditSource = appConfig.appName,
@@ -51,10 +45,26 @@ class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConf
       tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/")
     )
 
-    auditConnector.sendExtendedEvent(extendedDataEvent).flatMap {
-      case AuditResult.Success => Future.successful(AuditResult.Success)
-      case AuditResult.Disabled => Future.failed(AuditResult.Failure("Event was actively rejected"))
-      case AuditResult.Failure(msg, nested) => Future.failed(AuditResult.Failure(s"Audit Request Failed: $msg with error: $nested"))
-    }
+    auditConnector.sendExtendedEvent(extendedDataEvent)
   }
+
+  def auditAvScanning(payload: String)
+                            (implicit hc: HeaderCarrier): Future[AuditResult] = {
+    
+    val detailJsObject = JsObject(
+      Seq(
+        "avScanningResult" -> JsString(payload)
+      )
+    )
+    
+    val extendedDataEvent = ExtendedDataEvent(
+      auditSource = appConfig.appName,
+      auditType = "AvScanningResultReceived",
+      detail = detailJsObject,
+      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("AV Scanning Result Received", "/")
+    )
+
+    auditConnector.sendExtendedEvent(extendedDataEvent)
+  }
+  
 }

@@ -90,12 +90,3 @@ class SdesService @Inject() (
     }
   }
 
-  def auditMessageWrapperAndSdesPayload(sdesCallbackResponse: SdesCallbackResponse)(using hc: HeaderCarrier): Future[AuditResult] = {
-    messageWrapperRepository.findByUid(sdesCallbackResponse.correlationID).flatMap {
-      case Some(messageWrapper) =>
-        auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString, Some(messageWrapper)) 
-      case None =>
-        logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallbackResponse.correlationID}")
-        auditHandler.auditNewMessageWrapper(sdesCallbackResponse.toString)
-    }
-  }
