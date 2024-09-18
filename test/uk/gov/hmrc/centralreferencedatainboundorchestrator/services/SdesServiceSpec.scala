@@ -37,12 +37,12 @@ import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 
 import java.time.LocalDateTime
 import java.time.Instant
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 import scala.xml.Elem
 
 class SdesServiceSpec extends AnyWordSpec,
@@ -280,6 +280,8 @@ class SdesServiceSpec extends AnyWordSpec,
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       ).futureValue
 
+      result shouldBe Success
+
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any, any)(using any())
     }
@@ -298,13 +300,12 @@ class SdesServiceSpec extends AnyWordSpec,
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       ).futureValue
 
-//      recoverToExceptionIf[NoMatchingUIDInMongoError](result).map { mwe =>
-//        mwe.message shouldBe s"Failed to find a UID in Mongo DB: ${uid}"
-//      }.futureValue
+      result shouldBe Success
 
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
       verify(mockAuditHandler,times(1)).auditNewMessageWrapper(any,any)(using any())
     }
+    
   }
 
 

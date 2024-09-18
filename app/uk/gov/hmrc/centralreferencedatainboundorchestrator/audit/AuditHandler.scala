@@ -22,9 +22,9 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.{Disabled, Failure}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConfig)(implicit ec: ExecutionContext) {
@@ -51,7 +51,10 @@ class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConf
       tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/")
     )
 
-    // handle this 
-    auditConnector.sendExtendedEvent(extendedDataEvent) 
+    auditConnector.sendExtendedEvent(extendedDataEvent).flatMap {
+      case AuditResult.Success => Future.successful(AuditResult.Success)
+      case AuditResult.Disabled => Future.failed(AuditResult.Failure("Event was actively rejected"))
+      case AuditResult.Failure(msg, nested) => Future.failed(AuditResult.Failure(s"Audit Request Failed: $msg with error: $nested"))
+    }
   }
 }

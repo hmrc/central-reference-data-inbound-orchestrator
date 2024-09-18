@@ -23,14 +23,14 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import play.api.libs.json.{JsObject, JsString}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageWrapper, MongoWriteError}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.*
-import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,6 +51,8 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
   val testMessageWrapper: MessageWrapper = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received)
 
   val successfulAudit: Future[AuditResult] = Future.successful(Success)
+  val disabledAudit: Future[AuditResult] = Future.successful(Disabled)
+  val failedAudit: Future[AuditResult] = Future.successful(Failure("failed"))
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -58,12 +60,13 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
     super.beforeEach()
     reset(mockAuditConnector)
 
-    when(mockAuditConnector.sendExtendedEvent(any)(any, any))
-      .thenReturn(successfulAudit)
   }
 
   "The audit handler" should {
     "send a new message wrapper received event" in {
+
+      when(mockAuditConnector.sendExtendedEvent(any)(any, any))
+        .thenReturn(successfulAudit)
 
       val result = handler.auditNewMessageWrapper(testPayload).futureValue
 
@@ -74,9 +77,40 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
 
     "send a new message wrapper and payload received event" in {
 
+      when(mockAuditConnector.sendExtendedEvent(any)(any, any))
+        .thenReturn(successfulAudit)
+
       val result = handler.auditNewMessageWrapper(testPayload,Some(testMessageWrapper)).futureValue
 
       result shouldBe Success
+
+      verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
+    }
+
+    "should return disabled when audit handler is Disabled" in {
+
+      when(mockAuditConnector.sendExtendedEvent(any)(any, any))
+        .thenReturn(disabledAudit)
+
+      val result = handler.auditNewMessageWrapper(testPayload, Some(testMessageWrapper))
+
+      recoverToExceptionIf[AuditResult.Failure](result).map { mwe =>
+        mwe.getMessage shouldBe "Event was actively rejected"
+      }.futureValue
+
+      verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
+    }
+
+    "should send Failure with a message and an Option(throwable)" in {
+
+      when(mockAuditConnector.sendExtendedEvent(any)(any, any))
+        .thenReturn(failedAudit)
+
+      val result = handler.auditNewMessageWrapper(testPayload, Some(testMessageWrapper))
+
+      recoverToExceptionIf[AuditResult.Failure](result).map { mwe =>
+        mwe.getMessage shouldBe "Audit Request Failed: failed with error: None"
+      }.futureValue
 
       verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
     }
