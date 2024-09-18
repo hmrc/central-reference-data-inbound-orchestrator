@@ -23,7 +23,6 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkI
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 @Singleton
 class TestController @Inject() (
