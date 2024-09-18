@@ -65,9 +65,6 @@ class OrchestratorPoller @Inject()(
   private[services] def run(): Runnable = () => {
     lockService.withLock {
       poller()
-    }.map {
-      case Some(res) => logger.debug(s"Finished with $res. Lock has been released.")
-      case None => logger.debug("Failed to take lock")
     }
   }
 

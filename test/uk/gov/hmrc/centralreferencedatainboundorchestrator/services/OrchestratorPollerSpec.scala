@@ -99,13 +99,6 @@ class OrchestratorPollerSpec extends AnyWordSpec,
       verify(sdesService, times(0)).sendMessage(any)(using any)
     }
 
-    "no lock" in {
-      when(lockRepository.refreshExpiry(any, any, any))
-        .thenReturn(Future.successful(false))
-      val aaa = poller.run()
-      aaa.run()
-    }
-
     "processing a new item works" in {
       val wi = WorkItem[EISRequest](
         new ObjectId(),
