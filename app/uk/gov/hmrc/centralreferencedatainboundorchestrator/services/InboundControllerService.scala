@@ -39,12 +39,11 @@ class InboundControllerService @Inject()(
     yield dbRes
 
   private def getUID(xml: NodeSeq): Future[String] =
-    Try((xml \\ "IncludedBinaryObject").text.trim) match {
-      case Success(uid) if uid != "" =>
+    (xml \\ "IncludedBinaryObject").text.trim match {
+      case uid if uid != "" =>
         logger.info(s"Successfully extracted UID: $uid")
         Future.successful(uid)
-      case Failure(ex) =>
+      case _ =>
         logger.error("Failed to find UID in xml - potentially an error report")
         Future.failed(InvalidXMLContentError("Failed to find UID in xml - potentially an error report"))
-      case _ => Future.failed(InvalidXMLContentError("Failed for unknown reason, potentially an empty UID or a missing Node"))
     }

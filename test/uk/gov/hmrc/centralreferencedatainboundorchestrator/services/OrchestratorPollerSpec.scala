@@ -33,6 +33,8 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.module.OrchestratorModule
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.mongo.TimestampSupport
+import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
 import uk.gov.hmrc.play.bootstrap.tools.LogCapturing
@@ -51,6 +53,8 @@ class OrchestratorPollerSpec extends AnyWordSpec,
       .build()
 
   lazy val workItemRepository: EISWorkItemRepository = mock[EISWorkItemRepository]
+  lazy val lockRepository: LockRepository = mock[LockRepository]
+  lazy val timestampSupport: TimestampSupport = mock[TimestampSupport]
   lazy val sdesService: SdesService = mock[SdesService]
   lazy val appConfig: AppConfig = mock[AppConfig]
 
@@ -70,7 +74,14 @@ class OrchestratorPollerSpec extends AnyWordSpec,
   private val now = Instant.now()
   private val before = now.minus(defaultRetryInterval)
 
-  private val poller = StubOrchestratorPoller(app.actorSystem, workItemRepository, sdesService, appConfig)
+  private val poller = StubOrchestratorPoller(
+    app.actorSystem,
+    lockRepository,
+    workItemRepository,
+    timestampSupport,
+    sdesService,
+    appConfig
+  )
 
   when(workItemRepository.now()).thenReturn(now)
 
@@ -82,10 +93,17 @@ class OrchestratorPollerSpec extends AnyWordSpec,
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
         syncLogs()
-        logEvents.count(_.getLevel == Level.INFO) shouldBe 1
+        logEvents.count(_.getLevel == Level.DEBUG) shouldBe 1
       }
 
       verify(sdesService, times(0)).sendMessage(any)(using any)
+    }
+
+    "no lock" in {
+      when(lockRepository.refreshExpiry(any, any, any))
+        .thenReturn(Future.successful(false))
+      val aaa = poller.run()
+      aaa.run()
     }
 
     "processing a new item works" in {
@@ -209,7 +227,7 @@ class OrchestratorPollerSpec extends AnyWordSpec,
         syncLogs()
         logEvents.count(event =>
           event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == "We got an error java.lang.IllegalArgumentException"
+            event.getFormattedMessage == "We got an error processing an item"
         ) shouldBe 1
       }
 
@@ -241,7 +259,7 @@ class OrchestratorPollerSpec extends AnyWordSpec,
         syncLogs()
         logEvents.count(event =>
           event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == "We got an error processing an item"
+            event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
         ) shouldBe 1
       }
 
@@ -273,7 +291,7 @@ class OrchestratorPollerSpec extends AnyWordSpec,
         syncLogs()
         logEvents.count(event =>
           event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == "We got an error processing an item"
+            event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
         ) shouldBe 1
       }
 
@@ -294,12 +312,16 @@ class OrchestratorPollerSpec extends AnyWordSpec,
 // A test stub to expose the logger.
 class StubOrchestratorPoller(
   actorSystem: ActorSystem,
+  lockRepository: LockRepository,
   workItemRepo: EISWorkItemRepository,
+  timestampSupport: TimestampSupport,
   sdesService: SdesService,
   appConfig: AppConfig
 ) (using ec: ExecutionContext) extends OrchestratorPoller(
   actorSystem,
+  lockRepository,
   workItemRepo,
+  timestampSupport,
   sdesService,
   appConfig
 ):
