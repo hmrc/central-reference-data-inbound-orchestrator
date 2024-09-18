@@ -19,28 +19,52 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.audit
 import com.google.inject.Inject
 import play.api.libs.json.{JsObject, JsString}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.{Disabled, Failure}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
   def auditNewMessageWrapper(payload: String)
                             (implicit hc: HeaderCarrier): Future[AuditResult] = {
+    
+   val detailJsObject = JsObject(
+     Seq(
+       "messageWrapper"     -> JsString(payload)
+     )
+   )
+      
     val extendedDataEvent = ExtendedDataEvent(
       auditSource = appConfig.appName,
       auditType = "InboundMessageReceived",
-      detail = JsObject(
-        Seq(
-          "payload"     -> JsString(payload)
-        )
-      ),
+      detail = detailJsObject,
       tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/")
     )
 
     auditConnector.sendExtendedEvent(extendedDataEvent)
   }
+
+  def auditAvScanning(payload: String)
+                            (implicit hc: HeaderCarrier): Future[AuditResult] = {
+    
+    val detailJsObject = JsObject(
+      Seq(
+        "avScanningResult" -> JsString(payload)
+      )
+    )
+    
+    val extendedDataEvent = ExtendedDataEvent(
+      auditSource = appConfig.appName,
+      auditType = "AvScanningResultReceived",
+      detail = detailJsObject,
+      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("AV Scanning Result Received", "/")
+    )
+
+    auditConnector.sendExtendedEvent(extendedDataEvent)
+  }
+  
 }

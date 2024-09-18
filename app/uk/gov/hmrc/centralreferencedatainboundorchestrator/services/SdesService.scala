@@ -17,22 +17,25 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import scala.xml.XML.*
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.xml.XML.*
 
 @Singleton
 class SdesService @Inject() (
   messageWrapperRepository: MessageWrapperRepository,
   workItemRepo: EISWorkItemRepository,
   eisConnector: EisConnector,
+  auditHandler: AuditHandler,
   appConfig: AppConfig
 )(using executionContext: ExecutionContext) extends Logging:
 
@@ -86,3 +89,4 @@ class SdesService @Inject() (
         Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
     }
   }
+

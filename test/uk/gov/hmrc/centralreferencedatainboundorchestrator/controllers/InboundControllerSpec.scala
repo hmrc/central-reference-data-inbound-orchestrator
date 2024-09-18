@@ -137,6 +137,8 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      
     }
 
     "return bad request if UID is missing in XML" in {
@@ -169,6 +171,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
     }
     
     

@@ -34,7 +34,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 import org.bson.types.ObjectId
 import org.scalatest.BeforeAndAfterEach
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 
 import java.time.LocalDateTime
 import java.time.Instant
@@ -52,6 +55,7 @@ class SdesServiceSpec extends AnyWordSpec,
   lazy val mockMessageWrapperRepository: MessageWrapperRepository = mock[MessageWrapperRepository]
   lazy val mockEISWorkItemRepository: EISWorkItemRepository = mock[EISWorkItemRepository]
   lazy val mockEisConnector: EisConnector = mock[EisConnector]
+  lazy val mockAuditHandler:AuditHandler = mock[AuditHandler]
   lazy val mockAppConfig: AppConfig = mock[AppConfig]
 
   when(mockAppConfig.maxRetryCount).thenReturn(3)
@@ -63,6 +67,7 @@ class SdesServiceSpec extends AnyWordSpec,
       mockMessageWrapperRepository,
       mockEISWorkItemRepository,
       mockEisConnector,
+      mockAuditHandler,
       mockAppConfig
     )
 
@@ -75,7 +80,8 @@ class SdesServiceSpec extends AnyWordSpec,
     reset(
       mockMessageWrapperRepository,
       mockEISWorkItemRepository,
-      mockEisConnector
+      mockEisConnector,
+      mockAuditHandler
     )
   }
 
@@ -258,7 +264,6 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEISWorkItemRepository, times(0)).set(any)
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
-
   }
 
 

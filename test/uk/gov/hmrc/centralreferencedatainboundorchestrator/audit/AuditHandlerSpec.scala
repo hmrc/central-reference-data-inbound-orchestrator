@@ -22,17 +22,21 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import play.api.libs.json.{JsObject, JsString}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageWrapper, MongoWriteError}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.*
-import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuditHandlerSpec extends AnyWordSpec, Matchers, ScalaFutures:
+class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFutures:
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
   val mockAppConfig: AppConfig = mock[AppConfig]
 
@@ -44,22 +48,20 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
   val testCorrelationId = "CORRELATION_ID"
   val testPayload = "TEST PAYLOAD"
+  val testMessageWrapper: MessageWrapper = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received)
 
   val successfulAudit: Future[AuditResult] = Future.successful(Success)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockAuditConnector)
+
+  }
+
   "The audit handler" should {
     "send a new message wrapper received event" in {
-      val expectedEvent = ExtendedDataEvent(
-        auditSource = appName,
-        auditType = "InboundMessageReceived",
-        detail = JsObject(
-          Seq(
-            "payload"     -> JsString(testPayload)
-          )
-        )
-      )
 
       when(mockAuditConnector.sendExtendedEvent(any)(any, any))
         .thenReturn(successfulAudit)
@@ -70,4 +72,18 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
       verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
     }
+
+    "send a new message wrapper and payload received event" in {
+
+      when(mockAuditConnector.sendExtendedEvent(any)(any, any))
+        .thenReturn(successfulAudit)
+
+      val result = handler.auditAvScanning(testPayload).futureValue
+
+      result shouldBe Success
+
+      verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
+    }
+
+ 
   }
