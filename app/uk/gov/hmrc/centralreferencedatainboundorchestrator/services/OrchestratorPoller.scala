@@ -22,6 +22,8 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.mongo.TimestampSupport
+import uk.gov.hmrc.mongo.lock.{LockRepository, ScheduledLockService}
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 
 import java.time.Duration
@@ -34,7 +36,9 @@ import scala.util.{Failure, Success}
 @Singleton
 class OrchestratorPoller @Inject()(
                                     actorSystem: ActorSystem,
+                                    lockRepository: LockRepository,
                                     workItemRepo: EISWorkItemRepository,
+                                    timestampSupport: TimestampSupport,
                                     sdesService: SdesService,
                                     appConfig: AppConfig
                                   ) (using ec: ExecutionContext) extends Logging:
@@ -45,6 +49,13 @@ class OrchestratorPoller @Inject()(
 
   given hc: HeaderCarrier = HeaderCarrier()
 
+  private val lockService: ScheduledLockService = ScheduledLockService(
+    lockRepository = lockRepository,
+    lockId = "send_details_to_eis",
+    timestampSupport = timestampSupport,
+    schedulerInterval = interval
+  )
+
   val _: Cancellable = if appConfig.startScheduler then
     actorSystem.scheduler.
       scheduleAtFixedRate(initialDelay, interval)(run())(ec)
@@ -52,39 +63,47 @@ class OrchestratorPoller @Inject()(
     Cancellable.alreadyCancelled
 
   private[services] def run(): Runnable = () => {
-    poller()
+    lockService.withLock {
+      poller()
+    }
   }
 
-  private[services] def poller(): Unit ={
+  def poller(): Future[Boolean] = {
     val items = workItemRepo.pullOutstanding(
       failedBefore = workItemRepo.now().minus(retryAfter),
       availableBefore = workItemRepo.now()
     )
+
     items.flatMap {
       case None =>
-        logger.info("We did not find any requests")
-        Future.unit
+        logger.debug("We did not find any requests")
+        Future.successful(true)
       case Some(wi) =>
         try {
           sdesService.sendMessage(wi.item.payload) transform {
             case Success(true) =>
               logger.info("Successfully sent message")
               sdesService.updateStatus(true, wi.item.correlationID)
-              Success(workItemRepo.completeAndDelete(wi.id))
+              workItemRepo.completeAndDelete(wi.id)
+              Success(true)
             case Success(false) if wi.failureCount < appConfig.maxRetryCount =>
               logger.warn(s"failed to send work item `${wi.id}` for correlation Id `${wi.item.correlationID}`")
-              Success(failedAttempt(wi))
+              failedAttempt(wi)
+              Success(false)
             case Success(false) =>
               logger.error(s"failed to send work item `${wi.id}` ${wi.failureCount + 1} times. For correlation Id `${wi.item.correlationID}`")
-              Success(failedAttempt(wi))
-            case Failure(err) =>
-              logger.error(s"We got an error $err")
-              Success(failedAttempt(wi))
+              failedAttempt(wi)
+              Success(false)
+            case Failure(ex) =>
+              logger.error("We got an error processing an item", ex)
+              failedAttempt(wi)
+              Success(false)
           }
         } catch {
-          case e: Exception =>
-            logger.error("We got an error processing an item", e)
+          case ex: Throwable =>
+            logger.error(s"We got an exception $ex")
             failedAttempt(wi)
+            Future.successful(false)
         }
     }
   }

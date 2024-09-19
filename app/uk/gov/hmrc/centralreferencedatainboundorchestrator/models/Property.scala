@@ -20,6 +20,6 @@ import play.api.libs.json.{Json, OFormat}
 
 case class Property(name: String, value: String)
 
-object Property {
-  implicit val format: OFormat[Property] = Json.format[Property]
-}
+object Property:
+  given format: OFormat[Property] = Json.format[Property]
+

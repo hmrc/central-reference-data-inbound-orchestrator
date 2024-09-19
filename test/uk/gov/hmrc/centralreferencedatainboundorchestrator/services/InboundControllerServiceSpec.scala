@@ -24,9 +24,12 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
+
 import scala.concurrent.Future
+import scala.xml.NodeBuffer
 
 class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
@@ -50,7 +53,6 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       <TaskIdentifier>780912</TaskIdentifier>
       <AttributeName>ReferenceData</AttributeName>
       <MessageType>gZip</MessageType>
-      <IncludedBinaryObject> </IncludedBinaryObject>
       <MessageSender>CS/RD2</MessageSender>
     </Body>
   </MainMessage>
@@ -83,8 +85,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       val result = controller.processMessage(invalidTestBody)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
-        rt.getMessage shouldBe "Failed for unknown reason, potentially an empty UID or a missing Node"
+        rt.getMessage shouldBe "Failed to find UID in xml - potentially an error report"
       }.futureValue
     }
-    
   }
