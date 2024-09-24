@@ -34,8 +34,8 @@ class ValidationService extends Logging:
     val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
     val soapXsd = getClass.getResourceAsStream("/schemas/soap-envelope.xsd")
     val streamSourceSoapXsd = new StreamSource(soapXsd)
-    val bodyXsd = getClass.getResourceAsStream("/schemas/xml.xsd")
-    val streamSourceXmlXsd = new StreamSource(bodyXsd)
+    val xmlXsd = getClass.getResourceAsStream("/schemas/xml.xsd")
+    val streamSourceXmlXsd = new StreamSource(xmlXsd)
     val schema = factory.newSchema(Array[Source](streamSourceXmlXsd, streamSourceSoapXsd))
     streamSourceSoapXsd.getInputStream.close()
     streamSourceXmlXsd.getInputStream.close()
@@ -44,10 +44,10 @@ class ValidationService extends Logging:
 
   private lazy val bodySchema: Schema = {
     val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-    val soapXsd = getClass.getResourceAsStream("/schemas/receive-reference-data-submission-result.xsd")
-    val streamSourceSoapXsd = new StreamSource(soapXsd)
-    val schema = factory.newSchema(streamSourceSoapXsd)
-    streamSourceSoapXsd.getInputStream.close()
+    val bodyXsd = getClass.getResourceAsStream("/schemas/receive-reference-data-submission-result.xsd")
+    val streamSourceBodyXsd = new StreamSource(bodyXsd)
+    val schema = factory.newSchema(streamSourceBodyXsd)
+    streamSourceBodyXsd.getInputStream.close()
     schema
   }
 
