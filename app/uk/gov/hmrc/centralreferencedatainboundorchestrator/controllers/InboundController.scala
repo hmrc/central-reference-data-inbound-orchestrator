@@ -20,7 +20,7 @@ import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.InboundControllerService
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.io.StringReader
@@ -36,6 +36,7 @@ import scala.xml.NodeSeq
 class InboundController @Inject()(
                                    cc: ControllerComponents,
                                    inboundControllerService: InboundControllerService,
+                                   validationService: ValidationService,
                                    auditHandler: AuditHandler)
                                  (using ec: ExecutionContext)
   extends BackendController(cc) with Logging:
@@ -44,7 +45,7 @@ class InboundController @Inject()(
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
     auditHandler.auditNewMessageWrapper(request.body.toString)
-    if hasFilesHeader && validateRequestBody(request.body) then
+    if hasFilesHeader && validationService.validateFullSoapMessage(request.body) then
       inboundControllerService.processMessage(request.body) transform {
         case Success(_) => Success(Accepted)
         case Failure(err: Throwable) => err match
@@ -58,17 +59,3 @@ class InboundController @Inject()(
 
   private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =
     request.headers.get(FileIncludedHeader).exists(_.toBooleanOption.getOrElse(false))
-
-  private def validateRequestBody(body: NodeSeq) =
-    Try {
-      val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-      val xsd = getClass.getResourceAsStream("/schemas/csrd120main-v1.xsd") // this is temporary until we get the correct XSD file from public-soap-proxy
-      val schema = factory.newSchema(new StreamSource(xsd))
-      val validator = schema.newValidator()
-      validator.validate(new StreamSource(new StringReader(body.toString)))
-    } match {
-      case Success(_) => true
-      case _ =>
-        logger.error(s"Failed to validate schema of message - potentially an error report with body: $body")
-        false
-    }

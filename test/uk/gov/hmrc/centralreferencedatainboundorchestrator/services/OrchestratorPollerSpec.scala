@@ -184,7 +184,6 @@ class OrchestratorPollerSpec extends AnyWordSpec,
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
         syncLogs()
-        logEvents.foreach(println)
         logEvents.count(event =>
           event.getLevel == Level.ERROR &&
             event.getFormattedMessage == s"failed to send work item `${wi.id}` 4 times. For correlation Id `correlationID`"

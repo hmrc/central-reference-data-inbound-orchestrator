@@ -85,7 +85,7 @@ class InboundControllerISpec extends AnyWordSpec,
             "x-files-included" -> "true",
             "Content-Type" -> "application/xml"
           )
-          .post(InboundSoapMessage.xmlBody.toString)
+          .post(InboundSoapMessage.valid_soap_message.toString)
           .futureValue
 
       response.status shouldBe ACCEPTED
@@ -106,7 +106,29 @@ class InboundControllerISpec extends AnyWordSpec,
           .addHttpHeaders(
             "Content-Type" -> "application/xml"
           )
-          .post(InboundSoapMessage.xmlBody.toString)
+          .post(InboundSoapMessage.invalid_soap_message.toString)
+          .futureValue
+
+      response.status shouldBe BAD_REQUEST
+    }
+
+    "return bad request if the request does not contains a valid soap" in {
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
+      val response =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .post(InboundSoapMessage.invalid_soap_message.toString)
           .futureValue
 
       response.status shouldBe BAD_REQUEST
@@ -128,7 +150,7 @@ class InboundControllerISpec extends AnyWordSpec,
             "x-files-included" -> "true",
             "Content-Type" -> "application/xml"
           )
-          .post(InboundSoapMessage.xmlBody.toString)
+          .post(InboundSoapMessage.valid_soap_message.toString)
           .futureValue
 
       val responseDuplicate =
@@ -138,7 +160,7 @@ class InboundControllerISpec extends AnyWordSpec,
             "x-files-included" -> "true",
             "Content-Type" -> "application/xml"
           )
-          .post(InboundSoapMessage.xmlBody.toString)
+          .post(InboundSoapMessage.valid_soap_message.toString)
           .futureValue
 
       response.status shouldBe ACCEPTED
