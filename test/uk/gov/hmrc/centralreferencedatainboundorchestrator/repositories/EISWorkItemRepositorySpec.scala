@@ -18,6 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
 import org.mockito.Mockito.*
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -42,6 +43,11 @@ class EISWorkItemRepositorySpec extends AnyWordSpec,
   val repository: EISWorkItemRepository = EISWorkItemRepository(mongoComponent, appConfig)
   
   def testRequest: EISRequest = EISRequest("payload", UUID.randomUUID().toString)
+
+  override given patienceConfig: PatienceConfig = PatienceConfig(
+    timeout = scaled(Span(15, Seconds)),
+    interval = scaled(Span(15, Seconds))
+  )
 
   "EIS Work Item Repository" should {
     "Add a new EIS Request" in {

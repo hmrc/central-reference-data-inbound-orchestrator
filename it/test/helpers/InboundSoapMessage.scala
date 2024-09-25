@@ -19,7 +19,28 @@ package helpers
 import scala.xml.Elem
 
 object InboundSoapMessage {
-  val xmlBody: Elem = <MainMessage>
+
+  val valid_soap_message: Elem =
+    <S:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:S="http://www.w3.org/2003/05/soap-envelope">
+      <S:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataSubmissionResultReceiverCBS/ReceiveReferenceDataSubmissionResult</Action>
+      </S:Header>
+      <S:Body>
+        <ReceiveReferenceDataSubmissionResult>
+          <MessageHeader>
+            <messageID>testMessageId123</messageID>
+            <messageName>test message name</messageName>
+            <sender>CS/RD2</sender>
+            <recipient>DPS</recipient>
+            <timeCreation>2023-10-03T16:00:00</timeCreation>
+          </MessageHeader>
+          <TaskIdentifier>TASKID12345</TaskIdentifier>
+          <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b301</IncludedBinaryObject>
+        </ReceiveReferenceDataSubmissionResult>
+      </S:Body>
+    </S:Envelope>
+
+  val invalid_soap_message: Elem = <MainMessage>
     <Body>
       <TaskIdentifier>780912</TaskIdentifier>
       <AttributeName>ReferenceData</AttributeName>
