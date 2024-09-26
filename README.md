@@ -32,7 +32,13 @@ Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-
 
 ### Inbound message validation
 
-To be confirmed when we know the actual messages passed to us.
+Upon receiving the inbound soap message XML from public soap proxy, we validate it against the message XML schemas (XSD) before next step message processing.
+- All inbound soap messages are first validated against general schema [xml.xsd](conf/schemas/xml.xsd) and [soap envelope schema](conf/schemas/soap-envelope.xsd).
+- Valid soap messages are then validated against the [message wrapper schema](conf/schemas/receive-reference-data-submission-result.xsd) before we create a record in the Message wrapper collection.
+
+[Unit tests](test/uk/gov/hmrc/centralreferencedatainboundorchestrator/controllers/InboundControllerSpec.scala) and
+[integration tests](it/test/uk/gov/hmrc/centralreferencedatainboundorchestrator/controllers/InboundControllerISpec.scala) for schema validation in inbound controller.
+Sample valid and invalid soap messages could be found [here](it/test/helpers/InboundSoapMessage.scala).
 
 ## Databases
 ### Message wrapper Collection
