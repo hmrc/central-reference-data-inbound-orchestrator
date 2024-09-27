@@ -45,16 +45,27 @@ class InboundController @Inject()(
 
   def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
     auditHandler.auditNewMessageWrapper(request.body.toString)
-    if hasFilesHeader && validationService.validateFullSoapMessage(request.body) then
-      inboundControllerService.processMessage(request.body) transform {
-        case Success(_) => Success(Accepted)
-        case Failure(err: Throwable) => err match
-          case InvalidXMLContentError(_) => Success(BadRequest)
-          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
-          case _ => Success(InternalServerError)
+    if hasFilesHeader then
+      validationService.validateFullSoapMessage(request.body) match {
+        case Some(body) =>
+          determineResult(body)
+        case None => 
+          Future.successful(BadRequest)
       }
     else
       Future.successful(BadRequest)
+  }
+
+  private def determineResult(body: NodeSeq): Future[Status] = {
+    inboundControllerService.processMessage(body) transform {
+      case Success(_) =>
+        Success(Accepted)
+      case Failure(err: Throwable) => err match {
+        case InvalidXMLContentError(_) => Success(BadRequest)
+        case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
+        case _ => Success(InternalServerError)
+      }
+    }
   }
 
   private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =

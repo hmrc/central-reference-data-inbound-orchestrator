@@ -60,6 +60,15 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       </Body>
     </MainMessage>
 
+  private val validTestBodyWithoutCorrelationId: Elem = <MainMessage>
+    <Body>
+      <TaskIdentifier>780912</TaskIdentifier>
+      <AttributeName>ReferenceData</AttributeName>
+      <MessageType>gZip</MessageType>
+      <MessageSender>CS/RD2</MessageSender>
+    </Body>
+  </MainMessage>
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockAuditHandler)
@@ -70,7 +79,13 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       .thenReturn(auditSuccess)
   }
 
-  private def validateFullSoapMessage(result: Boolean): OngoingStubbing[Boolean] = {
+  private def validateFullSoapMessage(includeBody: Boolean, includeCorrelationID: Boolean = true): OngoingStubbing[Option[NodeSeq]] = {
+    val result = (includeBody, includeCorrelationID) match {
+      case (false, _) => None
+      case (true, true) => Some(validTestBody)
+      case _ => Some(validTestBodyWithoutCorrelationId)
+    }
+
     when(mockValidationService.validateFullSoapMessage(any))
       .thenReturn(result)
   }
@@ -184,7 +199,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
     }
 
     "return bad request if UID is missing in XML" in {
-      validateFullSoapMessage(true)
+      validateFullSoapMessage(true, false)
 
       when(mockInboundService.processMessage(any()))
         .thenReturn(Future.failed(InvalidXMLContentError("failed")))
