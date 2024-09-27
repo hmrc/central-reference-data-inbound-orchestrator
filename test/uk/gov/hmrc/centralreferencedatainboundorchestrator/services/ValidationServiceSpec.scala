@@ -122,7 +122,18 @@ class ValidationServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
                 </Not>
             </Should>
         </ExtraNode>
-        
+
+    private val valid_inner_message: Elem =
+        <MainMessage>
+            <Body>
+                <TaskIdentifier>TASKID12345</TaskIdentifier>
+                <AttributeName>ReferenceData</AttributeName>
+                <MessageType>gZip</MessageType>
+                <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b301</IncludedBinaryObject>
+                <MessageSender>CS/RD2</MessageSender>
+            </Body>
+        </MainMessage>
+
     "validation service" should {
         "validate a well formed soap message" in {
             validationService.validateSoapMessage(valid_soap_message) shouldBe true
@@ -149,16 +160,22 @@ class ValidationServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
         "not validate a bad message body" in {
             validationService.validateMessageWrapper(invalid_message_body) shouldBe false
         }
+        
+        "extract inner message from the message body" in {
+            val actual = validationService.extractInnerMessage(valid_message_body)
+            trim(actual.head) shouldBe trim(valid_inner_message)
+        }
 
         "completely validate a good soap message" in {
-            validationService.validateFullSoapMessage(valid_soap_message) shouldBe true
+            val actual = validationService.validateFullSoapMessage(valid_soap_message).get
+            actual.head shouldBe trim(valid_inner_message)
         }
 
         "completely validate a bad soap message" in {
-            validationService.validateFullSoapMessage(invalid_soap_message) shouldBe false
+            validationService.validateFullSoapMessage(invalid_soap_message) shouldBe None
         }
 
         "completely validate a good soap message with a bad body" in {
-            validationService.validateFullSoapMessage(valid_soap_message_without_body) shouldBe false
+            validationService.validateFullSoapMessage(valid_soap_message_with_invalid_body) shouldBe None
         }
     }

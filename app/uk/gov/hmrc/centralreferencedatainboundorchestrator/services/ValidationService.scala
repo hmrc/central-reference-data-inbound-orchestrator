@@ -28,6 +28,7 @@ import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.{Schema, SchemaFactory}
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, Node, NodeSeq}
+import scala.xml.Utility.trim
 
 class ValidationService extends Logging:
   private lazy val soapSchema: Schema = {
@@ -89,12 +90,28 @@ class ValidationService extends Logging:
     }
   }
 
-  def validateFullSoapMessage(soapMessage: NodeSeq): Boolean = {
+  private[services] def extractInnerMessage(body: NodeSeq): NodeSeq = {
+    val taskId = (body \\ "ReceiveReferenceDataSubmissionResult" \ "TaskIdentifier").text
+    val correlationId = (body \\ "ReceiveReferenceDataSubmissionResult" \ "IncludedBinaryObject").text
+    val innerMessage: Elem = <MainMessage>
+      <Body>
+        <TaskIdentifier>{taskId}</TaskIdentifier>
+        <AttributeName>ReferenceData</AttributeName>
+        <MessageType>gZip</MessageType>
+        <IncludedBinaryObject>{correlationId}</IncludedBinaryObject>
+        <MessageSender>CS/RD2</MessageSender>
+      </Body>
+    </MainMessage>
+    trim(innerMessage)
+  }
+
+  def validateFullSoapMessage(soapMessage: NodeSeq): Option[NodeSeq] = {
     if validateSoapMessage(soapMessage) then
-      getSoapBody(soapMessage) match {
-        case Some(messageWrapper) => validateMessageWrapper(messageWrapper)
-        case None => false // Should never be hit as a body is required for a valid soap message
-      }
+      for {
+        body <- getSoapBody(soapMessage)
+        if validateMessageWrapper(body)
+        innerMessage = extractInnerMessage(body)
+      } yield innerMessage
     else
-      false
+      None
   }
