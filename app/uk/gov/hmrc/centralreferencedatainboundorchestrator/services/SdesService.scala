@@ -51,7 +51,7 @@ class SdesService @Inject() (
 
       case "FileProcessingFailure" =>
         logger.info(s"AV Scan failed for uid: ${sdesCallback.correlationID}")
-        updateMessageStatus(sdesCallback, Failed)
+        updateMessageStatus(sdesCallback, Fail)
 
       case invalidNotification =>
         logger.warn(s"SDES notification not recognised: $invalidNotification")

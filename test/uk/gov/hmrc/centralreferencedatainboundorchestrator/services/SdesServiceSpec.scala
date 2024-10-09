@@ -141,7 +141,7 @@ class SdesServiceSpec extends AnyWordSpec,
 
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Failed))(using any()))
+      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Fail))(using any()))
         .thenReturn(Future.successful(true))
 
       val result = sdesService.processCallback(
@@ -243,7 +243,7 @@ class SdesServiceSpec extends AnyWordSpec,
 
     "should return exception MongoWriteError when accepting a FileProcessingFailure notification but Mongo fails to write" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Failed))(using any()))
+      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Fail))(using any()))
         .thenReturn(Future.successful(false))
 
       val result = sdesService.processCallback(
