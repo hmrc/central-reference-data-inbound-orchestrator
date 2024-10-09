@@ -86,7 +86,7 @@ class SdesServiceSpec extends AnyWordSpec,
   }
 
   "SdesService" should {
-    "should return av scan passed when accepting a FileReceived notification" in {
+    "should forward message to EIS when accepting a FileProcessed notification" in {
       val uid = UUID.randomUUID().toString
       val message = messageWrapper(uid)
 
@@ -109,7 +109,7 @@ class SdesServiceSpec extends AnyWordSpec,
         .thenReturn(Future.successful(wi))
 
       val result = sdesService.processCallback(
-        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+        SdesCallbackResponse("FileProcessed", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       ).futureValue
 
@@ -121,9 +121,27 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
 
+    "should return av scan passed when accepting a FileReceived notification" in {
+      val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Pass))(using any()))
+        .thenReturn(Future.successful(true))
+
+      val result = sdesService.processCallback(
+        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+      ).futureValue
+
+      result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+
+      verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
+      verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
+      verify(mockEISWorkItemRepository, times(0)).set(any)
+      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+    }
+
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Failed))(using any()))
+      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Fail))(using any()))
         .thenReturn(Future.successful(true))
 
       val result = sdesService.processCallback(
@@ -225,7 +243,7 @@ class SdesServiceSpec extends AnyWordSpec,
 
     "should return exception MongoWriteError when accepting a FileProcessingFailure notification but Mongo fails to write" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Failed))(using any()))
+      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Fail))(using any()))
         .thenReturn(Future.successful(false))
 
       val result = sdesService.processCallback(
@@ -251,7 +269,7 @@ class SdesServiceSpec extends AnyWordSpec,
         .thenReturn(Future.successful(None))
 
       val result = sdesService.processCallback(
-        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
+        SdesCallbackResponse("FileProcessed", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
           Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
       )
 
