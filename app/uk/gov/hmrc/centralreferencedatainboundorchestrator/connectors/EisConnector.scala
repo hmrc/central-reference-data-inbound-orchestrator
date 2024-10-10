@@ -33,7 +33,7 @@ class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig):
                                     ec: ExecutionContext,
                                     hc: HeaderCarrier
   ): Future[Boolean] =
-    val url = s"${appConfig.eisUrl}${appConfig.eisPath}/services/crdl/referencedataupdate/v1"
+    val url = s"${appConfig.eisUrl}${appConfig.eisPath}"
     httpClient
       .post(url"$url")
       .setHeader("Accept" -> "application/xml")
