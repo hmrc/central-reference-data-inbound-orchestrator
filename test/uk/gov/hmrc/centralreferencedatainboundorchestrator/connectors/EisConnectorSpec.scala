@@ -52,10 +52,10 @@ class EisConnectorSpec
 
   
   when(appConfig.eisUrl).thenReturn(s"http://$externalWireMockHost:$externalWireMockPort")
-  when(appConfig.eisPath).thenReturn("")
+  when(appConfig.eisPath).thenReturn("/csrd/referencedataupdate/v1")
   when(appConfig.eisBearerToken).thenReturn("test")
 
-  private val path = "/services/crdl/referencedataupdate/v1"
+  private val path = "/csrd/referencedataupdate/v1"
 
   private val connector = new EisConnector(httpClientV2, appConfig)
 
@@ -76,7 +76,7 @@ class EisConnectorSpec
       val expectedResponse = ACCEPTED
 
       stubFor(
-        post(urlEqualTo("/services/crdl/referencedataupdate/v1"))
+        post(urlEqualTo(path))
           .withRequestBody(equalToXml(testBody.toString))
           .willReturn(
             aResponse().withStatus(ACCEPTED)
