@@ -31,7 +31,7 @@ class SdesCallbackController @Inject()(sdesService: SdesService, cc: ControllerC
   extends BackendController(cc):
   
   def sdesCallback: Action[SdesCallbackResponse] = Action.async(parse.json[SdesCallbackResponse]) { implicit request =>
-    auditHandler.auditAvScanning(request.body.toString)
+    auditHandler.auditFileProcessed(request.body)
     sdesService.processCallback(request.body) transform {
       case Success(_) => Success(Accepted)
       case Failure(err: Throwable) => err match

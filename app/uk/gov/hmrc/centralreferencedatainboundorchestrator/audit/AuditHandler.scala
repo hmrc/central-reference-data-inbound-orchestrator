@@ -17,14 +17,15 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.audit
 
 import com.google.inject.Inject
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json.{JsObject, JsString, Json}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageWrapper, SdesCallbackResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.{Disabled, Failure}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConfig)(implicit ec: ExecutionContext) {
@@ -42,29 +43,24 @@ class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConf
       auditSource = appConfig.appName,
       auditType = "InboundMessageReceived",
       detail = detailJsObject,
-      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/")
+      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/central-reference-data-inbound-orchestrator")
     )
 
     auditConnector.sendExtendedEvent(extendedDataEvent)
   }
 
-  def auditAvScanning(payload: String)
-                            (implicit hc: HeaderCarrier): Future[AuditResult] = {
-    
-    val detailJsObject = JsObject(
-      Seq(
-        "avScanningResult" -> JsString(payload)
-      )
-    )
-    
+  def auditFileProcessed(payload: SdesCallbackResponse)
+                        (implicit hc: HeaderCarrier): Future[AuditResult] = {
+
+    val details = Json.obj("referenceDataFileProcessed" -> Json.toJson(payload))
+
     val extendedDataEvent = ExtendedDataEvent(
       auditSource = appConfig.appName,
-      auditType = "AvScanningResultReceived",
-      detail = detailJsObject,
-      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("AV Scanning Result Received", "/")
+      auditType = "ReferenceDataFileProcessed",
+      detail = details,
+      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Reference Data File Processed", "/central-reference-data-inbound-orchestrator/services/crdl/callback")
     )
 
     auditConnector.sendExtendedEvent(extendedDataEvent)
   }
-  
 }
