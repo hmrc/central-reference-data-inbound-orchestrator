@@ -17,9 +17,8 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import org.apache.pekko.stream.Materializer
-import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{reset, when}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito.{reset, times, verify, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -59,68 +58,79 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockSdesService)
+    reset(mockAuditHandler)
   }
 
   "POST /services/crdl/callback" should {
     "accept a valid message" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future("some"))
-
+      when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future("some"))
       
       val result = controller.sdesCallback()(
         fakeRequest
           .withBody(validTestBody)
       )
       status(result) shouldBe ACCEPTED
+
+      verify(mockAuditHandler, times(1)).auditFileProcessed(eqTo(validTestBody))(any)
     }
 
     "fail if invalid message" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.eq(invalidTestBody))(using any())).thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
+      when(mockSdesService.processCallback(eqTo(invalidTestBody))(using any())).thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
 
       val result = controller.sdesCallback()(
         fakeRequest
           .withBody(invalidTestBody)
       )
       status(result) shouldBe BAD_REQUEST
+
+      verify(mockAuditHandler, times(1)).auditFileProcessed(eqTo(invalidTestBody))(any)
     }
 
     "fail if no UID present" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.eq(invalidUID))(using any())).thenReturn(Future.failed(NoMatchingUIDInMongoError("not found")))
+      when(mockSdesService.processCallback(eqTo(invalidUID))(using any())).thenReturn(Future.failed(NoMatchingUIDInMongoError("not found")))
 
       val result = controller.sdesCallback()(
         fakeRequest
           .withBody(invalidUID)
       )
       status(result) shouldBe NOT_FOUND
+
+      verify(mockAuditHandler, times(1)).auditFileProcessed(eqTo(invalidUID))(any)
     }
 
     "fail if Mongo Read Error" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future.failed(MongoReadError("failed")))
+      when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future.failed(MongoReadError("failed")))
 
       val result = controller.sdesCallback()(
         fakeRequest
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+
+      verify(mockAuditHandler, times(1)).auditFileProcessed(eqTo(validTestBody))(any)
     }
 
     "fail if Mongo Write Error" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future.failed(MongoWriteError("failed")))
+      when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future.failed(MongoWriteError("failed")))
 
       val result = controller.sdesCallback()(
         fakeRequest
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+
+      verify(mockAuditHandler, times(1)).auditFileProcessed(eqTo(validTestBody))(any)
     }
 
     "fail if Any other Error" in {
-      when(mockSdesService.processCallback(ArgumentMatchers.eq(validTestBody))(using any())).thenReturn(Future.failed(Throwable("Internal Server Error")))
+      when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future.failed(Throwable("Internal Server Error")))
 
       val result = controller.sdesCallback()(
         fakeRequest
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+
+      verify(mockAuditHandler, times(1)).auditFileProcessed(eqTo(validTestBody))(any)
     }
-    
   }
