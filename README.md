@@ -21,14 +21,45 @@ Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-
 
 ## API
 
-| Path - internal routes prefixed by `/central-reference-data-inbound-orchestrator` | Supported Methods | Type     | Description                                                                  |
-|-----------------------------------------------------------------------------------|-------------------|----------|------------------------------------------------------------------------------|
+| Path - internal routes prefixed by `/central-reference-data-inbound-orchestrator` | Supported Methods | Type     | Description                                                                                    |
+|-----------------------------------------------------------------------------------|-------------------|----------|------------------------------------------------------------------------------------------------|
 | `/`                                                                               | POST              | Internal | Endpoint to receive xml messages and store in mongo. [See ItTestPayloads examples](it/helpers) |
-| `/services/crdl/callback`                                                         | POST              | Internal | Endpoint to receive antivirus Scan result from SDES.                         |
-| `/test-only/message-wrappers`                                                     | DELETE            | Test     | Endpoint to delete all message wrappers in mongo.                            |
-| `/test-only/message-wrappers/:id`                                                 | GET               | Test     | Endpoint to get message wrapper status by id from mongo.                     |
-| `/test-only/eis-work-items`                                                       | DELETE            | Test     | Endpoint to delete all eis work items.                                       |
+| `/services/crdl/callback`                                                         | POST              | Internal | Endpoint to receive antivirus Scan result from SDES.                                           |
+| `/test-only/message-wrappers`                                                     | DELETE            | Test     | Endpoint to delete all message wrappers in mongo.                                              |
+| `/test-only/message-wrappers/:id`                                                 | GET               | Test     | Endpoint to get message wrapper status by id from mongo.                                       |
+| `/test-only/eis-work-items`                                                       | DELETE            | Test     | Endpoint to delete all eis work items.                                                         |
 
+
+## Outbound Call to EIS
+
+When we have received confirmation that the reference data file has been successfully 
+processed we need to forward the message wrapper on to EIS. There are a few configuration 
+entries which help define this process.
+
+### Endpoint definition
+
+The actual endpoint we call is defined using the `microservice.services.eis-api` group.
+The main entries are the standard `host`, `port` and `protocol`. 
+
+We also include a `path` entry which defines the actual endpoint on the EIS server.
+
+There is also an entry, `bearerToken` to allow us to define the security token required
+to connect to the EIS server.
+
+### Asynchronous Configuration Settings
+
+The outbound call to EIS is performed asynchronously, and it also has some logic to retry
+the call if something happens during the call. The configuration entries are all in the
+`poller` group.
+
+| entry                        | data type | use                                                                                                                                                                                                         |
+|------------------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `initial-delay`              | duration  | How long, after the service is started, until we start looking for calls to make.                                                                                                                           |
+| `interval`                   | duration  | How long to wait, after checking for a message wrapper to send, before we check again.                                                                                                                      |
+| `in-progress-retry-after`    | duration  | If there is a problem making a call then we should wait for period of time before we retry sending the message. This entry records the minimum amount of time we should wait before retrying.               |
+| `max-retry-count`            | integer   | How many time we should attempt to retry a call.                                                                                                                                                            |
+| `start-scheduler`            | boolean   | A flag to determine whether, or not, we should start the scheduler. This should only be set to false for testing purposes.                                                                                  |
+| `work-item-retention-period` | duration  | The definition of a call is called a work-item and if it is successfully sent then we automatically remove it. If it fails, after all of the retries, then it says in the database for this length of time. |
 
 ### Inbound message validation
 
@@ -73,6 +104,7 @@ If a message is received with the following header: `x-files-included: true` the
   "uid": "c04a1612-705d-4373-8840-9d137b14b30a"
 }
 ```
+</Details>
 
 ### License
 
