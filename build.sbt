@@ -5,6 +5,7 @@ ThisBuild / scalaVersion := "3.4.2"
 
 lazy val microservice = Project("central-reference-data-inbound-orchestrator", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
+  .disablePlugins(JUnitXmlReportPlugin)
   .settings(
     resolvers += "HMRC-open-artefacts-maven2" at "https://open.artefacts.tax.service.gov.uk/maven2",
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
