@@ -28,9 +28,9 @@ import scala.concurrent.ExecutionContext
 class TestController @Inject() (
   messageWrapperRepository: MessageWrapperRepository,
   eisWorkItemRepository: EISWorkItemRepository,
-  cc: ControllerComponents)
-  (using ec: ExecutionContext)
-  extends BackendController(cc) :
+  cc: ControllerComponents
+)(using ec: ExecutionContext)
+    extends BackendController(cc):
 
   def clearAllWrappers(): Action[AnyContent] = Action.async { implicit request =>
     messageWrapperRepository.deleteAll().map(_ => Accepted)
@@ -43,6 +43,6 @@ class TestController @Inject() (
   def findById(uid: String): Action[AnyContent] = Action.async { implicit request =>
     messageWrapperRepository.findByUid(uid).map {
       case Some(messageWrapper) => Accepted(messageWrapper.status.toString)
-      case None => NotFound
+      case None                 => NotFound
     }
   }

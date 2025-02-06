@@ -43,9 +43,7 @@ import java.time.{Duration, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class OrchestratorPollerSpec extends AnyWordSpec,
-  GuiceOneAppPerSuite, BeforeAndAfterEach,
-  Matchers, LogCapturing:
+class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEach, Matchers, LogCapturing:
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -53,17 +51,17 @@ class OrchestratorPollerSpec extends AnyWordSpec,
       .build()
 
   lazy val workItemRepository: EISWorkItemRepository = mock[EISWorkItemRepository]
-  lazy val lockRepository: LockRepository = mock[LockRepository]
-  lazy val timestampSupport: TimestampSupport = mock[TimestampSupport]
-  lazy val sdesService: SdesService = mock[SdesService]
-  lazy val appConfig: AppConfig = mock[AppConfig]
+  lazy val lockRepository: LockRepository            = mock[LockRepository]
+  lazy val timestampSupport: TimestampSupport        = mock[TimestampSupport]
+  lazy val sdesService: SdesService                  = mock[SdesService]
+  lazy val appConfig: AppConfig                      = mock[AppConfig]
 
   lazy val defaultRetryInterval: Duration = Duration.ofMinutes(1)
   when(appConfig.startScheduler).thenReturn(false)
   when(appConfig.pollerRetryAfter).thenReturn(defaultRetryInterval)
   when(appConfig.maxRetryCount).thenReturn(3)
 
-  val correlationID: String = "correlationID"
+  val correlationID: String   = "correlationID"
   val testRequest: EISRequest = EISRequest("Test Payload", correlationID)
 
   override def beforeEach(): Unit = {
@@ -71,7 +69,7 @@ class OrchestratorPollerSpec extends AnyWordSpec,
     reset(sdesService)
   }
 
-  private val now = Instant.now()
+  private val now    = Instant.now()
   private val before = now.minus(defaultRetryInterval)
 
   private val poller = StubOrchestratorPoller(
@@ -294,13 +292,9 @@ class OrchestratorPollerSpec extends AnyWordSpec,
     }
   }
 
-  /**
-   * The logging is asynchronous so we need a
-   * short pause to allow the log capturing 
-   * to catch up
-   */
+  /** The logging is asynchronous so we need a short pause to allow the log capturing to catch up
+    */
   def syncLogs(): Unit = Thread.sleep(20)
-
 
 // A test stub to expose the logger.
 class StubOrchestratorPoller(
@@ -310,12 +304,13 @@ class StubOrchestratorPoller(
   timestampSupport: TimestampSupport,
   sdesService: SdesService,
   appConfig: AppConfig
-) (using ec: ExecutionContext) extends OrchestratorPoller(
-  actorSystem,
-  lockRepository,
-  workItemRepo,
-  timestampSupport,
-  sdesService,
-  appConfig
-):
+)(using ec: ExecutionContext)
+    extends OrchestratorPoller(
+      actorSystem,
+      lockRepository,
+      workItemRepo,
+      timestampSupport,
+      sdesService,
+      appConfig
+    ):
   val testLogger: Logger = logger

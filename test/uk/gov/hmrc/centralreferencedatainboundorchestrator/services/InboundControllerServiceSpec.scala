@@ -34,7 +34,7 @@ import scala.xml.NodeBuffer
 class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
   lazy val mockMessageWrapperRepository: MessageWrapperRepository = mock[MessageWrapperRepository]
-  private val controller = new InboundControllerService(mockMessageWrapperRepository)
+  private val controller                                          = new InboundControllerService(mockMessageWrapperRepository)
 
   // This is the expected body we need to send to EIS, using this for test purposes
   // until we get a real sample input file.

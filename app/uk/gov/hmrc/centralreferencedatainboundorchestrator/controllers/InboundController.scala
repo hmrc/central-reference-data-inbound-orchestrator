@@ -33,13 +33,14 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
 
 @Singleton
-class InboundController @Inject()(
-                                   cc: ControllerComponents,
-                                   inboundControllerService: InboundControllerService,
-                                   validationService: ValidationService,
-                                   auditHandler: AuditHandler)
-                                 (using ec: ExecutionContext)
-  extends BackendController(cc) with Logging:
+class InboundController @Inject() (
+  cc: ControllerComponents,
+  inboundControllerService: InboundControllerService,
+  validationService: ValidationService,
+  auditHandler: AuditHandler
+)(using ec: ExecutionContext)
+    extends BackendController(cc)
+    with Logging:
 
   private val FileIncludedHeader = "x-files-included"
 
@@ -49,24 +50,23 @@ class InboundController @Inject()(
       validationService.validateFullSoapMessage(request.body) match {
         case Some(body) =>
           determineResult(body)
-        case None => 
+        case None       =>
           Future.successful(BadRequest)
       }
-    else
-      Future.successful(BadRequest)
+    else Future.successful(BadRequest)
   }
 
-  private def determineResult(body: NodeSeq): Future[Status] = {
+  private def determineResult(body: NodeSeq): Future[Status] =
     inboundControllerService.processMessage(body) transform {
-      case Success(_) =>
+      case Success(_)              =>
         Success(Accepted)
-      case Failure(err: Throwable) => err match {
-        case InvalidXMLContentError(_) => Success(BadRequest)
-        case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
-        case _ => Success(InternalServerError)
-      }
+      case Failure(err: Throwable) =>
+        err match {
+          case InvalidXMLContentError(_)              => Success(BadRequest)
+          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
+          case _                                      => Success(InternalServerError)
+        }
     }
-  }
 
   private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =
     request.headers.get(FileIncludedHeader).exists(_.toBooleanOption.getOrElse(false))

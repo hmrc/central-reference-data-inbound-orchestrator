@@ -22,8 +22,8 @@ object MessageStatus extends Enumeration:
   type MessageStatus = Value
 
   val Received: Value = Value("Received")
-  val Sent: Value = Value("Sent")
-  val Pass: Value = Value("ScanPassed")
-  val Fail: Value = Value("ScanFailed")
+  val Sent: Value     = Value("Sent")
+  val Pass: Value     = Value("ScanPassed")
+  val Fail: Value     = Value("ScanFailed")
 
   given format: Format[MessageStatus] = Json.formatEnum(this)

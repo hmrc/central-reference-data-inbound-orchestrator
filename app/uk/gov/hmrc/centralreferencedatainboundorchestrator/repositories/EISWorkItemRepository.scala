@@ -32,21 +32,22 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class EISWorkItemRepository @Inject()(
- mongoComponent: MongoComponent,
- appConfig: AppConfig
-)(using ec: ExecutionContext) extends WorkItemRepository[EISRequest](
-  collectionName = "eis-request",
-  mongoComponent = mongoComponent,
-  itemFormat = EISRequest.EISRequestFormat,
-  workItemFields = WorkItemFields.default,
-  extraIndexes = Seq(
-    IndexModel(
-      Indexes.ascending(WorkItemFields.default.updatedAt),
-      IndexOptions().expireAfter(appConfig.workItemRetentionPeriod.toMillis, TimeUnit.MILLISECONDS)
-    )
-  )
-):
+class EISWorkItemRepository @Inject() (
+  mongoComponent: MongoComponent,
+  appConfig: AppConfig
+)(using ec: ExecutionContext)
+    extends WorkItemRepository[EISRequest](
+      collectionName = "eis-request",
+      mongoComponent = mongoComponent,
+      itemFormat = EISRequest.EISRequestFormat,
+      workItemFields = WorkItemFields.default,
+      extraIndexes = Seq(
+        IndexModel(
+          Indexes.ascending(WorkItemFields.default.updatedAt),
+          IndexOptions().expireAfter(appConfig.workItemRetentionPeriod.toMillis, TimeUnit.MILLISECONDS)
+        )
+      )
+    ):
   override def inProgressRetryAfter: Duration = appConfig.pollerRetryAfter
 
   override def now(): Instant = Clock.systemUTC().instant()

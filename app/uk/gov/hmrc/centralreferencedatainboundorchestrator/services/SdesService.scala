@@ -37,9 +37,10 @@ class SdesService @Inject() (
   eisConnector: EisConnector,
   auditHandler: AuditHandler,
   appConfig: AppConfig
-)(using executionContext: ExecutionContext) extends Logging:
+)(using executionContext: ExecutionContext)
+    extends Logging:
 
-  def processCallback(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier): Future[String] = {
+  def processCallback(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier): Future[String] =
     sdesCallback.notification match {
       case "FileReceived" =>
         logger.info(s"AV Scan passed Successfully for uid: ${sdesCallback.correlationID}")
@@ -47,7 +48,7 @@ class SdesService @Inject() (
 
       case "FileProcessed" =>
         logger.info(s"File has now been delivered to the HMRC recipient for uid: ${sdesCallback.correlationID}")
-        forwardMessage(sdesCallback)  
+        forwardMessage(sdesCallback)
 
       case "FileProcessingFailure" =>
         logger.info(s"AV Scan failed for uid: ${sdesCallback.correlationID}")
@@ -57,16 +58,14 @@ class SdesService @Inject() (
         logger.warn(s"SDES notification not recognised: $invalidNotification")
         Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
     }
-  }
 
-  def sendMessage(payload: String)(using hc: HeaderCarrier): Future[Boolean] = {
+  def sendMessage(payload: String)(using hc: HeaderCarrier): Future[Boolean] =
     eisConnector.forwardMessage(loadString(payload))
-  }
 
-  def updateStatus(messageSent: Boolean, correlationID: String): Future[String] = {
+  def updateStatus(messageSent: Boolean, correlationID: String): Future[String] =
     if messageSent then
       messageWrapperRepository.updateStatus(correlationID, Sent) flatMap {
-        case true =>
+        case true  =>
           Future.successful(s"Message with UID: $correlationID, successfully sent to EIS and status updated to sent.")
         case false =>
           Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: $correlationID"))
@@ -74,23 +73,25 @@ class SdesService @Inject() (
     else
       logger.error("Message not sent")
       Future.failed(EisResponseError(s"Unable to send message to EIS after ${appConfig.maxRetryCount} attempts"))
-  }
 
-  private def updateMessageStatus(sdesCallback: SdesCallbackResponse, status: MessageStatus) = {
+  private def updateMessageStatus(sdesCallback: SdesCallbackResponse, status: MessageStatus) =
     messageWrapperRepository.updateStatus(sdesCallback.correlationID, status) flatMap {
-      case true => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}")
-      case false => Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}"))
+      case true  => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}")
+      case false =>
+        Future.failed(
+          MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}")
+        )
     }
-  }
 
-  private def forwardMessage(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier) = {
+  private def forwardMessage(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier) =
     messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
       case Some(messageWrapper) =>
-        workItemRepo.set(EISRequest(messageWrapper.payload, sdesCallback.correlationID))
+        workItemRepo
+          .set(EISRequest(messageWrapper.payload, sdesCallback.correlationID))
           .map(_ => s"Message with UID: ${sdesCallback.correlationID}, successfully queued")
-      case None =>
+      case None                 =>
         logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallback.correlationID}")
-        Future.failed(NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}"))
+        Future.failed(
+          NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}")
+        )
     }
-  }
-

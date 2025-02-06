@@ -32,70 +32,86 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MessageWrapperRepository @Inject()(
-                                     mongoComponent: MongoComponent,
-                                     appConfig: AppConfig
-                                   )(using ec: ExecutionContext) extends PlayMongoRepository[MessageWrapper](
-  collectionName = "message-wrapper",
-  mongoComponent = mongoComponent,
-  domainFormat = MessageWrapper.mongoFormat,
-  indexes = Seq(
-    IndexModel(
-      Indexes.ascending("uid"),
-      IndexOptions().name("uidx").unique(true)
+class MessageWrapperRepository @Inject() (
+  mongoComponent: MongoComponent,
+  appConfig: AppConfig
+)(using ec: ExecutionContext)
+    extends PlayMongoRepository[MessageWrapper](
+      collectionName = "message-wrapper",
+      mongoComponent = mongoComponent,
+      domainFormat = MessageWrapper.mongoFormat,
+      indexes = Seq(
+        IndexModel(
+          Indexes.ascending("uid"),
+          IndexOptions().name("uidx").unique(true)
+        ),
+        IndexModel(
+          Indexes.ascending("lastUpdated"),
+          IndexOptions()
+            .name("lastUpdatedIdx")
+            .expireAfter(appConfig.cacheTtl, TimeUnit.DAYS)
+        )
+      ),
+      replaceIndexes = true
     ),
-    IndexModel(
-      Indexes.ascending("lastUpdated"),
-      IndexOptions()
-        .name("lastUpdatedIdx")
-        .expireAfter(appConfig.cacheTtl, TimeUnit.DAYS)
-    )
-  ),
-  replaceIndexes = true
-), Logging:
+      Logging:
 
-  def insertMessageWrapper(uid: String,
-                           payload: String,
-                           status: MessageStatus)
-                          (using ec: ExecutionContext): Future[Boolean] = {
+  def insertMessageWrapper(uid: String, payload: String, status: MessageStatus)(using
+    ec: ExecutionContext
+  ): Future[Boolean] = {
     logger.info(s"Inserting a message wrapper in $collectionName table with uid: $uid")
-    collection.insertOne(MessageWrapper(uid, payload, status))
+    collection
+      .insertOne(MessageWrapper(uid, payload, status))
       .head()
       .map(_ =>
         logger.info(s"Inserted a message wrapper in $collectionName table with uid: $uid")
         true
       )
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}")
-          Future.failed(MongoWriteError(s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}")
+        Future.failed(
+          MongoWriteError(
+            s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}"
+          )
+        )
       }
   }
 
   def findByUid(uid: String)(using ec: ExecutionContext): Future[Option[MessageWrapper]] =
-    collection.find(Filters.equal("uid", uid))
+    collection
+      .find(Filters.equal("uid", uid))
       .headOption()
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}")
-          Future.failed(MongoReadError(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}")
+        Future.failed(
+          MongoReadError(
+            s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}"
+          )
+        )
       }
 
   def deleteAll(): Future[DeleteResult] =
     collection.deleteMany(Filters.empty()).toFuture()
 
   def updateStatus(uid: String, status: MessageStatus)(using ec: ExecutionContext): Future[Boolean] =
-    collection.updateOne(
+    collection
+      .updateOne(
         Filters.equal("uid", uid),
         Updates.combine(
           Updates.set("status", status.toString),
           Updates.set("lastUpdated", Instant.now())
         )
-      ).toFuture()
+      )
+      .toFuture()
       .map(_.wasAcknowledged())
-      .recoverWith {
-        case e =>
-          logger.error(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}")
-          Future.failed(MongoWriteError(s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"))
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          MongoWriteError(
+            s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"
+          )
+        )
 
       }

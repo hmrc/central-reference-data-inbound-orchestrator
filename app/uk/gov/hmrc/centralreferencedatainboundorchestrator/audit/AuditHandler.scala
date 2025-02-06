@@ -30,27 +30,27 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConfig)(implicit ec: ExecutionContext) {
 
-  def auditNewMessageWrapper(payload: String)
-                            (implicit hc: HeaderCarrier): Future[AuditResult] = {
-    
-   val detailJsObject = JsObject(
-     Seq(
-       "messageWrapper"     -> JsString(payload)
-     )
-   )
-      
+  def auditNewMessageWrapper(payload: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+
+    val detailJsObject = JsObject(
+      Seq(
+        "messageWrapper" -> JsString(payload)
+      )
+    )
+
     val extendedDataEvent = ExtendedDataEvent(
       auditSource = appConfig.appName,
       auditType = "InboundMessageReceived",
       detail = detailJsObject,
-      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Inbound message received", "/central-reference-data-inbound-orchestrator")
+      tags = AuditExtensions
+        .auditHeaderCarrier(hc)
+        .toAuditTags("Inbound message received", "/central-reference-data-inbound-orchestrator")
     )
 
     auditConnector.sendExtendedEvent(extendedDataEvent)
   }
 
-  def auditFileProcessed(payload: SdesCallbackResponse)
-                        (implicit hc: HeaderCarrier): Future[AuditResult] = {
+  def auditFileProcessed(payload: SdesCallbackResponse)(implicit hc: HeaderCarrier): Future[AuditResult] = {
 
     val details = Json.obj("referenceDataFileProcessed" -> Json.toJson(payload))
 
@@ -58,7 +58,12 @@ class AuditHandler @Inject() (auditConnector: AuditConnector, appConfig: AppConf
       auditSource = appConfig.appName,
       auditType = "ReferenceDataFileProcessed",
       detail = details,
-      tags = AuditExtensions.auditHeaderCarrier(hc).toAuditTags("Reference Data File Processed", "/central-reference-data-inbound-orchestrator/services/crdl/callback")
+      tags = AuditExtensions
+        .auditHeaderCarrier(hc)
+        .toAuditTags(
+          "Reference Data File Processed",
+          "/central-reference-data-inbound-orchestrator/services/crdl/callback"
+        )
     )
 
     auditConnector.sendExtendedEvent(extendedDataEvent)

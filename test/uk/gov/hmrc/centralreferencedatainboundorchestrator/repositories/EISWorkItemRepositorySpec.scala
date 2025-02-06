@@ -30,18 +30,19 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.*
 
-class EISWorkItemRepositorySpec extends AnyWordSpec,
-  MockitoSugar,
-  GuiceOneAppPerSuite,
-  CleanMongoCollectionSupport,
-  Matchers:
+class EISWorkItemRepositorySpec
+    extends AnyWordSpec,
+      MockitoSugar,
+      GuiceOneAppPerSuite,
+      CleanMongoCollectionSupport,
+      Matchers:
 
   val appConfig: AppConfig = mock[AppConfig]
 
   when(appConfig.workItemRetentionPeriod).thenReturn(5.days)
 
   val repository: EISWorkItemRepository = EISWorkItemRepository(mongoComponent, appConfig)
-  
+
   def testRequest: EISRequest = EISRequest("payload", UUID.randomUUID().toString)
 
   override given patienceConfig: PatienceConfig = PatienceConfig(
@@ -56,10 +57,10 @@ class EISWorkItemRepositorySpec extends AnyWordSpec,
       repository.set(testRequest).futureValue
 
       val countOfDocsAfter = documentCount()
-      
+
       countOfDocsBefore + 1 shouldBe countOfDocsAfter
     }
-    
+
     "Delete all existing documents" in {
       repository.set(testRequest).futureValue
       repository.set(testRequest).futureValue
@@ -72,7 +73,7 @@ class EISWorkItemRepositorySpec extends AnyWordSpec,
 
       val countOfDocsAfter = documentCount()
 
-      countOfDocsAfter shouldBe 0      
+      countOfDocsAfter shouldBe 0
     }
   }
 

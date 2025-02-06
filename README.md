@@ -106,6 +106,11 @@ If a message is received with the following header: `x-files-included: true` the
 ```
 </Details>
 
+### All tests and checks
+This is an sbt command alias specific to this project. It will run a scala format
+check, run unit tests, run integration tests and produce a coverage report:
+> `sbt runAllChecks`
+
 ### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").

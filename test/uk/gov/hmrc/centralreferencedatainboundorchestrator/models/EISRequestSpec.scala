@@ -23,11 +23,11 @@ import play.api.libs.json.*
 class EISRequestSpec extends AnyWordSpec, Matchers:
 
   private val testRequest: EISRequest = EISRequest("Some payload", "correlationID")
-  private val testJson: JsObject = Json.obj(
-    "payload" -> "Some payload",
+  private val testJson: JsObject      = Json.obj(
+    "payload"       -> "Some payload",
     "correlationID" -> "correlationID"
   )
-  
+
   "EISRequest" should {
     "serialise properly" in {
       val actual = Json.toJson(testRequest)

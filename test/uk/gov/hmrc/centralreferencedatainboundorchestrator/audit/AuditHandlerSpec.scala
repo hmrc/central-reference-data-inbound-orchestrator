@@ -38,9 +38,9 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFutures:
+class AuditHandlerSpec extends AnyWordSpec, Matchers, BeforeAndAfterEach, ScalaFutures:
   val mockAuditConnector: AuditConnector = mock[AuditConnector]
-  val mockAppConfig: AppConfig = mock[AppConfig]
+  val mockAppConfig: AppConfig           = mock[AppConfig]
 
   val appName = "TestApp"
 
@@ -48,34 +48,34 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
 
   val handler: AuditHandler = AuditHandler(mockAuditConnector, mockAppConfig)
 
-  val testCorrelationId = "CORRELATION_ID"
-  val testPayload = "TEST PAYLOAD"
-  val expectedMessageReceived: JsObject = Json.obj(
+  val testCorrelationId                          = "CORRELATION_ID"
+  val testPayload                                = "TEST PAYLOAD"
+  val expectedMessageReceived: JsObject          = Json.obj(
     "messageWrapper" -> testPayload
   )
   val testCallbackResponse: SdesCallbackResponse = SdesCallbackResponse(
     "Notification",
     "FileName",
     "CorrelationId",
-    LocalDateTime.of(2024,10,30,9,0,0),
+    LocalDateTime.of(2024, 10, 30, 9, 0, 0),
     Some("checksumAlgorithm"),
     Some("checksum"),
     None,
     List(),
     None
   )
-  val expectedFileProcessedDetails: JsObject = Json.obj(
+  val expectedFileProcessedDetails: JsObject     = Json.obj(
     "referenceDataFileProcessed" -> Json.obj(
-      "notification" -> "Notification",
-      "filename" -> "FileName",
-      "correlationID" -> "CorrelationId",
-      "dateTime" -> "2024-10-30T09:00:00",
+      "notification"      -> "Notification",
+      "filename"          -> "FileName",
+      "correlationID"     -> "CorrelationId",
+      "dateTime"          -> "2024-10-30T09:00:00",
       "checksumAlgorithm" -> "checksumAlgorithm",
-      "checksum" -> "checksum",
-      "properties" -> Json.arr()
+      "checksum"          -> "checksum",
+      "properties"        -> Json.arr()
     )
   )
-  val testMessageWrapper: MessageWrapper = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received)
+  val testMessageWrapper: MessageWrapper         = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received)
 
   val successfulAudit: Future[AuditResult] = Future.successful(Success)
 
@@ -101,11 +101,11 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
 
       val sentEvent = captor.getValue
 
-      sentEvent.auditSource shouldBe appName
-      sentEvent.auditType shouldBe "InboundMessageReceived"
+      sentEvent.auditSource                 shouldBe appName
+      sentEvent.auditType                   shouldBe "InboundMessageReceived"
       sentEvent.tags.get("transactionName") shouldBe Some("Inbound message received")
-      sentEvent.tags.get("path") shouldBe Some("/central-reference-data-inbound-orchestrator")
-      sentEvent.detail shouldBe expectedMessageReceived
+      sentEvent.tags.get("path")            shouldBe Some("/central-reference-data-inbound-orchestrator")
+      sentEvent.detail                      shouldBe expectedMessageReceived
 
       verify(mockAuditConnector, times(1)).sendExtendedEvent(any)(any, any)
     }
@@ -123,11 +123,11 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers,BeforeAndAfterEach, ScalaFu
 
       val sentEvent = captor.getValue
 
-      sentEvent.auditSource shouldBe appName
-      sentEvent.auditType shouldBe "ReferenceDataFileProcessed"
+      sentEvent.auditSource                 shouldBe appName
+      sentEvent.auditType                   shouldBe "ReferenceDataFileProcessed"
       sentEvent.tags.get("transactionName") shouldBe Some("Reference Data File Processed")
-      sentEvent.tags.get("path") shouldBe Some("/central-reference-data-inbound-orchestrator/services/crdl/callback")
-      sentEvent.detail shouldBe expectedFileProcessedDetails
+      sentEvent.tags.get("path")            shouldBe Some("/central-reference-data-inbound-orchestrator/services/crdl/callback")
+      sentEvent.detail                      shouldBe expectedFileProcessedDetails
 
       println(s"The tags are ${sentEvent.tags}")
 
