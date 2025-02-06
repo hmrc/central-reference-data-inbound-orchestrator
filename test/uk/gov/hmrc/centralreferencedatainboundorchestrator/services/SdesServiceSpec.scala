@@ -45,18 +45,17 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.Elem
 
-class SdesServiceSpec extends AnyWordSpec,
-  GuiceOneAppPerSuite, BeforeAndAfterEach, Matchers, ScalaFutures:
+class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEach, Matchers, ScalaFutures:
 
   given ExecutionContext = ExecutionContext.global
 
   given HeaderCarrier = HeaderCarrier()
 
   lazy val mockMessageWrapperRepository: MessageWrapperRepository = mock[MessageWrapperRepository]
-  lazy val mockEISWorkItemRepository: EISWorkItemRepository = mock[EISWorkItemRepository]
-  lazy val mockEisConnector: EisConnector = mock[EisConnector]
-  lazy val mockAuditHandler:AuditHandler = mock[AuditHandler]
-  lazy val mockAppConfig: AppConfig = mock[AppConfig]
+  lazy val mockEISWorkItemRepository: EISWorkItemRepository       = mock[EISWorkItemRepository]
+  lazy val mockEisConnector: EisConnector                         = mock[EisConnector]
+  lazy val mockAuditHandler: AuditHandler                         = mock[AuditHandler]
+  lazy val mockAppConfig: AppConfig                               = mock[AppConfig]
 
   when(mockAppConfig.maxRetryCount).thenReturn(3)
 
@@ -87,7 +86,7 @@ class SdesServiceSpec extends AnyWordSpec,
 
   "SdesService" should {
     "should forward message to EIS when accepting a FileProcessed notification" in {
-      val uid = UUID.randomUUID().toString
+      val uid     = UUID.randomUUID().toString
       val message = messageWrapper(uid)
 
       when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
@@ -108,10 +107,21 @@ class SdesServiceSpec extends AnyWordSpec,
       when(mockEISWorkItemRepository.set(eqTo(expectedRequest)))
         .thenReturn(Future.successful(wi))
 
-      val result = sdesService.processCallback(
-        SdesCallbackResponse("FileProcessed", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
-      ).futureValue
+      val result = sdesService
+        .processCallback(
+          SdesCallbackResponse(
+            "FileProcessed",
+            "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+            uid,
+            LocalDateTime.now(),
+            Option("894bed34007114b82fa39e05197f9eec"),
+            Option("MD5"),
+            Option(LocalDateTime.now()),
+            List(Property("name1", "value1")),
+            Option("None")
+          )
+        )
+        .futureValue
 
       result shouldBe s"Message with UID: $uid, successfully queued"
 
@@ -126,10 +136,21 @@ class SdesServiceSpec extends AnyWordSpec,
       when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Pass))(using any()))
         .thenReturn(Future.successful(true))
 
-      val result = sdesService.processCallback(
-        SdesCallbackResponse("FileReceived", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
-      ).futureValue
+      val result = sdesService
+        .processCallback(
+          SdesCallbackResponse(
+            "FileReceived",
+            "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+            uid,
+            LocalDateTime.now(),
+            Option("894bed34007114b82fa39e05197f9eec"),
+            Option("MD5"),
+            Option(LocalDateTime.now()),
+            List(Property("name1", "value1")),
+            Option("None")
+          )
+        )
+        .futureValue
 
       result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
 
@@ -144,10 +165,21 @@ class SdesServiceSpec extends AnyWordSpec,
       when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Fail))(using any()))
         .thenReturn(Future.successful(true))
 
-      val result = sdesService.processCallback(
-        SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
-      ).futureValue
+      val result = sdesService
+        .processCallback(
+          SdesCallbackResponse(
+            "FileProcessingFailure",
+            "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+            uid,
+            LocalDateTime.now(),
+            Option("894bed34007114b82fa39e05197f9eec"),
+            Option("MD5"),
+            Option(LocalDateTime.now()),
+            List(Property("name1", "value1")),
+            Option("None")
+          )
+        )
+        .futureValue
 
       result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
 
@@ -161,8 +193,17 @@ class SdesServiceSpec extends AnyWordSpec,
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
 
       val result = sdesService.processCallback(
-        SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+        SdesCallbackResponse(
+          "FileProcessingTest",
+          "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+          uid,
+          LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"),
+          Option("MD5"),
+          Option(LocalDateTime.now()),
+          List(Property("name1", "value1")),
+          Option("None")
+        )
       )
 
       recoverToExceptionIf[Throwable](result).map { rt =>
@@ -247,8 +288,17 @@ class SdesServiceSpec extends AnyWordSpec,
         .thenReturn(Future.successful(false))
 
       val result = sdesService.processCallback(
-        SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+        SdesCallbackResponse(
+          "FileProcessingFailure",
+          "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+          uid,
+          LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"),
+          Option("MD5"),
+          Option(LocalDateTime.now()),
+          List(Property("name1", "value1")),
+          Option("None")
+        )
       )
 
       recoverToExceptionIf[MongoWriteError](result).map { mwe =>
@@ -262,15 +312,24 @@ class SdesServiceSpec extends AnyWordSpec,
     }
 
     "should return exception NoMatchingUIDInMongoError when forwarding a message but Mongo fails to find UID in Mongo Matching" in {
-      val uid = UUID.randomUUID().toString
+      val uid     = UUID.randomUUID().toString
       val message = messageWrapper(uid)
 
       when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
         .thenReturn(Future.successful(None))
 
       val result = sdesService.processCallback(
-        SdesCallbackResponse("FileProcessed", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", uid, LocalDateTime.now(),
-          Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+        SdesCallbackResponse(
+          "FileProcessed",
+          "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+          uid,
+          LocalDateTime.now(),
+          Option("894bed34007114b82fa39e05197f9eec"),
+          Option("MD5"),
+          Option(LocalDateTime.now()),
+          List(Property("name1", "value1")),
+          Option("None")
+        )
       )
 
       recoverToExceptionIf[NoMatchingUIDInMongoError](result).map { mwe =>
@@ -283,6 +342,3 @@ class SdesServiceSpec extends AnyWordSpec,
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
   }
-
-
-

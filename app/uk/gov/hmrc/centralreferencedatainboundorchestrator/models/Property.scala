@@ -22,4 +22,3 @@ case class Property(name: String, value: String)
 
 object Property:
   given format: OFormat[Property] = Json.format[Property]
-

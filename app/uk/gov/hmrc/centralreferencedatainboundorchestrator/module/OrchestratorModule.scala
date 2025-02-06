@@ -20,6 +20,5 @@ import com.google.inject.AbstractModule
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.OrchestratorPoller
 
 class OrchestratorModule extends AbstractModule:
-  override def configure(): Unit = {
+  override def configure(): Unit =
     bind(classOf[OrchestratorPoller]).asEagerSingleton()
-  }

@@ -27,13 +27,14 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MessageWrapperRepositorySpec extends AnyWordSpec,
-  MockitoSugar,
-  GuiceOneAppPerSuite,
-  CleanMongoCollectionSupport,
-  Matchers:
+class MessageWrapperRepositorySpec
+    extends AnyWordSpec,
+      MockitoSugar,
+      GuiceOneAppPerSuite,
+      CleanMongoCollectionSupport,
+      Matchers:
 
-  val appConfig: AppConfig = mock[AppConfig]
+  val appConfig: AppConfig                 = mock[AppConfig]
   val repository: MessageWrapperRepository = MessageWrapperRepository(mongoComponent, appConfig)
 
   "MessageWrapperRepository" should {
@@ -44,7 +45,7 @@ class MessageWrapperRepositorySpec extends AnyWordSpec,
       repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received).futureValue
       repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received).futureValue
       repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received).futureValue
-      
+
       repository.deleteAll().futureValue
 
       val countOfDocsAfter = repository.collection.countDocuments().head().futureValue
@@ -52,4 +53,3 @@ class MessageWrapperRepositorySpec extends AnyWordSpec,
       countOfDocsAfter shouldBe 0
     }
   }
-

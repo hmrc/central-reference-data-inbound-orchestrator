@@ -30,13 +30,13 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.NodeSeq
 
-class EisConnector @Inject()(httpClient: HttpClientV2, appConfig: AppConfig):
+class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig):
 
   def forwardMessage(body: NodeSeq)(using
-                                    ec: ExecutionContext,
-                                    hc: HeaderCarrier
+    ec: ExecutionContext,
+    hc: HeaderCarrier
   ): Future[Boolean] =
-    val url = s"${appConfig.eisUrl}${appConfig.eisPath}"
+    val url                   = s"${appConfig.eisUrl}${appConfig.eisPath}"
     val iso8601DateTimeFormat = DateTimeFormatter.ofPattern("EEE dd MMM yyyy HH:mm:ss 'GMT'")
     httpClient
       .post(url"$url")

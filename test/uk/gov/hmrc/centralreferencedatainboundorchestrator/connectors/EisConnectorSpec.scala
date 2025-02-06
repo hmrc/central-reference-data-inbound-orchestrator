@@ -17,7 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import org.mockito.ArgumentMatchers.{eq => eqTo, any}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
@@ -36,21 +36,20 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.Elem
 
 class EisConnectorSpec
-  extends AnyWordSpec
-    , ExternalWireMockSupport
-    , Matchers
-    , ScalaFutures
-    , IntegrationPatience
-    , GuiceOneAppPerSuite
-    , MockitoSugar
-    , BeforeAndAfterEach {
+    extends AnyWordSpec,
+      ExternalWireMockSupport,
+      Matchers,
+      ScalaFutures,
+      IntegrationPatience,
+      GuiceOneAppPerSuite,
+      MockitoSugar,
+      BeforeAndAfterEach {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  private val appConfig: AppConfig = mock[AppConfig]
+  private val appConfig: AppConfig       = mock[AppConfig]
   private val httpClientV2: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
-  
   when(appConfig.eisUrl).thenReturn(s"http://$externalWireMockHost:$externalWireMockPort")
   when(appConfig.eisPath).thenReturn("/csrd/referencedataupdate/v1")
   when(appConfig.eisBearerToken).thenReturn("test")

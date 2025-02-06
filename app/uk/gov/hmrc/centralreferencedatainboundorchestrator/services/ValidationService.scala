@@ -32,67 +32,64 @@ import scala.xml.Utility.trim
 
 class ValidationService extends Logging:
   private lazy val soapSchema: Schema = {
-    val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-    val soapXsd = getClass.getResourceAsStream("/schemas/soap-envelope.xsd")
+    val factory             = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+    val soapXsd             = getClass.getResourceAsStream("/schemas/soap-envelope.xsd")
     val streamSourceSoapXsd = new StreamSource(soapXsd)
-    val xmlXsd = getClass.getResourceAsStream("/schemas/xml.xsd")
-    val streamSourceXmlXsd = new StreamSource(xmlXsd)
-    val schema = factory.newSchema(Array[Source](streamSourceXmlXsd, streamSourceSoapXsd))
+    val xmlXsd              = getClass.getResourceAsStream("/schemas/xml.xsd")
+    val streamSourceXmlXsd  = new StreamSource(xmlXsd)
+    val schema              = factory.newSchema(Array[Source](streamSourceXmlXsd, streamSourceSoapXsd))
     streamSourceSoapXsd.getInputStream.close()
     streamSourceXmlXsd.getInputStream.close()
     schema
   }
 
   private lazy val bodySchema: Schema = {
-    val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-    val bodyXsd = getClass.getResourceAsStream("/schemas/receive-reference-data-submission-result.xsd")
+    val factory             = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+    val bodyXsd             = getClass.getResourceAsStream("/schemas/receive-reference-data-submission-result.xsd")
     val streamSourceBodyXsd = new StreamSource(bodyXsd)
-    val schema = factory.newSchema(streamSourceBodyXsd)
+    val schema              = factory.newSchema(streamSourceBodyXsd)
     streamSourceBodyXsd.getInputStream.close()
     schema
   }
 
   private[services] def validateSoapMessage(soapMessage: NodeSeq): Boolean = {
-    val bis = new ByteArrayInputStream(soapMessage.toString.getBytes)
+    val bis            = new ByteArrayInputStream(soapMessage.toString.getBytes)
     val builderFactory = DocumentBuilderFactory.newInstance()
     builderFactory.setNamespaceAware(true)
-    val builder = builderFactory.newDocumentBuilder()
-    val xml: Document = builder.parse(bis)
-    val validator = soapSchema.newValidator()
+    val builder        = builderFactory.newDocumentBuilder()
+    val xml: Document  = builder.parse(bis)
+    val validator      = soapSchema.newValidator()
     Try {
       validator.validate(new DOMSource(xml))
       true
     } match {
       case Success(valid) => true
-      case Failure(ex) => false
+      case Failure(ex)    => false
     }
   }
 
-  private[services] def getSoapBody(soapMessage: NodeSeq): Option[Node] = {
-    (soapMessage \\ "Body")
-      .headOption
-      .fold[Option[Node]](None)(
-        body =>
-          body.child.collectFirst { case e: Elem => e}
-      )
-  }
+  private[services] def getSoapBody(soapMessage: NodeSeq): Option[Node] =
+    (soapMessage \\ "Body").headOption
+      .fold[Option[Node]](None)(body => body.child.collectFirst { case e: Elem => e })
 
-  private[services] def validateMessageWrapper(messageWrapper: NodeSeq): Boolean = {
+  private[services] def validateMessageWrapper(messageWrapper: NodeSeq): Boolean =
     Try {
       val validator = bodySchema.newValidator()
       validator.validate(new StreamSource(new StringReader(messageWrapper.toString)))
       true
     } match {
-      case Success(_) => true
+      case Success(_)  => true
       case Failure(ex) =>
-        logger.error(s"Failed to validate schema of message - potentially an error report with body: $messageWrapper", ex)
+        logger.error(
+          s"Failed to validate schema of message - potentially an error report with body: $messageWrapper",
+          ex
+        )
         false
     }
-  }
 
   private[services] def extractInnerMessage(body: NodeSeq): NodeSeq = {
-    val taskId = (body \\ "ReceiveReferenceDataSubmissionResult" \ "TaskIdentifier").text
-    val correlationId = (body \\ "ReceiveReferenceDataSubmissionResult" \ "IncludedBinaryObject").text
+    val taskId             = (body \\ "ReceiveReferenceDataSubmissionResult" \ "TaskIdentifier").text
+    val correlationId      = (body \\ "ReceiveReferenceDataSubmissionResult" \ "IncludedBinaryObject").text
     val innerMessage: Elem = <MainMessage>
       <Body>
         <TaskIdentifier>{taskId}</TaskIdentifier>
@@ -105,13 +102,11 @@ class ValidationService extends Logging:
     trim(innerMessage)
   }
 
-  def validateFullSoapMessage(soapMessage: NodeSeq): Option[NodeSeq] = {
+  def validateFullSoapMessage(soapMessage: NodeSeq): Option[NodeSeq] =
     if validateSoapMessage(soapMessage) then
       for {
-        body <- getSoapBody(soapMessage)
+        body        <- getSoapBody(soapMessage)
         if validateMessageWrapper(body)
         innerMessage = extractInnerMessage(body)
       } yield innerMessage
-    else
-      None
-  }
+    else None

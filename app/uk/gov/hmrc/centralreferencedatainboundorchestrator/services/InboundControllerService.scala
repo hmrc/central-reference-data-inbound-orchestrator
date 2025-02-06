@@ -28,13 +28,14 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
 
 @Singleton
-class InboundControllerService @Inject()(
-            messageWrapperRepository: MessageWrapperRepository
-                                              )(using ec: ExecutionContext) extends Logging:
+class InboundControllerService @Inject() (
+  messageWrapperRepository: MessageWrapperRepository
+)(using ec: ExecutionContext)
+    extends Logging:
 
   def processMessage(xml: NodeSeq): Future[Boolean] =
     for
-      uid <- getUID(xml)
+      uid   <- getUID(xml)
       dbRes <- messageWrapperRepository.insertMessageWrapper(uid, xml.toString, Received)
     yield dbRes
 
@@ -43,7 +44,7 @@ class InboundControllerService @Inject()(
       case uid if uid != "" =>
         logger.info(s"Successfully extracted UID: $uid")
         Future.successful(uid)
-      case _ =>
+      case _                =>
         logger.error("Failed to find UID in xml - potentially an error report")
         Future.failed(InvalidXMLContentError("Failed to find UID in xml - potentially an error report"))
     }

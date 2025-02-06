@@ -39,11 +39,16 @@ import scala.xml.*
 class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEach, Matchers:
 
   lazy val mockInboundService: InboundControllerService = mock[InboundControllerService]
-  lazy val mockAuditHandler: AuditHandler = mock[AuditHandler]
-  lazy val mockValidationService: ValidationService = mock[ValidationService]
+  lazy val mockAuditHandler: AuditHandler               = mock[AuditHandler]
+  lazy val mockValidationService: ValidationService     = mock[ValidationService]
 
   private val fakeRequest = FakeRequest("POST", "/")
-  private val controller = new InboundController(Helpers.stubControllerComponents(), mockInboundService, mockValidationService, mockAuditHandler)
+  private val controller  = new InboundController(
+    Helpers.stubControllerComponents(),
+    mockInboundService,
+    mockValidationService,
+    mockAuditHandler
+  )
   given mat: Materializer = app.injector.instanceOf[Materializer]
 
   private val auditSuccess = Future.successful(Success)
@@ -79,11 +84,14 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       .thenReturn(auditSuccess)
   }
 
-  private def validateFullSoapMessage(includeBody: Boolean, includeCorrelationID: Boolean = true): OngoingStubbing[Option[NodeSeq]] = {
+  private def validateFullSoapMessage(
+    includeBody: Boolean,
+    includeCorrelationID: Boolean = true
+  ): OngoingStubbing[Option[NodeSeq]] = {
     val result = (includeBody, includeCorrelationID) match {
-      case (false, _) => None
+      case (false, _)   => None
       case (true, true) => Some(validTestBody)
-      case _ => Some(validTestBodyWithoutCorrelationId)
+      case _            => Some(validTestBodyWithoutCorrelationId)
     }
 
     when(mockValidationService.validateFullSoapMessage(any))
@@ -101,7 +109,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         fakeRequest
           .withHeaders(
             "x-files-included" -> "true",
-            "Content-Type" -> "application/xml"
+            "Content-Type"     -> "application/xml"
           )
           .withBody(validTestBody)
       )
@@ -119,7 +127,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         fakeRequest
           .withHeaders(
             "x-files-included" -> "true",
-            "Content-Type" -> "application/xml"
+            "Content-Type"     -> "application/xml"
           )
           .withBody(validTestBody)
       )
@@ -167,7 +175,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         fakeRequest
           .withHeaders(
             "x-files-included" -> "true",
-            "Content-Type" -> "application/xml"
+            "Content-Type"     -> "application/xml"
           )
           .withBody(validTestBody)
       )
@@ -188,7 +196,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         fakeRequest
           .withHeaders(
             "x-files-included" -> "true",
-            "Content-Type" -> "application/xml"
+            "Content-Type"     -> "application/xml"
           )
           .withBody(validTestBody)
       )
@@ -208,7 +216,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         fakeRequest
           .withHeaders(
             "x-files-included" -> "true",
-            "Content-Type" -> "application/xml"
+            "Content-Type"     -> "application/xml"
           )
           .withBody(validTestBody)
       )
@@ -229,7 +237,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         fakeRequest
           .withHeaders(
             "x-files-included" -> "true",
-            "Content-Type" -> "application/xml"
+            "Content-Type"     -> "application/xml"
           )
           .withBody(validTestBody)
       )

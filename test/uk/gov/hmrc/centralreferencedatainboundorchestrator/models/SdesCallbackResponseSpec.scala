@@ -21,7 +21,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{JsObject, JsSuccess, Json}
 import java.time.LocalDateTime
 
-class SdesCallbackResponseSpec extends AnyWordSpec, Matchers{
+class SdesCallbackResponseSpec extends AnyWordSpec, Matchers {
 
   private val testResponse = SdesCallbackResponse(
     "notification",
@@ -40,19 +40,19 @@ class SdesCallbackResponseSpec extends AnyWordSpec, Matchers{
   )
 
   private val testJson: JsObject = Json.obj(
-    "notification" -> "notification",
-    "filename" -> "filename",
-    "correlationID" -> "correlationID",
-    "dateTime" -> LocalDateTime.of(2024, 9, 9, 15, 30, 0, 0),
+    "notification"      -> "notification",
+    "filename"          -> "filename",
+    "correlationID"     -> "correlationID",
+    "dateTime"          -> LocalDateTime.of(2024, 9, 9, 15, 30, 0, 0),
     "checksumAlgorithm" -> Some("CheckSumAlgorithm"),
-    "checksum" -> Some("checksum"),
-    "availableUntil" -> Some(LocalDateTime.of(2024, 9, 10, 14, 30, 0, 0)),
-    "properties" -> List(
+    "checksum"          -> Some("checksum"),
+    "availableUntil"    -> Some(LocalDateTime.of(2024, 9, 10, 14, 30, 0, 0)),
+    "properties"        -> List(
       Property("Property1", "1"),
       Property("Property2", "2"),
       Property("Property3", "3")
     ),
-    "failureReason" -> Some("Some Failure")
+    "failureReason"     -> Some("Some Failure")
   )
 
   "SDES Response" should {

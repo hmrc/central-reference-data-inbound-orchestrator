@@ -23,17 +23,16 @@ import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject()(config: Configuration)
-  extends ServicesConfig(config):
+class AppConfig @Inject() (config: Configuration) extends ServicesConfig(config):
 
-  val appName: String = config.get[String]("appName")
-  val cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInDays")
-  val eisUrl: String = baseUrl("eis-api")
-  val eisPath: String = config.get[String]("microservice.services.eis-api.path")
-  val eisBearerToken: String = config.get[String]("microservice.services.eis-api.bearerToken")
-  val pollerInitialDelay: FiniteDuration = config.get[FiniteDuration]("poller.initial-delay")
-  val pollerInterval: FiniteDuration = config.get[FiniteDuration]("poller.interval")
-  val pollerRetryAfter: Duration = config.get[Duration]("poller.in-progress-retry-after")
-  val maxRetryCount: Int = config.get[Int]("poller.max-retry-count")
-  val startScheduler: Boolean = config.getOptional[Boolean]("poller.start-scheduler").getOrElse(false)
+  val appName: String                         = config.get[String]("appName")
+  val cacheTtl: Long                          = config.get[Long]("mongodb.timeToLiveInDays")
+  val eisUrl: String                          = baseUrl("eis-api")
+  val eisPath: String                         = config.get[String]("microservice.services.eis-api.path")
+  val eisBearerToken: String                  = config.get[String]("microservice.services.eis-api.bearerToken")
+  val pollerInitialDelay: FiniteDuration      = config.get[FiniteDuration]("poller.initial-delay")
+  val pollerInterval: FiniteDuration          = config.get[FiniteDuration]("poller.interval")
+  val pollerRetryAfter: Duration              = config.get[Duration]("poller.in-progress-retry-after")
+  val maxRetryCount: Int                      = config.get[Int]("poller.max-retry-count")
+  val startScheduler: Boolean                 = config.getOptional[Boolean]("poller.start-scheduler").getOrElse(false)
   val workItemRetentionPeriod: FiniteDuration = config.get[FiniteDuration]("poller.work-item-retention-period")

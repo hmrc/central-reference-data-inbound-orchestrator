@@ -21,16 +21,16 @@ import play.api.libs.json.{Json, OFormat, Writes}
 import java.time.LocalDateTime
 
 case class SdesCallbackResponse(
-                         notification: String,
-                         filename: String,
-                         correlationID: String,
-                         dateTime: LocalDateTime,
-                         checksumAlgorithm: Option[String] = None,
-                         checksum: Option[String] = None,
-                         availableUntil: Option[LocalDateTime] = None,
-                         properties: List[Property] = Nil,
-                         failureReason: Option[String] = None
-                       )
+  notification: String,
+  filename: String,
+  correlationID: String,
+  dateTime: LocalDateTime,
+  checksumAlgorithm: Option[String] = None,
+  checksum: Option[String] = None,
+  availableUntil: Option[LocalDateTime] = None,
+  properties: List[Property] = Nil,
+  failureReason: Option[String] = None
+)
 
 object SdesCallbackResponse {
   given format: OFormat[SdesCallbackResponse] = Json.format[SdesCallbackResponse]

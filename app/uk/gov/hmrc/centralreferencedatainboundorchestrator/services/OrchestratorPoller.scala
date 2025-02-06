@@ -34,18 +34,19 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 @Singleton
-class OrchestratorPoller @Inject()(
-                                    actorSystem: ActorSystem,
-                                    lockRepository: LockRepository,
-                                    workItemRepo: EISWorkItemRepository,
-                                    timestampSupport: TimestampSupport,
-                                    sdesService: SdesService,
-                                    appConfig: AppConfig
-                                  ) (using ec: ExecutionContext) extends Logging:
+class OrchestratorPoller @Inject() (
+  actorSystem: ActorSystem,
+  lockRepository: LockRepository,
+  workItemRepo: EISWorkItemRepository,
+  timestampSupport: TimestampSupport,
+  sdesService: SdesService,
+  appConfig: AppConfig
+)(using ec: ExecutionContext)
+    extends Logging:
 
   private val initialDelay: FiniteDuration = appConfig.pollerInitialDelay
-  private val interval: FiniteDuration = appConfig.pollerInterval
-  private val retryAfter: Duration = appConfig.pollerRetryAfter
+  private val interval: FiniteDuration     = appConfig.pollerInterval
+  private val retryAfter: Duration         = appConfig.pollerRetryAfter
 
   given hc: HeaderCarrier = HeaderCarrier()
 
@@ -56,17 +57,14 @@ class OrchestratorPoller @Inject()(
     schedulerInterval = interval
   )
 
-  val _: Cancellable = if appConfig.startScheduler then
-    actorSystem.scheduler.
-      scheduleAtFixedRate(initialDelay, interval)(run())(ec)
-  else
-    Cancellable.alreadyCancelled
+  val _: Cancellable =
+    if appConfig.startScheduler then actorSystem.scheduler.scheduleAtFixedRate(initialDelay, interval)(run())(ec)
+    else Cancellable.alreadyCancelled
 
-  private[services] def run(): Runnable = () => {
+  private[services] def run(): Runnable = () =>
     lockService.withLock {
       poller()
     }
-  }
 
   def poller(): Future[Boolean] = {
     val items = workItemRepo.pullOutstanding(
@@ -75,13 +73,13 @@ class OrchestratorPoller @Inject()(
     )
 
     items.flatMap {
-      case None =>
+      case None     =>
         logger.debug("We did not find any requests")
         Future.successful(true)
       case Some(wi) =>
-        try {
+        try
           sdesService.sendMessage(wi.item.payload) transform {
-            case Success(true) =>
+            case Success(true)                                               =>
               logger.info("Successfully sent message")
               sdesService.updateStatus(true, wi.item.correlationID)
               workItemRepo.completeAndDelete(wi.id)
@@ -90,16 +88,18 @@ class OrchestratorPoller @Inject()(
               logger.warn(s"failed to send work item `${wi.id}` for correlation Id `${wi.item.correlationID}`")
               failedAttempt(wi)
               Success(false)
-            case Success(false) =>
-              logger.error(s"failed to send work item `${wi.id}` ${wi.failureCount + 1} times. For correlation Id `${wi.item.correlationID}`")
+            case Success(false)                                              =>
+              logger.error(
+                s"failed to send work item `${wi.id}` ${wi.failureCount + 1} times. For correlation Id `${wi.item.correlationID}`"
+              )
               failedAttempt(wi)
               Success(false)
-            case Failure(ex) =>
+            case Failure(ex)                                                 =>
               logger.error("We got an error processing an item", ex)
               failedAttempt(wi)
               Success(false)
           }
-        } catch {
+        catch {
           case ex: Throwable =>
             logger.error(s"We got an exception $ex")
             failedAttempt(wi)
@@ -108,10 +108,8 @@ class OrchestratorPoller @Inject()(
     }
   }
 
-  private def failedAttempt(wi: WorkItem[EISRequest]): Future[Boolean] = {
-    if wi.failureCount < appConfig.maxRetryCount then
-      workItemRepo.markAs(wi.id, ProcessingStatus.Failed)
+  private def failedAttempt(wi: WorkItem[EISRequest]): Future[Boolean] =
+    if wi.failureCount < appConfig.maxRetryCount then workItemRepo.markAs(wi.id, ProcessingStatus.Failed)
     else
       sdesService.updateStatus(false, wi.item.correlationID)
       workItemRepo.markAs(wi.id, ProcessingStatus.PermanentlyFailed)
-  }

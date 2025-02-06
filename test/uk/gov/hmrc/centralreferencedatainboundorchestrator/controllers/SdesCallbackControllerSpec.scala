@@ -39,21 +39,48 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
 
   given HeaderCarrier = HeaderCarrier()
 
-  private val fakeRequest = FakeRequest("POST", "/services/crdl/callback")
-  lazy val mockSdesService: SdesService = mock[SdesService]
+  private val fakeRequest                 = FakeRequest("POST", "/services/crdl/callback")
+  lazy val mockSdesService: SdesService   = mock[SdesService]
   lazy val mockAuditHandler: AuditHandler = mock[AuditHandler]
-  private val controller = new SdesCallbackController(mockSdesService, Helpers.stubControllerComponents(),mockAuditHandler)
-  given mat: Materializer = app.injector.instanceOf[Materializer]
-  
-  private val validTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingFailure", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
-    Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+  private val controller                  =
+    new SdesCallbackController(mockSdesService, Helpers.stubControllerComponents(), mockAuditHandler)
+  given mat: Materializer                 = app.injector.instanceOf[Materializer]
 
-  private val invalidTestBody: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d", LocalDateTime.now(),
-    Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+  private val validTestBody: SdesCallbackResponse = SdesCallbackResponse(
+    "FileProcessingFailure",
+    "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+    "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d",
+    LocalDateTime.now(),
+    Option("894bed34007114b82fa39e05197f9eec"),
+    Option("MD5"),
+    Option(LocalDateTime.now()),
+    List(Property("name1", "value1")),
+    Option("None")
+  )
 
-  private val invalidUID: SdesCallbackResponse = SdesCallbackResponse("FileProcessingTest", "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip", "", LocalDateTime.now(),
-    Option("894bed34007114b82fa39e05197f9eec"), Option("MD5"), Option(LocalDateTime.now()), List(Property("name1", "value1")), Option("None"))
+  private val invalidTestBody: SdesCallbackResponse = SdesCallbackResponse(
+    "FileProcessingTest",
+    "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+    "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d",
+    LocalDateTime.now(),
+    Option("894bed34007114b82fa39e05197f9eec"),
+    Option("MD5"),
+    Option(LocalDateTime.now()),
+    List(Property("name1", "value1")),
+    Option("None")
+  )
 
+  private val invalidUID: SdesCallbackResponse = SdesCallbackResponse(
+    "FileProcessingTest",
+    "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d.zip",
+    "",
+    LocalDateTime.now(),
+    Option("894bed34007114b82fa39e05197f9eec"),
+    Option("MD5"),
+    Option(LocalDateTime.now()),
+    List(Property("name1", "value1")),
+    Option("None")
+  )
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -64,7 +91,7 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
   "POST /services/crdl/callback" should {
     "accept a valid message" in {
       when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future("some"))
-      
+
       val result = controller.sdesCallback()(
         fakeRequest
           .withBody(validTestBody)
@@ -75,7 +102,8 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     }
 
     "fail if invalid message" in {
-      when(mockSdesService.processCallback(eqTo(invalidTestBody))(using any())).thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
+      when(mockSdesService.processCallback(eqTo(invalidTestBody))(using any()))
+        .thenReturn(Future.failed(InvalidSDESNotificationError("invalid")))
 
       val result = controller.sdesCallback()(
         fakeRequest
@@ -87,7 +115,8 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     }
 
     "fail if no UID present" in {
-      when(mockSdesService.processCallback(eqTo(invalidUID))(using any())).thenReturn(Future.failed(NoMatchingUIDInMongoError("not found")))
+      when(mockSdesService.processCallback(eqTo(invalidUID))(using any()))
+        .thenReturn(Future.failed(NoMatchingUIDInMongoError("not found")))
 
       val result = controller.sdesCallback()(
         fakeRequest
@@ -99,7 +128,8 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     }
 
     "fail if Mongo Read Error" in {
-      when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future.failed(MongoReadError("failed")))
+      when(mockSdesService.processCallback(eqTo(validTestBody))(using any()))
+        .thenReturn(Future.failed(MongoReadError("failed")))
 
       val result = controller.sdesCallback()(
         fakeRequest
@@ -111,7 +141,8 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     }
 
     "fail if Mongo Write Error" in {
-      when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future.failed(MongoWriteError("failed")))
+      when(mockSdesService.processCallback(eqTo(validTestBody))(using any()))
+        .thenReturn(Future.failed(MongoWriteError("failed")))
 
       val result = controller.sdesCallback()(
         fakeRequest
@@ -123,7 +154,8 @@ class SdesCallbackControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, Match
     }
 
     "fail if Any other Error" in {
-      when(mockSdesService.processCallback(eqTo(validTestBody))(using any())).thenReturn(Future.failed(Throwable("Internal Server Error")))
+      when(mockSdesService.processCallback(eqTo(validTestBody))(using any()))
+        .thenReturn(Future.failed(Throwable("Internal Server Error")))
 
       val result = controller.sdesCallback()(
         fakeRequest
