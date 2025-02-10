@@ -42,7 +42,7 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig):
       .post(url"$url")
       .setHeader("Accept" -> "application/xml")
       .setHeader("Content-Type" -> "application/xml;charset=UTF-8")
-      .setHeader("Authorization" -> appConfig.eisBearerToken)
+      .setHeader("Authorization" -> s"Bearer ${appConfig.eisBearerToken}")
       .setHeader("X-Forwarded-Host" -> "central-reference-data-inbound-orchestrator")
       .setHeader("X-Correlation-Id" -> UUID.randomUUID().toString)
       .setHeader("Date" -> iso8601DateTimeFormat.format(ZonedDateTime.now(ZoneOffset.UTC)))
