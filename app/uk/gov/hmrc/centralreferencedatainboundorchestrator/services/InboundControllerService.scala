@@ -17,14 +17,12 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
-
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 import scala.xml.NodeSeq
 
 @Singleton

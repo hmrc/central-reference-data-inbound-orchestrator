@@ -27,8 +27,8 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.{Schema, SchemaFactory}
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, Node, NodeSeq}
 import scala.xml.Utility.trim
+import scala.xml.{Elem, Node, NodeSeq}
 
 class ValidationService extends Logging:
   private lazy val soapSchema: Schema = {

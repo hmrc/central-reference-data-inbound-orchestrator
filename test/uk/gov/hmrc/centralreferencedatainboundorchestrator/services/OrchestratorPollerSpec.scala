@@ -32,11 +32,10 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.module.OrchestratorModule
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.TimestampSupport
 import uk.gov.hmrc.mongo.lock.LockRepository
-import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus.*
+import uk.gov.hmrc.mongo.workitem.WorkItem
 import uk.gov.hmrc.play.bootstrap.tools.LogCapturing
 
 import java.time.{Duration, Instant}
@@ -110,8 +109,6 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      given hc: HeaderCarrier = HeaderCarrier()
-
       when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
         .thenReturn(Future.successful(true))
 
@@ -142,8 +139,6 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      given hc: HeaderCarrier = HeaderCarrier()
-
       when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
         .thenReturn(Future.successful(false))
 
@@ -173,8 +168,6 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
       )
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
-
-      given hc: HeaderCarrier = HeaderCarrier()
 
       when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
         .thenReturn(Future.successful(false))
@@ -208,8 +201,6 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      given hc: HeaderCarrier = HeaderCarrier()
-
       when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
         .thenReturn(Future.failed(new IllegalArgumentException))
 
@@ -240,8 +231,6 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      given hc: HeaderCarrier = HeaderCarrier()
-
       when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
         .thenThrow(new IllegalArgumentException)
 
@@ -271,8 +260,6 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
       )
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
-
-      given hc: HeaderCarrier = HeaderCarrier()
 
       when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
         .thenThrow(new IllegalArgumentException)

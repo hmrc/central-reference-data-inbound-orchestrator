@@ -17,20 +17,19 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito.when
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpec
-import org.mockito.Mockito.when
-import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status.*
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.test.ExternalWireMockSupport
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.test.ExternalWireMockSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.Elem
@@ -71,8 +70,6 @@ class EisConnectorSpec
 
   "EIS Connector" should {
     "return successfully if the service is running" in {
-
-      val expectedResponse = ACCEPTED
 
       stubFor(
         post(urlEqualTo(path))

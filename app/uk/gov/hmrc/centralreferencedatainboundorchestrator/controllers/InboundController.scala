@@ -18,18 +18,14 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import play.api.Logging
 import play.api.mvc.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import java.io.StringReader
 import javax.inject.{Inject, Singleton}
-import javax.xml.XMLConstants
-import javax.xml.transform.stream.StreamSource
-import javax.xml.validation.SchemaFactory
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
 
 @Singleton

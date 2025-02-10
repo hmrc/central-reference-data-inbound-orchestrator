@@ -17,14 +17,12 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,7 +33,6 @@ class SdesService @Inject() (
   messageWrapperRepository: MessageWrapperRepository,
   workItemRepo: EISWorkItemRepository,
   eisConnector: EisConnector,
-  auditHandler: AuditHandler,
   appConfig: AppConfig
 )(using executionContext: ExecutionContext)
     extends Logging:
@@ -83,7 +80,7 @@ class SdesService @Inject() (
         )
     }
 
-  private def forwardMessage(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier) =
+  private def forwardMessage(sdesCallback: SdesCallbackResponse) =
     messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
       case Some(messageWrapper) =>
         workItemRepo
