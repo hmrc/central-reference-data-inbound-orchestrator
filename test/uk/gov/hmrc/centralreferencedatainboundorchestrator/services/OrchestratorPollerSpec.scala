@@ -22,6 +22,7 @@ import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -43,7 +44,13 @@ import java.time.{Duration, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEach, Matchers, LogCapturing:
+class OrchestratorPollerSpec
+    extends AnyWordSpec,
+      GuiceOneAppPerSuite,
+      BeforeAndAfterEach,
+      Matchers,
+      LogCapturing,
+      Eventually:
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -90,8 +97,9 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
-        syncLogs()
-        logEvents.count(_.getLevel == Level.DEBUG) shouldBe 1
+        eventually {
+          logEvents.count(_.getLevel == Level.DEBUG) shouldBe 1
+        }
       }
 
       verify(sdesService, times(0)).sendMessage(any)(using any)
@@ -117,11 +125,12 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
-        syncLogs()
-        logEvents.count(event =>
-          event.getLevel == Level.INFO &&
-            event.getFormattedMessage == "Successfully sent message"
-        ) shouldBe 1
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.INFO &&
+              event.getFormattedMessage == "Successfully sent message"
+          ) shouldBe 1
+        }
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
@@ -149,11 +158,12 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
-        syncLogs()
-        logEvents.count(event =>
-          event.getLevel == Level.WARN &&
-            event.getFormattedMessage == s"failed to send work item `${wi.id}` for correlation Id `correlationID`"
-        ) shouldBe 1
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.WARN &&
+              event.getFormattedMessage == s"failed to send work item `${wi.id}` for correlation Id `correlationID`"
+          ) shouldBe 1
+        }
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
@@ -181,12 +191,12 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
-        syncLogs()
-        logEvents.foreach(println)
-        logEvents.count(event =>
-          event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == s"failed to send work item `${wi.id}` 4 times. For correlation Id `correlationID`"
-        ) shouldBe 1
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.ERROR &&
+              event.getFormattedMessage == s"failed to send work item `${wi.id}` 4 times. For correlation Id `correlationID`"
+          ) shouldBe 1
+        }
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
@@ -215,11 +225,12 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
-        syncLogs()
-        logEvents.count(event =>
-          event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == "We got an error processing an item"
-        ) shouldBe 1
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.ERROR &&
+              event.getFormattedMessage == "We got an error processing an item"
+          ) shouldBe 1
+        }
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
@@ -247,11 +258,12 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
-        syncLogs()
-        logEvents.count(event =>
-          event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
-        ) shouldBe 1
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.ERROR &&
+              event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
+          ) shouldBe 1
+        }
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
@@ -279,11 +291,12 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
         poller.poller()
-        syncLogs()
-        logEvents.count(event =>
-          event.getLevel == Level.ERROR &&
-            event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
-        ) shouldBe 1
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.ERROR &&
+              event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
+          ) shouldBe 1
+        }
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
@@ -291,10 +304,6 @@ class OrchestratorPollerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAnd
       verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(PermanentlyFailed), any)
     }
   }
-
-  /** The logging is asynchronous so we need a short pause to allow the log capturing to catch up
-    */
-  def syncLogs(): Unit = Thread.sleep(20)
 
 // A test stub to expose the logger.
 class StubOrchestratorPoller(
