@@ -30,7 +30,6 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{Property, SdesCallbackResponse}
 
 import java.time.LocalDateTime
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallbackResponse.*
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.mongo.test.MongoSupport
 

@@ -19,10 +19,9 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.audit
 import com.google.inject.Inject
 import play.api.libs.json.{JsObject, JsString, Json}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageWrapper, SdesCallbackResponse}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SdesCallbackResponse
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions
-import uk.gov.hmrc.play.audit.http.connector.AuditResult.{Disabled, Failure}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 

@@ -17,30 +17,27 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import org.apache.pekko.stream.Materializer
+import org.bson.types.ObjectId
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalactic.Prettifier.default
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.RecoverMethods.recoverToExceptionIf
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
-import org.bson.types.ObjectId
-import org.scalatest.BeforeAndAfterEach
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 
-import java.time.LocalDateTime
-import java.time.Instant
+import java.time.{Instant, LocalDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.Elem
@@ -66,7 +63,6 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       mockMessageWrapperRepository,
       mockEISWorkItemRepository,
       mockEisConnector,
-      mockAuditHandler,
       mockAppConfig
     )
 
@@ -79,8 +75,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
     reset(
       mockMessageWrapperRepository,
       mockEISWorkItemRepository,
-      mockEisConnector,
-      mockAuditHandler
+      mockEisConnector
     )
   }
 
@@ -312,8 +307,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
     }
 
     "should return exception NoMatchingUIDInMongoError when forwarding a message but Mongo fails to find UID in Mongo Matching" in {
-      val uid     = UUID.randomUUID().toString
-      val message = messageWrapper(uid)
+      val uid = UUID.randomUUID().toString
 
       when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
         .thenReturn(Future.successful(None))
