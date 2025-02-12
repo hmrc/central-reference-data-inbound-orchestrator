@@ -20,25 +20,30 @@ import scala.xml.Elem
 
 object InboundSoapMessage {
 
+
   val valid_soap_message: Elem =
-    <S:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:S="http://www.w3.org/2003/05/soap-envelope">
-      <S:Header>
-        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataSubmissionResultReceiverCBS/ReceiveReferenceDataSubmissionResult</Action>
-      </S:Header>
-      <S:Body>
-        <ReceiveReferenceDataSubmissionResult>
-          <MessageHeader>
-            <messageID>testMessageId123</messageID>
-            <messageName>test message name</messageName>
-            <sender>CS/RD2</sender>
-            <recipient>DPS</recipient>
-            <timeCreation>2023-10-03T16:00:00</timeCreation>
-          </MessageHeader>
-          <TaskIdentifier>TASKID12345</TaskIdentifier>
-          <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b301</IncludedBinaryObject>
-        </ReceiveReferenceDataSubmissionResult>
-      </S:Body>
-    </S:Envelope>
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+                   xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
+                   xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v4:ReceiveReferenceDataReqMsg>
+          <v41:MessageHeader>
+            <v2:messageID>testMessageId123</v2:messageID>
+            <v2:messageName>test message name</v2:messageName>
+            <v2:sender>CS/RD2</v2:sender>
+            <v2:recipient>DPS</v2:recipient>
+            <v2:timeCreation>2023-10-03T16:00:00</v2:timeCreation>
+          </v41:MessageHeader>
+          <v41:TaskIdentifier>TASKID12345</v41:TaskIdentifier>
+          <v41:ReceiveReferenceDataRequestResult>c04a1612-705d-4373-8840-9d137b14b301</v41:ReceiveReferenceDataRequestResult>
+        </v4:ReceiveReferenceDataReqMsg>
+      </soap:Body>
+    </soap:Envelope>
 
   val invalid_soap_message: Elem = <MainMessage>
     <Body>

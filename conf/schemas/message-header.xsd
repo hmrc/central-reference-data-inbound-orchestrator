@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This is a simplified version of the V2 MessageHeaderType.xsd from the CSRD2 Service Specifications -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2"
+           targetNamespace="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2"
+           elementFormDefault="qualified">
+    <xs:complexType name="MessageHeaderType">
+        <xs:sequence>
+            <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

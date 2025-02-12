@@ -16,97 +16,48 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
-import org.w3c.dom.Document
 import play.api.Logging
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 
-import java.io.{ByteArrayInputStream, StringReader}
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.Source
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamSource
-import javax.xml.validation.{Schema, SchemaFactory}
-import scala.util.{Failure, Success, Try}
+import javax.inject.Inject
+import scala.util.Try
 import scala.xml.Utility.trim
-import scala.xml.{Elem, Node, NodeSeq}
+import scala.xml.factory.XMLLoader
+import scala.xml.{Elem, Node, NodeSeq, XML}
 
-class ValidationService extends Logging:
-  private lazy val soapSchema: Schema = {
-    val factory             = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-    val soapXsd             = getClass.getResourceAsStream("/schemas/soap-envelope.xsd")
-    val streamSourceSoapXsd = new StreamSource(soapXsd)
-    val xmlXsd              = getClass.getResourceAsStream("/schemas/xml.xsd")
-    val streamSourceXmlXsd  = new StreamSource(xmlXsd)
-    val schema              = factory.newSchema(Array[Source](streamSourceXmlXsd, streamSourceSoapXsd))
-    streamSourceSoapXsd.getInputStream.close()
-    streamSourceXmlXsd.getInputStream.close()
-    schema
-  }
+class ValidationService @Inject() (val appConfig: AppConfig, val loader: XMLLoader[Elem]) extends Logging:
+  private def validateSoapMessage(loader: XMLLoader[Elem], soapMessage: String): Option[Elem] = {
+    val loadMessage = Try(loader.loadString(soapMessage))
 
-  private lazy val bodySchema: Schema = {
-    val factory             = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-    val bodyXsd             = getClass.getResourceAsStream("/schemas/receive-reference-data-submission-result.xsd")
-    val streamSourceBodyXsd = new StreamSource(bodyXsd)
-    val schema              = factory.newSchema(streamSourceBodyXsd)
-    streamSourceBodyXsd.getInputStream.close()
-    schema
-  }
-
-  private[services] def validateSoapMessage(soapMessage: NodeSeq): Boolean = {
-    val bis            = new ByteArrayInputStream(soapMessage.toString.getBytes)
-    val builderFactory = DocumentBuilderFactory.newInstance()
-    builderFactory.setNamespaceAware(true)
-    val builder        = builderFactory.newDocumentBuilder()
-    val xml: Document  = builder.parse(bis)
-    val validator      = soapSchema.newValidator()
-    Try {
-      validator.validate(new DOMSource(xml))
-      true
-    } match {
-      case Success(valid) => true
-      case Failure(ex)    => false
-    }
-  }
-
-  private[services] def getSoapBody(soapMessage: NodeSeq): Option[Node] =
-    (soapMessage \\ "Body").headOption
-      .fold[Option[Node]](None)(body => body.child.collectFirst { case e: Elem => e })
-
-  private[services] def validateMessageWrapper(messageWrapper: NodeSeq): Boolean =
-    Try {
-      val validator = bodySchema.newValidator()
-      validator.validate(new StreamSource(new StringReader(messageWrapper.toString)))
-      true
-    } match {
-      case Success(_)  => true
-      case Failure(ex) =>
-        logger.error(
-          s"Failed to validate schema of message - potentially an error report with body: $messageWrapper",
-          ex
-        )
-        false
+    loadMessage.failed.foreach { ex =>
+      logger.error(
+        s"Failed to validate schema of message: $soapMessage",
+        ex
+      )
     }
 
-  private[services] def extractInnerMessage(body: NodeSeq): NodeSeq = {
-    val taskId             = (body \\ "ReceiveReferenceDataSubmissionResult" \ "TaskIdentifier").text
-    val correlationId      = (body \\ "ReceiveReferenceDataSubmissionResult" \ "IncludedBinaryObject").text
-    val innerMessage: Elem = <MainMessage>
-      <Body>
-        <TaskIdentifier>{taskId}</TaskIdentifier>
-        <AttributeName>ReferenceData</AttributeName>
-        <MessageType>gZip</MessageType>
-        <IncludedBinaryObject>{correlationId}</IncludedBinaryObject>
-        <MessageSender>CS/RD2</MessageSender>
-      </Body>
-    </MainMessage>
-    trim(innerMessage)
+    loadMessage.toOption
   }
 
-  def validateFullSoapMessage(soapMessage: NodeSeq): Option[NodeSeq] =
-    if validateSoapMessage(soapMessage) then
-      for {
-        body        <- getSoapBody(soapMessage)
-        if validateMessageWrapper(body)
-        innerMessage = extractInnerMessage(body)
-      } yield innerMessage
-    else None
+  private def extractInnerMessage(soapMessage: NodeSeq): Option[Node] =
+    for
+      requestMessage <- (soapMessage \\ "Body" \ "ReceiveReferenceDataReqMsg").headOption
+      taskId         <- (requestMessage \ "TaskIdentifier").headOption
+      correlationId  <- (requestMessage \ "ReceiveReferenceDataRequestResult").headOption
+    yield trim(
+      <MainMessage>
+        <Body>
+          <TaskIdentifier>{taskId.text}</TaskIdentifier>
+          <AttributeName>ReferenceData</AttributeName>
+          <MessageType>gZip</MessageType>
+          <IncludedBinaryObject>{correlationId.text}</IncludedBinaryObject>
+          <MessageSender>CS/RD2</MessageSender>
+        </Body>
+      </MainMessage>
+    )
+
+  def validateFullSoapMessage(soapMessage: String): Option[Node] =
+    for
+      soapXml      <- validateSoapMessage(if appConfig.xsdValidation then loader else XML, soapMessage)
+      innerMessage <- extractInnerMessage(soapXml)
+    yield innerMessage

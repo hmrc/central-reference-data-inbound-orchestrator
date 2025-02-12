@@ -40,8 +40,8 @@ class InboundController @Inject() (
 
   private val FileIncludedHeader = "x-files-included"
 
-  def submit(): Action[NodeSeq] = Action.async(parse.xml) { implicit request =>
-    auditHandler.auditNewMessageWrapper(request.body.toString)
+  def submit(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
+    auditHandler.auditNewMessageWrapper(request.body)
     if hasFilesHeader then
       validationService.validateFullSoapMessage(request.body) match {
         case Some(body) =>
@@ -64,5 +64,5 @@ class InboundController @Inject() (
         }
     }
 
-  private def hasFilesHeader(implicit request: Request[NodeSeq]): Boolean =
+  private def hasFilesHeader(implicit request: Request[?]): Boolean =
     request.headers.get(FileIncludedHeader).exists(_.toBooleanOption.getOrElse(false))
