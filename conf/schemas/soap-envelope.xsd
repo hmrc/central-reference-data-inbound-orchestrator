@@ -1,6 +1,16 @@
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.w3.org/2003/05/soap-envelope" targetNamespace="http://www.w3.org/2003/05/soap-envelope" elementFormDefault="qualified">
+
+<!--
+This is a modified version of the SOAP Envelope xsd from https://www.w3.org/2003/05/soap-envelope/soap-envelope.xsd.
+The change made was to require that the content of the SOAP body conforms to the ReceiveReferenceDataReqMsg from CSRD2.
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.w3.org/2003/05/soap-envelope"
+           xmlns:reqmsg="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+           targetNamespace="http://www.w3.org/2003/05/soap-envelope" elementFormDefault="qualified">
 
     <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+
+    <xs:import namespace="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4" schemaLocation="request-message.xsd"/>
 
     <!-- Envelope, header and body -->
     <xs:element name="Envelope" type="tns:Envelope"/>
@@ -28,7 +38,8 @@
     <xs:element name="Body" type="tns:Body"/>
     <xs:complexType name="Body">
         <xs:sequence>
-            <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+            <!-- NOTE: This change to the original SOAP Envelope schema applies the validation of the CS/RD2 request message -->
+            <xs:element ref="reqmsg:ReceiveReferenceDataReqMsg" />
         </xs:sequence>
         <xs:anyAttribute namespace="##other" processContents="lax"/>
     </xs:complexType>
@@ -115,9 +126,10 @@
     </xs:complexType>
 
 
-    <!-- Global element and associated types for managing version transition as described in Appendix A of the SOAP Version 1.2 Part 1 Recommendation  -->  <xs:complexType name="SupportedEnvType">
-    <xs:attribute name="qname" type="xs:QName" use="required"/>
-</xs:complexType>
+    <!-- Global element and associated types for managing version transition as described in Appendix A of the SOAP Version 1.2 Part 1 Recommendation  -->
+    <xs:complexType name="SupportedEnvType">
+        <xs:attribute name="qname" type="xs:QName" use="required"/>
+    </xs:complexType>
 
     <xs:element name="Upgrade" type="tns:UpgradeType"/>
     <xs:complexType name="UpgradeType">

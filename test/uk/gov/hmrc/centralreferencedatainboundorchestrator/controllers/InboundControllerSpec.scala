@@ -154,15 +154,20 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
     }
 
     "return Bad Request if there is no XML content" in {
+      validateFullSoapMessage(false)
+
       val result = controller.submit()(
         fakeRequest
           .withHeaders(
             "x-files-included" -> "true"
           )
       )
-      status(result) shouldBe UNSUPPORTED_MEDIA_TYPE
+
+      status(result) shouldBe BAD_REQUEST
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
       verify(mockInboundService, times(0)).processMessage(any)
-      verify(mockValidationService, times(0)).validateFullSoapMessage(any)
     }
 
     "return internal server error if process message fails" in {

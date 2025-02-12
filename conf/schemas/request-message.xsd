@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+This is a simplified version of the V4 ICCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS.xsd from the CSRD2 Service Specifications
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+           xmlns:reqtype="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
+           targetNamespace="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+           elementFormDefault="qualified">
+    <xs:import namespace="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
+               schemaLocation="request-type.xsd"/>
+    <xs:element name="ReceiveReferenceDataReqMsg" type="reqtype:ReceiveReferenceDataRequestType" />
+</xs:schema>
