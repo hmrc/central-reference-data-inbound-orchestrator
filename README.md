@@ -21,13 +21,13 @@ Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-
 
 ## API
 
-| Path - internal routes prefixed by `/central-reference-data-inbound-orchestrator` | Supported Methods | Type     | Description                                                                                    |
-|-----------------------------------------------------------------------------------|-------------------|----------|------------------------------------------------------------------------------------------------|
-| `/`                                                                               | POST              | Internal | Endpoint to receive xml messages and store in mongo. [See ItTestPayloads examples](it/helpers) |
-| `/services/crdl/callback`                                                         | POST              | Internal | Endpoint to receive antivirus Scan result from SDES.                                           |
-| `/test-only/message-wrappers`                                                     | DELETE            | Test     | Endpoint to delete all message wrappers in mongo.                                              |
-| `/test-only/message-wrappers/:id`                                                 | GET               | Test     | Endpoint to get message wrapper status by id from mongo.                                       |
-| `/test-only/eis-work-items`                                                       | DELETE            | Test     | Endpoint to delete all eis work items.                                                         |
+| Path - internal routes prefixed by `/central-reference-data-inbound-orchestrator` | Supported Methods | Type     | Description                                                                                        |
+|-----------------------------------------------------------------------------------|-------------------|----------|----------------------------------------------------------------------------------------------------|
+| `/`                                                                               | POST              | Internal | Endpoint to receive xml messages and store in mongo. [See ItTestPayloads examples](it/test/helpers)|
+| `/services/crdl/callback`                                                         | POST              | Internal | Endpoint to receive antivirus Scan result from SDES.                                               |
+| `/test-only/message-wrappers`                                                     | DELETE            | Test     | Endpoint to delete all message wrappers in mongo.                                                  |
+| `/test-only/message-wrappers/:id`                                                 | GET               | Test     | Endpoint to get message wrapper status by id from mongo.                                           |
+| `/test-only/eis-work-items`                                                       | DELETE            | Test     | Endpoint to delete all eis work items.                                                             |
 
 
 ## Outbound Call to EIS
@@ -65,7 +65,7 @@ the call if something happens during the call. The configuration entries are all
 
 Upon receiving the inbound soap message XML from public soap proxy, we validate it against the message XML schemas (XSD) before next step message processing.
 - All inbound soap messages are first validated against general schema [xml.xsd](conf/schemas/xml.xsd) and [soap envelope schema](conf/schemas/soap-envelope.xsd).
-- Valid soap messages are then validated against the [message wrapper schema](conf/schemas/receive-reference-data-submission-result.xsd) before we create a record in the Message wrapper collection.
+- Valid soap messages are then validated against the message wrapper schemas like [request-message](conf/schemas/request-message.xsd), [request-type](conf/schemas/request-type.xsd) and [message-header](conf/schemas/message-header.xsd) before we create a record in the Message wrapper collection.
 
 [Unit tests](test/uk/gov/hmrc/centralreferencedatainboundorchestrator/controllers/InboundControllerSpec.scala) and
 [integration tests](it/test/uk/gov/hmrc/centralreferencedatainboundorchestrator/controllers/InboundControllerISpec.scala) for schema validation in inbound controller.
@@ -100,7 +100,7 @@ If a message is received with the following header: `x-files-included: true` the
   "receivedTimestamp": {
     "$date": "2024-08-08T10:07:24.435Z"
   },
-  "status": "received",
+  "status": "Received",
   "uid": "c04a1612-705d-4373-8840-9d137b14b30a"
 }
 ```

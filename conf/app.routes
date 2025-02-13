@@ -1,4 +1,4 @@
 # microservice specific routes
 
-POST       /                        uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers.InboundController.submit()
+POST       /                                      uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers.InboundController.submit()
 POST       /services/crdl/callback                uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers.SdesCallbackController.sdesCallback()
