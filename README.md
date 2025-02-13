@@ -64,12 +64,16 @@ the call if something happens during the call. The configuration entries are all
 ### Inbound message validation
 
 Upon receiving the inbound soap message XML from public soap proxy, we validate it against the message XML schemas (XSD) before next step message processing.
-- All inbound soap messages are first validated against general schema [xml.xsd](conf/schemas/xml.xsd) and [soap envelope schema](conf/schemas/soap-envelope.xsd).
-- Valid soap messages are then validated against the message wrapper schemas like [request-message](conf/schemas/request-message.xsd), [request-type](conf/schemas/request-type.xsd) and [message-header](conf/schemas/message-header.xsd) before we create a record in the Message wrapper collection.
 
-[Unit tests](test/uk/gov/hmrc/centralreferencedatainboundorchestrator/controllers/InboundControllerSpec.scala) and
-[integration tests](it/test/uk/gov/hmrc/centralreferencedatainboundorchestrator/controllers/InboundControllerISpec.scala) for schema validation in inbound controller.
-Sample valid and invalid soap messages could be found [here](it/test/helpers/InboundSoapMessage.scala).
+All inbound SOAP messages are validated against the [SOAP Envelope schema](conf/schemas/soap-envelope.xsd).
+
+The SOAP envelope schema has been modified with the additional requirement that the body validates against a simplified version of the [ReferenceDataExportReceiverCBS](conf/schemas/request-message.xsd) callback service schema from the CSRD2 Service Specification.
+
+Originally, the service did this as a two-step process, first validating the SOAP Envelope and then validating the message body as a standalone document. However, this would not have worked if there were namespaced elements in the message body as the namespace declarations would be on the SOAP Envelope element.
+
+After the request has passed this validation, we extract the fields required from the request message and create a record in the message wrapper collection.
+
+Sample messages can be found [here](it/test/helpers/InboundSoapMessage.scala).
 
 ## Databases
 ### Message wrapper Collection
