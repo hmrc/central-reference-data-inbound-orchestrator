@@ -21,13 +21,13 @@ Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-
 
 ## API
 
-| Path - internal routes prefixed by `/central-reference-data-inbound-orchestrator` | Supported Methods | Type     | Description                                                                                    |
-|-----------------------------------------------------------------------------------|-------------------|----------|------------------------------------------------------------------------------------------------|
-| `/`                                                                               | POST              | Internal | Endpoint to receive xml messages and store in mongo. [See ItTestPayloads examples](it/helpers) |
-| `/services/crdl/callback`                                                         | POST              | Internal | Endpoint to receive antivirus Scan result from SDES.                                           |
-| `/test-only/message-wrappers`                                                     | DELETE            | Test     | Endpoint to delete all message wrappers in mongo.                                              |
-| `/test-only/message-wrappers/:id`                                                 | GET               | Test     | Endpoint to get message wrapper status by id from mongo.                                       |
-| `/test-only/eis-work-items`                                                       | DELETE            | Test     | Endpoint to delete all eis work items.                                                         |
+| Path - internal routes prefixed by `/central-reference-data-inbound-orchestrator` | Supported Methods | Type     | Description                                                                                        |
+|-----------------------------------------------------------------------------------|-------------------|----------|----------------------------------------------------------------------------------------------------|
+| `/`                                                                               | POST              | Internal | Endpoint to receive xml messages and store in mongo. [See ItTestPayloads examples](it/test/helpers)|
+| `/services/crdl/callback`                                                         | POST              | Internal | Endpoint to receive antivirus Scan result from SDES.                                               |
+| `/test-only/message-wrappers`                                                     | DELETE            | Test     | Endpoint to delete all message wrappers in mongo.                                                  |
+| `/test-only/message-wrappers/:id`                                                 | GET               | Test     | Endpoint to get message wrapper status by id from mongo.                                           |
+| `/test-only/eis-work-items`                                                       | DELETE            | Test     | Endpoint to delete all eis work items.                                                             |
 
 
 ## Outbound Call to EIS
@@ -104,7 +104,7 @@ If a message is received with the following header: `x-files-included: true` the
   "receivedTimestamp": {
     "$date": "2024-08-08T10:07:24.435Z"
   },
-  "status": "received",
+  "status": "Received",
   "uid": "c04a1612-705d-4373-8840-9d137b14b30a"
 }
 ```
