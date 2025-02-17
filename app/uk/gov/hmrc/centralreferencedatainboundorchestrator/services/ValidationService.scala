@@ -43,7 +43,9 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: XMLLoad
     for
       requestMessage <- (soapMessage \\ "Body" \ "ReceiveReferenceDataReqMsg").headOption
       taskId         <- (requestMessage \ "TaskIdentifier").headOption
-      correlationId  <- (requestMessage \ "ReceiveReferenceDataRequestResult").headOption
+      correlationId  <- (requestMessage \ "ReceiveReferenceDataRequestResult").headOption.orElse(
+                          (requestMessage \ "ErrorReport").headOption
+                        )
     yield trim(
       <MainMessage>
         <Body>

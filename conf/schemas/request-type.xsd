@@ -14,7 +14,10 @@ This is a simplified version of the V4 ReferenceDataExportReceiverCBSServiceType
         <xs:sequence>
             <xs:element name="MessageHeader" type="header:MessageHeaderType" minOccurs="1" maxOccurs="1"/>
             <xs:element name="TaskIdentifier" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="ReceiveReferenceDataRequestResult" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:choice>
+                <xs:element name="ReceiveReferenceDataRequestResult" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="ErrorReport" type="xs:string" minOccurs="1" maxOccurs="1" />
+            </xs:choice>
         </xs:sequence>
     </xs:complexType>
 </xs:schema>

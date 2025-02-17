@@ -91,6 +91,28 @@ class InboundControllerISpec extends AnyWordSpec,
       response.status shouldBe ACCEPTED
     }
 
+    "return Accepted with a valid Error Report request" in {
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
+      val response =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .post(InboundSoapMessage.valid_soap_error_report_message.toString)
+          .futureValue
+
+      response.status shouldBe ACCEPTED
+    }
+
     "return bad request if the request does not contain all of the headers" in {
       stubFor(
         post(urlEqualTo("/write/audit"))
