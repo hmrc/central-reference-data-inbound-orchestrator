@@ -17,6 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.google.inject.Inject
+import play.api.Logging
 import play.api.http.Status.ACCEPTED
 import play.api.libs.ws.XMLBodyWritables.writeableOf_NodeSeq
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
@@ -30,14 +31,17 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.NodeSeq
 
-class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig):
+class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig) extends Logging:
 
   def forwardMessage(body: NodeSeq)(using
     ec: ExecutionContext,
     hc: HeaderCarrier
-  ): Future[Boolean] =
+  ): Future[Boolean] ={
+
     val url                   = s"${appConfig.eisUrl}${appConfig.eisPath}"
     val iso8601DateTimeFormat = DateTimeFormatter.ofPattern("EEE dd MMM yyyy HH:mm:ss 'GMT'")
+
+    logger.info(s" request to EIS data: url $url token ${appConfig.eisBearerToken} body $body")
     httpClient
       .post(url"$url")
       .setHeader("Accept" -> "application/xml")
@@ -49,3 +53,4 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig):
       .withBody(body)
       .execute[HttpResponse]
       .map(_.status == ACCEPTED)
+  }
