@@ -31,6 +31,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.Elem
 
@@ -55,7 +56,7 @@ class EisConnectorSpec
 
   private val path = "/csrd/referencedataupdate/v1"
 
-  private val connector = new EisConnector(httpClientV2, appConfig)
+  private val connector = new EisConnector(httpClientV2, appConfig, Clock.systemUTC())
 
   private val testBody: Elem =
     <MainMessage>

@@ -19,6 +19,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.config
 import com.google.inject.{AbstractModule, TypeLiteral}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.ValidatingXmlLoader
 
+import java.time.Clock
 import scala.xml.Elem
 import scala.xml.factory.XMLLoader
 
@@ -27,3 +28,4 @@ class Module extends AbstractModule:
   override def configure(): Unit =
     bind(classOf[AppConfig]).asEagerSingleton()
     bind(new TypeLiteral[XMLLoader[Elem]]() {}).to(classOf[ValidatingXmlLoader])
+    bind(classOf[Clock]).toInstance(Clock.systemUTC())
