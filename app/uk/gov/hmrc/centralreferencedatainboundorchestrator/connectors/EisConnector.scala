@@ -18,6 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.google.inject.Inject
 import play.api.Logging
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.XMLBodyWritables.writeableOf_NodeSeq
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.http.HttpReads.Implicits.*
@@ -25,37 +26,39 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 
 import java.time.format.DateTimeFormatter
-import java.time.{ZoneOffset, ZonedDateTime}
+import java.time.{Clock, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
 
-class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig) extends Logging:
+class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, clock: Clock) extends Logging:
 
+  private val httpDateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
   def forwardMessage(body: NodeSeq)(using
     ec: ExecutionContext,
     hc: HeaderCarrier
   ): Future[Boolean] =
-    val url                   = s"${appConfig.eisUrl}${appConfig.eisPath}"
-    val iso8601DateTimeFormat = DateTimeFormatter.ofPattern("EEE dd MMM yyyy HH:mm:ss 'GMT'")
+    val url           = s"${appConfig.eisUrl}${appConfig.eisPath}"
+    val now           = clock.instant().atZone(ZoneOffset.UTC)
+    val correlationId = UUID.randomUUID().toString
     httpClient
       .post(url"$url")
-      .setHeader("Accept" -> "application/xml")
-      .setHeader("Content-Type" -> "application/xml;charset=UTF-8")
-      .setHeader("Authorization" -> s"Bearer ${appConfig.eisBearerToken}")
-      .setHeader("X-Forwarded-Host" -> "central-reference-data-inbound-orchestrator")
-      .setHeader("X-Correlation-Id" -> UUID.randomUUID().toString)
-      .setHeader("Date" -> iso8601DateTimeFormat.format(ZonedDateTime.now(ZoneOffset.UTC)))
+      .setHeader(HeaderNames.ACCEPT -> MimeTypes.XML)
+      .setHeader(HeaderNames.CONTENT_TYPE -> MimeTypes.XML)
+      .setHeader(HeaderNames.AUTHORIZATION -> s"Bearer ${appConfig.eisBearerToken}")
+      .setHeader(HeaderNames.X_FORWARDED_HOST -> "central-reference-data-inbound-orchestrator")
+      .setHeader("X-Correlation-Id" -> correlationId)
+      .setHeader(HeaderNames.DATE -> httpDateFormatter.format(now))
       .withBody(body)
       .execute[Either[UpstreamErrorResponse, Unit]]
       .transformWith {
         case Success(Right(_))  =>
           Future.successful(true)
         case Success(Left(err)) =>
-          logger.error("Error while calling EIS", err)
+          logger.error(s"Error while calling EIS with correlation ID : $correlationId", err)
           Future.successful(false)
-        case Failure(err) =>
-          logger.error("Error while calling EIS", err)
+        case Failure(err)       =>
+          logger.error(s"Error while calling EIS with correlation ID : $correlationId", err)
           Future.successful(false)
       }
