@@ -18,8 +18,9 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.google.inject.Inject
 import play.api.Logging
-import play.api.http.{HeaderNames, MimeTypes}
+import play.api.http.{ContentTypes, HeaderNames, MimeTypes}
 import play.api.libs.ws.XMLBodyWritables.writeableOf_NodeSeq
+import play.api.mvc.Codec
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -33,8 +34,8 @@ import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
 
 class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, clock: Clock) extends Logging:
-
   private val httpDateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+
   def forwardMessage(body: NodeSeq)(using
     ec: ExecutionContext,
     hc: HeaderCarrier
@@ -45,7 +46,7 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, cl
     httpClient
       .post(url"$url")
       .setHeader(HeaderNames.ACCEPT -> MimeTypes.XML)
-      .setHeader(HeaderNames.CONTENT_TYPE -> MimeTypes.XML)
+      .setHeader(HeaderNames.CONTENT_TYPE -> ContentTypes.XML(Codec.utf_8))
       .setHeader(HeaderNames.AUTHORIZATION -> s"Bearer ${appConfig.eisBearerToken}")
       .setHeader(HeaderNames.X_FORWARDED_HOST -> "central-reference-data-inbound-orchestrator")
       .setHeader("X-Correlation-Id" -> correlationId)
