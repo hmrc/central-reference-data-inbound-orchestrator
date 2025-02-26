@@ -17,20 +17,21 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors
 
 import com.google.inject.Inject
-import play.api.http.Status.ACCEPTED
+import play.api.Logging
 import play.api.libs.ws.XMLBodyWritables.writeableOf_NodeSeq
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
-import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 
-import java.time.{ZoneOffset, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{ZoneOffset, ZonedDateTime}
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
 
-class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig):
+class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig) extends Logging:
 
   def forwardMessage(body: NodeSeq)(using
     ec: ExecutionContext,
@@ -47,5 +48,14 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig):
       .setHeader("X-Correlation-Id" -> UUID.randomUUID().toString)
       .setHeader("Date" -> iso8601DateTimeFormat.format(ZonedDateTime.now(ZoneOffset.UTC)))
       .withBody(body)
-      .execute[HttpResponse]
-      .map(_.status == ACCEPTED)
+      .execute[Either[UpstreamErrorResponse, Unit]]
+      .transformWith {
+        case Success(Right(_))  =>
+          Future.successful(true)
+        case Success(Left(err)) =>
+          logger.error("Error while calling EIS", err)
+          Future.successful(false)
+        case Failure(err) =>
+          logger.error("Error while calling EIS", err)
+          Future.successful(false)
+      }
