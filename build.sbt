@@ -11,7 +11,7 @@ lazy val microservice = Project("central-reference-data-inbound-orchestrator", f
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
-    scalacOptions += "-Wconf:src=routes/.*:s",
+    scalacOptions ++= Seq("-Wconf:src=routes/.*:s", "-Wconf:msg=Flag.*repeatedly:s"),
     resolvers += Resolver.jcenterRepo,
     PlayKeys.playDefaultPort := 7250,
   )
