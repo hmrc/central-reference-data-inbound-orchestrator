@@ -33,7 +33,7 @@ Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-
 ## Outbound Call to EIS
 
 When we have received confirmation that the reference data file has been successfully 
-processed we need to forward the message wrapper on to EIS. There are a few configuration 
+processed we need to forward the message wrapper on to EIS(API number CRDL01 a.k.a. CSRD120). There are a few configuration
 entries which help define this process.
 
 ### Endpoint definition
