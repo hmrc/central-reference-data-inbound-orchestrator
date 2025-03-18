@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+This is a simplified version of the V1 Monitoring.xsd from the CSRD2 Service Specifications
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1"
+           targetNamespace="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1"
+           elementFormDefault="qualified">
+    <xs:element name="isAliveReqMsg">
+        <xs:complexType>
+            <xs:sequence />
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

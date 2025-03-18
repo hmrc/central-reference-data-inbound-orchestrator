@@ -19,7 +19,6 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.*
-import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -29,6 +28,8 @@ import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 
@@ -53,8 +54,8 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
 
   private val auditSuccess = Future.successful(Success)
 
-  // This is the expected body we need to send to EIS, using this for test purposes
-  // until we get a real sample input file.
+  private val validReferenceDataMessage = InboundSoapMessage.valid_soap_message
+
   private val validTestBody: Elem = <MainMessage>
       <Body>
         <TaskIdentifier>780912</TaskIdentifier>
@@ -64,15 +65,6 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       	<MessageSender>CS/RD2</MessageSender>
       </Body>
     </MainMessage>
-
-  private val validTestBodyWithoutCorrelationId: Elem = <MainMessage>
-    <Body>
-      <TaskIdentifier>780912</TaskIdentifier>
-      <AttributeName>ReferenceData</AttributeName>
-      <MessageType>gZip</MessageType>
-      <MessageSender>CS/RD2</MessageSender>
-    </Body>
-  </MainMessage>
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -84,26 +76,12 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       .thenReturn(auditSuccess)
   }
 
-  private def validateFullSoapMessage(
-    includeBody: Boolean,
-    includeCorrelationID: Boolean = true
-  ): OngoingStubbing[Option[NodeSeq]] = {
-    val result = (includeBody, includeCorrelationID) match {
-      case (false, _)   => None
-      case (true, true) => Some(validTestBody)
-      case _            => Some(validTestBodyWithoutCorrelationId)
-    }
-
-    when(mockValidationService.validateFullSoapMessage(any))
-      .thenReturn(result)
-  }
-
   "POST /" should {
-    "accept a valid message" in {
-      when(mockInboundService.processMessage(any()))
-        .thenReturn(Future.successful(true))
-
-      validateFullSoapMessage(true)
+    "accept a valid ReceiveReferenceData message" in {
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validReferenceDataMessage))
+      when(mockValidationService.extractSoapAction(any)).thenReturn(Some(ReceiveReferenceData))
+      when(mockValidationService.extractInnerMessage(any)).thenReturn(Some(validTestBody))
+      when(mockInboundService.processMessage(any())).thenReturn(Future.successful(true))
 
       val result = controller.submit()(
         fakeRequest
@@ -116,12 +94,15 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       status(result) shouldBe ACCEPTED
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(1)).extractSoapAction(any)
+      verify(mockValidationService, times(1)).extractInnerMessage(any)
       verify(mockInboundService, times(1)).processMessage(any)
-      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
     }
 
-    "return Bad Request if an invalid message is supplied" in {
-      validateFullSoapMessage(false)
+    "return Bad Request if an invalid ReceiveReferenceData message is supplied" in {
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(None)
+      when(mockInboundService.processMessage(any())).thenReturn(Future.successful(true))
 
       val result = controller.submit()(
         fakeRequest
@@ -134,11 +115,15 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       status(result) shouldBe BAD_REQUEST
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(0)).extractSoapAction(any)
       verify(mockInboundService, times(0)).processMessage(any)
-      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
     }
 
-    "return Bad Request if the x-files-included header is not present" in {
+    "return Bad Request if the x-files-included header is not present in a ReceiveReferenceData message" in {
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validReferenceDataMessage))
+      when(mockValidationService.extractSoapAction(any)).thenReturn(Some(ReceiveReferenceData))
+
       val result = controller.submit()(
         fakeRequest
           .withHeaders(
@@ -149,32 +134,17 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       status(result) shouldBe BAD_REQUEST
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
-      verify(mockInboundService, times(0)).processMessage(any)
-      verify(mockValidationService, times(0)).validateFullSoapMessage(any)
-    }
-
-    "return Bad Request if there is no XML content" in {
-      validateFullSoapMessage(false)
-
-      val result = controller.submit()(
-        fakeRequest
-          .withHeaders(
-            "x-files-included" -> "true"
-          )
-      )
-
-      status(result) shouldBe BAD_REQUEST
-
-      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
-      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(1)).extractSoapAction(any)
+      verify(mockValidationService, times(0)).extractInnerMessage(any)
       verify(mockInboundService, times(0)).processMessage(any)
     }
 
-    "return internal server error if process message fails" in {
-      validateFullSoapMessage(true)
-
-      when(mockInboundService.processMessage(any()))
-        .thenReturn(Future.failed(MongoWriteError("failed")))
+    "return internal server error if process message fails with MongoWriteError" in {
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validReferenceDataMessage))
+      when(mockValidationService.extractSoapAction(any)).thenReturn(Some(ReceiveReferenceData))
+      when(mockValidationService.extractInnerMessage(any)).thenReturn(Some(validTestBody))
+      when(mockInboundService.processMessage(any())).thenReturn(Future.failed(MongoWriteError("failed")))
 
       val result = controller.submit()(
         fakeRequest
@@ -187,15 +157,17 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       status(result) shouldBe INTERNAL_SERVER_ERROR
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
-      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(1)).extractSoapAction(any)
+      verify(mockValidationService, times(1)).extractInnerMessage(any)
       verify(mockInboundService, times(1)).processMessage(any)
     }
 
-    "return internal server error if reading process message fails" in {
-      validateFullSoapMessage(true)
-
-      when(mockInboundService.processMessage(any()))
-        .thenReturn(Future.failed(MongoReadError("failed")))
+    "return internal server error if process message fails with MongoReadError" in {
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validReferenceDataMessage))
+      when(mockValidationService.extractSoapAction(any)).thenReturn(Some(ReceiveReferenceData))
+      when(mockValidationService.extractInnerMessage(any)).thenReturn(Some(validTestBody))
+      when(mockInboundService.processMessage(any())).thenReturn(Future.failed(MongoReadError("failed")))
 
       val result = controller.submit()(
         fakeRequest
@@ -206,16 +178,19 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
-      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(1)).extractSoapAction(any)
+      verify(mockValidationService, times(1)).extractInnerMessage(any)
       verify(mockInboundService, times(1)).processMessage(any)
     }
 
     "return bad request if UID is missing in XML" in {
-      validateFullSoapMessage(true, false)
-
-      when(mockInboundService.processMessage(any()))
-        .thenReturn(Future.failed(InvalidXMLContentError("failed")))
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validReferenceDataMessage))
+      when(mockValidationService.extractSoapAction(any)).thenReturn(Some(ReceiveReferenceData))
+      when(mockValidationService.extractInnerMessage(any)).thenReturn(Some(validTestBody))
+      when(mockInboundService.processMessage(any())).thenReturn(Future.failed(InvalidXMLContentError("failed")))
 
       val result = controller.submit()(
         fakeRequest
@@ -228,15 +203,17 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       status(result) shouldBe BAD_REQUEST
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
-      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(1)).extractSoapAction(any)
+      verify(mockValidationService, times(1)).extractInnerMessage(any)
       verify(mockInboundService, times(1)).processMessage(any)
     }
 
-    "fail if Any other Error" in {
-      validateFullSoapMessage(true)
-
-      when(mockInboundService.processMessage(any()))
-        .thenReturn(Future.failed(Throwable("failed")))
+    "fail if another error is thrown during message processing" in {
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validReferenceDataMessage))
+      when(mockValidationService.extractSoapAction(any)).thenReturn(Some(ReceiveReferenceData))
+      when(mockValidationService.extractInnerMessage(any)).thenReturn(Some(validTestBody))
+      when(mockInboundService.processMessage(any())).thenReturn(Future.failed(Throwable("failed")))
 
       val result = controller.submit()(
         fakeRequest
@@ -247,8 +224,11 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(validTestBody)
       )
       status(result) shouldBe INTERNAL_SERVER_ERROR
+
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
-      verify(mockValidationService, times(1)).validateFullSoapMessage(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(1)).extractSoapAction(any)
+      verify(mockValidationService, times(1)).extractInnerMessage(any)
       verify(mockInboundService, times(1)).processMessage(any)
     }
   }

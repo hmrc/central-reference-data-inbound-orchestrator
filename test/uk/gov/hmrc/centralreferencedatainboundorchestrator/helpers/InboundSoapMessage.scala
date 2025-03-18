@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package helpers
+package uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers
 
 import scala.xml.Elem
 
 object InboundSoapMessage {
-
 
   val valid_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
@@ -44,9 +43,9 @@ object InboundSoapMessage {
         </v4:ReceiveReferenceDataReqMsg>
       </soap:Body>
     </soap:Envelope>
-    
+
   val valid_soap_error_report_message: Elem =
-      <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
                      xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
                      xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
                      xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">

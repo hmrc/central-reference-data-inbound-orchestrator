@@ -23,6 +23,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
 
 import scala.xml.{Elem, Node}
 import scala.xml.Utility.trim
@@ -54,6 +55,30 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
                 <v41:ReceiveReferenceDataRequestResult>c04a1612-705d-4373-8840-9d137b14b301</v41:ReceiveReferenceDataRequestResult>
             </v4:ReceiveReferenceDataReqMsg>
         </soap:Body>
+    </soap:Envelope>
+
+  private val valid_is_alive_soap_message: Elem =
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v1:isAliveReqMsg />
+      </soap:Body>
+    </soap:Envelope>
+
+  private val invalid_soap_action_message: Elem =
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataSubmissionResultReceiverCBS/ReceiveReferenceDataSubmissionResult</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v1:isAliveReqMsg />
+      </soap:Body>
     </soap:Envelope>
 
   private val valid_error_report_soap_message: Elem =
@@ -113,6 +138,26 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       </soap:Body>
     </soap:Envelope>
 
+  private val invalid_is_alive_soap_message: Elem =
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v1:isAliveReqMsg>
+          <Should>
+            <Not>
+              <Be>
+                <Present/>
+              </Be>
+            </Not>
+          </Should>
+        </v1:isAliveReqMsg>
+      </soap:Body>
+    </soap:Envelope>
+
   private val valid_soap_message_with_invalid_body: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
                      xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
@@ -151,36 +196,90 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
   override def beforeEach(): Unit =
     reset(mockAppConfig)
 
-  "validation service" should {
-    "succeed when validating a good soap message" in {
-      when(mockAppConfig.xsdValidation).thenReturn(true)
-      val actual = validationService.validateFullSoapMessage(valid_soap_message.toString)
-      actual.value.head shouldBe trim(valid_inner_message)
+  "ValidationService" when {
+    "validating SOAP message" should {
+      "succeed when validating a good soap message" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        val actual = validationService.validateSoapMessage(valid_soap_message.toString)
+        actual.value.head shouldBe trim(valid_soap_message)
+      }
+
+      "succeed when validating a good is alive soap message" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        val actual = validationService.validateSoapMessage(valid_is_alive_soap_message.toString)
+        actual.value.head shouldBe trim(valid_is_alive_soap_message)
+      }
+
+      "succeed when validating a good error report soap message" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        val actual = validationService.validateSoapMessage(valid_error_report_soap_message.toString)
+        actual.value.head shouldBe trim(valid_error_report_soap_message)
+      }
+
+      "fail when validating a reference data soap message with unexpected extra elements" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        validationService.validateSoapMessage(invalid_soap_message.toString) shouldBe None
+      }
+
+      "succeed when validating a reference soap message with unexpected extra elements when XSD validation is disabled" in {
+        when(mockAppConfig.xsdValidation).thenReturn(false)
+        validationService.validateSoapMessage(invalid_soap_message.toString) shouldBe Some(invalid_soap_message)
+      }
+
+      "fail when validating an is alive soap message with unexpected extra elements" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        validationService.validateSoapMessage(invalid_is_alive_soap_message.toString) shouldBe None
+      }
+
+      "succeed when validating an is alive soap message with unexpected extra elements when XSD validation is disabled" in {
+        when(mockAppConfig.xsdValidation).thenReturn(false)
+        validationService.validateSoapMessage(invalid_is_alive_soap_message.toString) shouldBe Some(
+          invalid_is_alive_soap_message
+        )
+      }
+
+      "fail when validating a good soap message with missing details in the body" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        validationService.validateSoapMessage(valid_soap_message_with_invalid_body.toString) shouldBe None
+      }
+
+      "succeed when validating a good soap message with missing details in the body when XSD validation is disabled" in {
+        when(mockAppConfig.xsdValidation).thenReturn(false)
+        validationService.validateSoapMessage(valid_soap_message_with_invalid_body.toString) shouldBe Some(
+          valid_soap_message_with_invalid_body
+        )
+      }
     }
 
-    "succeed when validating a good Error Report soap message" in {
-      when(mockAppConfig.xsdValidation).thenReturn(true)
-      val actual = validationService.validateFullSoapMessage(valid_error_report_soap_message.toString)
-      actual.value.head shouldBe trim(valid_inner_message)
+    "extracting SOAP Action" should {
+      "succeed when given a valid reference data message" in {
+        validationService.extractSoapAction(valid_soap_message) shouldBe Some(SoapAction.ReceiveReferenceData)
+      }
+
+      "succeed when given a valid isAlive message" in {
+        validationService.extractSoapAction(valid_is_alive_soap_message) shouldBe Some(SoapAction.IsAlive)
+      }
+
+      "fail when given anything else" in {
+        validationService.extractSoapAction(invalid_soap_action_message) shouldBe None
+      }
     }
 
-    "fail when validating a soap message with unexpected extra elements" in {
-      when(mockAppConfig.xsdValidation).thenReturn(true)
-      validationService.validateFullSoapMessage(invalid_soap_message.toString) shouldBe None
-    }
+    "extracting inner message" should {
+      "succeed when extracting data from a good reference data soap message" in {
+        validationService.extractInnerMessage(valid_soap_message) shouldBe Some(trim(valid_inner_message))
+      }
 
-    "succeed when validating a soap message with unexpected extra elements when XSD validation is disabled" in {
-      when(mockAppConfig.xsdValidation).thenReturn(false)
-      validationService.validateFullSoapMessage(invalid_soap_message.toString) shouldBe defined
-    }
+      "succeed when extracting data from a good error report soap message" in {
+        validationService.extractInnerMessage(valid_error_report_soap_message) shouldBe Some(trim(valid_inner_message))
+      }
 
-    "fail when validating a good soap message with missing details in the body" in {
-      when(mockAppConfig.xsdValidation).thenReturn(true)
-      validationService.validateFullSoapMessage(valid_soap_message_with_invalid_body.toString) shouldBe None
-    }
+      "fail when extracting data from a reference data soap message that is missing mandatory data" in {
+        validationService.extractInnerMessage(valid_soap_message_with_invalid_body) shouldBe None
+      }
 
-    "fail when validating a good soap message with missing details in the body when XSD validation is disabled" in {
-      when(mockAppConfig.xsdValidation).thenReturn(false)
-      validationService.validateFullSoapMessage(valid_soap_message_with_invalid_body.toString) shouldBe None
+      "fail when extracting data from any other kind of message" in {
+        validationService.extractInnerMessage(valid_is_alive_soap_message) shouldBe None
+      }
     }
   }
