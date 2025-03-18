@@ -91,6 +91,28 @@ class InboundControllerISpec extends AnyWordSpec,
       response.status shouldBe ACCEPTED
     }
 
+    "return OK with a valid IsAlive request" in {
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
+      val response =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .post(InboundSoapMessage.valid_soap_is_alive_message.toString)
+          .futureValue
+
+      response.status shouldBe OK
+    }
+
     "return Accepted with a valid Error Report request" in {
       stubFor(
         post(urlEqualTo("/write/audit"))

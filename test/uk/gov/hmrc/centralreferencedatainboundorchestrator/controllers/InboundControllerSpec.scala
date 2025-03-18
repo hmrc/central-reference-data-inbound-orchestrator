@@ -29,7 +29,7 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReceiveReferenceData}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 
@@ -55,6 +55,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
   private val auditSuccess = Future.successful(Success)
 
   private val validReferenceDataMessage = InboundSoapMessage.valid_soap_message
+  private val validIsAliveMessage       = InboundSoapMessage.valid_soap_is_alive_message
 
   private val validTestBody: Elem = <MainMessage>
       <Body>
@@ -98,6 +99,27 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       verify(mockValidationService, times(1)).extractSoapAction(any)
       verify(mockValidationService, times(1)).extractInnerMessage(any)
       verify(mockInboundService, times(1)).processMessage(any)
+    }
+
+    "accept a valid isAliveReqMsg message" in {
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validIsAliveMessage))
+      when(mockValidationService.extractSoapAction(any)).thenReturn(Some(IsAlive))
+
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders(
+            "x-files-included" -> "true",
+            "Content-Type"     -> "application/xml"
+          )
+          .withBody(validTestBody)
+      )
+      status(result) shouldBe OK
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockValidationService, times(1)).validateSoapMessage(any)
+      verify(mockValidationService, times(1)).extractSoapAction(any)
+      verify(mockValidationService, times(0)).extractInnerMessage(any)
+      verify(mockInboundService, times(0)).processMessage(any)
     }
 
     "return Bad Request if an invalid ReceiveReferenceData message is supplied" in {
