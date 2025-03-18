@@ -44,6 +44,18 @@ object InboundSoapMessage {
       </soap:Body>
     </soap:Envelope>
 
+  val valid_soap_is_alive_message: Elem =
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v1:isAliveReqMsg/>
+      </soap:Body>
+    </soap:Envelope>
+
   val valid_soap_error_report_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
                      xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
