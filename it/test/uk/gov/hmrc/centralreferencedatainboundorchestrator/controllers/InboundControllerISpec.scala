@@ -17,7 +17,6 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import helpers.InboundSoapMessage
 import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
@@ -29,6 +28,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.WSClient
 import play.api.test.Helpers.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.mongo.test.MongoSupport

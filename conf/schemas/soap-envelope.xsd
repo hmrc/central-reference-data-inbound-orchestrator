@@ -6,11 +6,14 @@ The change made was to require that the content of the SOAP body conforms to the
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.w3.org/2003/05/soap-envelope"
            xmlns:reqmsg="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+           xmlns:alivemsg="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1"
            targetNamespace="http://www.w3.org/2003/05/soap-envelope" elementFormDefault="qualified">
 
     <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
 
     <xs:import namespace="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4" schemaLocation="request-message.xsd"/>
+
+    <xs:import namespace="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1" schemaLocation="isalive-message.xsd"/>
 
     <!-- Envelope, header and body -->
     <xs:element name="Envelope" type="tns:Envelope"/>
@@ -39,7 +42,10 @@ The change made was to require that the content of the SOAP body conforms to the
     <xs:complexType name="Body">
         <xs:sequence>
             <!-- NOTE: This change to the original SOAP Envelope schema applies the validation of the CS/RD2 request message -->
-            <xs:element ref="reqmsg:ReceiveReferenceDataReqMsg" />
+            <xs:choice>
+                <xs:element ref="reqmsg:ReceiveReferenceDataReqMsg" />
+                <xs:element ref="alivemsg:isAliveReqMsg" />
+            </xs:choice>
         </xs:sequence>
         <xs:anyAttribute namespace="##other" processContents="lax"/>
     </xs:complexType>

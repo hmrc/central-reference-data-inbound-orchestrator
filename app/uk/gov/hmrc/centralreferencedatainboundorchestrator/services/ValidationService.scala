@@ -18,6 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
 
 import javax.inject.Inject
 import scala.util.Try
@@ -39,7 +40,7 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: XMLLoad
     loadMessage.toOption
   }
 
-  private def extractInnerMessage(soapMessage: NodeSeq): Option[Node] =
+  def extractInnerMessage(soapMessage: NodeSeq): Option[Node] =
     for
       requestMessage <- (soapMessage \\ "Body" \ "ReceiveReferenceDataReqMsg").headOption
       taskId         <- (requestMessage \ "TaskIdentifier").headOption
@@ -58,8 +59,11 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: XMLLoad
       </MainMessage>
     )
 
-  def validateFullSoapMessage(soapMessage: String): Option[Node] =
+  def extractSoapAction(soapMessage: NodeSeq): Option[SoapAction] =
     for
-      soapXml      <- validateSoapMessage(if appConfig.xsdValidation then loader else XML, soapMessage)
-      innerMessage <- extractInnerMessage(soapXml)
-    yield innerMessage
+      actionNode <- (soapMessage \\ "Header" \ "Action").headOption
+      action     <- SoapAction.fromString(actionNode.text.trim)
+    yield action
+
+  def validateSoapMessage(soapMessage: String): Option[Node] =
+    validateSoapMessage(if appConfig.xsdValidation then loader else XML, soapMessage)

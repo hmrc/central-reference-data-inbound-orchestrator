@@ -42,18 +42,37 @@ class InboundController @Inject() (
 
   def submit(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
     auditHandler.auditNewMessageWrapper(request.body)
-    if hasFilesHeader then
-      validationService.validateFullSoapMessage(request.body) match {
-        case Some(body) =>
-          determineResult(body)
-        case None       =>
-          Future.successful(BadRequest)
-      }
-    else Future.successful(BadRequest)
+
+    val result = for
+      validatedMessage <- validationService.validateSoapMessage(request.body)
+      soapAction       <- validationService.extractSoapAction(validatedMessage)
+    yield handleInboundMessage(soapAction, validatedMessage)
+
+    result.getOrElse(Future.successful(BadRequest))
   }
 
-  private def determineResult(body: NodeSeq): Future[Status] =
-    inboundControllerService.processMessage(body) transform {
+  private def handleInboundMessage(action: SoapAction, validatedMessage: NodeSeq)(using
+    request: Request[?]
+  ): Future[Status] =
+    action match {
+      case SoapAction.ReceiveReferenceData =>
+        handleReferenceDataMessage(validatedMessage)
+      case SoapAction.IsAlive              =>
+        Future.successful(Ok)
+    }
+
+  private def handleReferenceDataMessage(validatedMessage: NodeSeq)(using request: Request[?]): Future[Status] = {
+    val result = for
+      hasFilesHeader <- getHasFilesHeader
+      if hasFilesHeader
+      innerMessage   <- validationService.extractInnerMessage(validatedMessage)
+    yield processInboundMessage(innerMessage)
+
+    result.getOrElse(Future.successful(BadRequest))
+  }
+
+  private def processInboundMessage(body: NodeSeq): Future[Status] =
+    inboundControllerService.processMessage(body).transform {
       case Success(_)              =>
         Success(Accepted)
       case Failure(err: Throwable) =>
@@ -64,5 +83,5 @@ class InboundController @Inject() (
         }
     }
 
-  private def hasFilesHeader(implicit request: Request[?]): Boolean =
-    request.headers.get(FileIncludedHeader).exists(_.toBooleanOption.getOrElse(false))
+  private def getHasFilesHeader(implicit request: Request[?]): Option[Boolean] =
+    request.headers.get(FileIncludedHeader).flatMap(_.toBooleanOption)
