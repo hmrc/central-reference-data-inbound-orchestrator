@@ -14,6 +14,7 @@ lazy val microservice = Project("central-reference-data-inbound-orchestrator", f
     scalacOptions ++= Seq("-Wconf:src=routes/.*:s", "-Wconf:msg=Flag.*repeatedly:s"),
     resolvers += Resolver.jcenterRepo,
     PlayKeys.playDefaultPort := 7250,
+    Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
   )
 
 lazy val it = project
@@ -21,5 +22,6 @@ lazy val it = project
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(libraryDependencies ++= AppDependencies.it)
+  .settings(Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat)
 
 addCommandAlias("runAllChecks", ";clean;compile;scalafmtAll;coverage;test;it/test;coverageReport")
