@@ -22,6 +22,6 @@ lazy val it = project
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(libraryDependencies ++= AppDependencies.it)
-  .settings(Test/ classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat)
+  .settings(Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat)
 
 addCommandAlias("runAllChecks", ";clean;compile;scalafmtAll;coverage;test;it/test;coverageReport")
