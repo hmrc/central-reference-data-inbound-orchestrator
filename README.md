@@ -6,14 +6,13 @@ The Central Reference Data Inbound Orchestrator responsibilities:
 - Keep track of the AV Scanning progress of an update
 
 ## Development Setup
-- Run mongo: `docker run -d -p 27017:27017 mongo:4.2.18` (please use latest version as per MDTP best practices, this is just an example)
+- Run mongo: `docker run --restart unless-stopped --name mongodb -p 27017:27017 -d percona/percona-server-mongodb:6.0 --replSet rs0` (please use latest version as per MDTP best practices, this is just an example)
 - Run locally: `sbt run` which runs on port `7250` by default
 
 ## Tests
 - Run Unit Tests: `sbt test`
 - Run Integration Tests: `sbt it/test`
 - Run Unit and Integration Tests: `sbt test it/test`
-- Run Unit and Integration Tests with Code Coverage: `./run_tests_with_coverage.sh`
 
 Run Acceptance Tests: see [here](https://github.com/hmrc/central-reference-data-acceptance-tests)
 
