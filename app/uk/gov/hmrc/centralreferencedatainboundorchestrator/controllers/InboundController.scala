@@ -53,12 +53,12 @@ class InboundController @Inject() (
 
   private def handleInboundMessage(action: SoapAction, validatedMessage: NodeSeq)(using
     request: Request[?]
-  ): Future[Status] =
+  ): Future[Result] =
     action match {
       case SoapAction.ReceiveReferenceData =>
         handleReferenceDataMessage(validatedMessage)
       case SoapAction.IsAlive              =>
-        Future.successful(Ok)
+        Future.successful(Ok(IsAliveResponse.xml))
     }
 
   private def handleReferenceDataMessage(validatedMessage: NodeSeq)(using request: Request[?]): Future[Status] = {
