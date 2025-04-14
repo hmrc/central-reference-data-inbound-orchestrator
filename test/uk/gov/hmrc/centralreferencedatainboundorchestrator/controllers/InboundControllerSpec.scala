@@ -28,7 +28,7 @@ import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.{InboundSoapMessage, OutboundSoapMessage}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReceiveReferenceData}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
@@ -54,8 +54,10 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
 
   private val auditSuccess = Future.successful(Success)
 
-  private val validReferenceDataMessage = InboundSoapMessage.valid_soap_message
-  private val validIsAliveMessage       = InboundSoapMessage.valid_soap_is_alive_message
+  private val validReferenceDataMessage  = InboundSoapMessage.valid_soap_message
+  private val validIsAliveRequestMessage = InboundSoapMessage.valid_soap_is_alive_message
+
+  private val validIsAliveResponseMessage = OutboundSoapMessage.valid_is_alive_response_message
 
   private val validTestBody: Elem = <MainMessage>
       <Body>
@@ -102,18 +104,21 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
     }
 
     "accept a valid isAliveReqMsg message" in {
-      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validIsAliveMessage))
+      when(mockValidationService.validateSoapMessage(any)).thenReturn(Some(validIsAliveRequestMessage))
       when(mockValidationService.extractSoapAction(any)).thenReturn(Some(IsAlive))
 
-      val result = controller.submit()(
-        fakeRequest
-          .withHeaders(
-            "x-files-included" -> "true",
-            "Content-Type"     -> "application/xml"
-          )
-          .withBody(validTestBody)
-      )
+      val result = controller
+        .submit()(
+          fakeRequest
+            .withHeaders(
+              "x-files-included" -> "true",
+              "Content-Type"     -> "application/xml"
+            )
+            .withBody(validTestBody)
+        )
+        .run()
       status(result) shouldBe OK
+      contentAsString(result) shouldBe validIsAliveResponseMessage.toString
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
       verify(mockValidationService, times(1)).validateSoapMessage(any)
