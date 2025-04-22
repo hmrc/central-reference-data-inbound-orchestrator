@@ -27,11 +27,14 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.DefaultBodyWritables.*
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.readableAsXml
 import play.api.test.Helpers.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.{InboundSoapMessage, OutboundSoapMessage}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.MessageWrapperRepository
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.mongo.test.MongoSupport
+
+import scala.xml.Elem
 
 class InboundControllerISpec extends AnyWordSpec,
   Matchers,
@@ -111,6 +114,7 @@ class InboundControllerISpec extends AnyWordSpec,
           .futureValue
 
       response.status shouldBe OK
+      response.body[Elem] shouldBe OutboundSoapMessage.valid_is_alive_response_message
     }
 
     "return Accepted with a valid Error Report request" in {
