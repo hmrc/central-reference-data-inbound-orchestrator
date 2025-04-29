@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
+package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers.testonly
 
 import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
