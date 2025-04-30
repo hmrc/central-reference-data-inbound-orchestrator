@@ -17,6 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
 import com.google.inject.{Inject, Singleton}
+import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Indexes, Updates}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
@@ -27,14 +28,15 @@ import org.mongodb.scala.*
 import org.mongodb.scala.result.DeleteResult
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
 
-import java.time.Instant
+import java.time.Clock
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class MessageWrapperRepository @Inject() (
   mongoComponent: MongoComponent,
-  appConfig: AppConfig
+  appConfig: AppConfig,
+  clock: Clock
 )(using ec: ExecutionContext)
     extends PlayMongoRepository[MessageWrapper](
       collectionName = "message-wrapper",
@@ -59,9 +61,10 @@ class MessageWrapperRepository @Inject() (
   def insertMessageWrapper(uid: String, payload: String, status: MessageStatus)(using
     ec: ExecutionContext
   ): Future[Boolean] = {
+    val currentInstant = clock.instant()
     logger.info(s"Inserting a message wrapper in $collectionName table with uid: $uid")
     collection
-      .insertOne(MessageWrapper(uid, payload, status))
+      .insertOne(MessageWrapper(uid, payload, status, currentInstant, currentInstant))
       .head()
       .map(_ =>
         logger.info(s"Inserted a message wrapper in $collectionName table with uid: $uid")
@@ -90,27 +93,56 @@ class MessageWrapperRepository @Inject() (
         )
       }
 
+  def findByUidAndUpdateStatus(uid: String, expectedStatus: MessageStatus, newStatus: MessageStatus)(using
+    ec: ExecutionContext
+  ): Future[Option[MessageWrapper]] =
+    collection
+      .findOneAndUpdate(
+        Filters.and(
+          Filters.equal("uid", uid),
+          Filters.equal("status", expectedStatus.toString)
+        ),
+        Updates.combine(
+          Updates.set("status", newStatus.toString),
+          Updates.set("lastUpdated", clock.instant())
+        ),
+        FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+      )
+      .headOption()
+      .recoverWith { case e =>
+        logger.error(
+          s"failed to retrieve and update message wrapper with uid: $uid in $collectionName table with ${e.getMessage}"
+        )
+        Future.failed(
+          MongoReadError(
+            s"failed to retrieve and update message wrapper with uid: $uid in $collectionName table with ${e.getMessage}"
+          )
+        )
+      }
+
   def deleteAll(): Future[DeleteResult] =
     collection.deleteMany(Filters.empty()).toFuture()
 
-  def updateStatus(uid: String, status: MessageStatus)(using ec: ExecutionContext): Future[Boolean] =
+  def updateStatus(uid: String, expectedStatus: MessageStatus, newStatus: MessageStatus)(using
+    ec: ExecutionContext
+  ): Future[Boolean] =
     collection
       .updateOne(
-        Filters.equal("uid", uid),
+        Filters.and(Filters.equal("uid", uid), Filters.equal("status", expectedStatus.toString)),
         Updates.combine(
-          Updates.set("status", status.toString),
-          Updates.set("lastUpdated", Instant.now())
+          Updates.set("status", newStatus.toString),
+          Updates.set("lastUpdated", clock.instant())
         )
       )
       .toFuture()
       .map(_.wasAcknowledged())
       .recoverWith { case e =>
         logger.error(
-          s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"
+          s"failed to update message wrappers status with uid: $uid & status: $expectedStatus in $collectionName table with ${e.getMessage}"
         )
         Future.failed(
           MongoWriteError(
-            s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"
+            s"failed to update message wrappers status with uid: $uid & status: $expectedStatus in $collectionName table with ${e.getMessage}"
           )
         )
 

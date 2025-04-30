@@ -21,9 +21,17 @@ import play.api.libs.json.*
 object MessageStatus extends Enumeration:
   type MessageStatus = Value
 
+  // Received the message wrapper from the public SOAP proxy
   val Received: Value = Value("Received")
-  val Sent: Value     = Value("Sent")
-  val Pass: Value     = Value("ScanPassed")
-  val Fail: Value     = Value("ScanFailed")
+
+  // Received an AV scanning notification from SDES
+  val Pass: Value = Value("ScanPassed")
+  val Fail: Value = Value("ScanFailed")
+
+  // Submitted the item to the work queue for sending to EIS
+  val Submitted: Value = Value("Submitted")
+
+  // Sent the message wrapper on to DPS via EIS
+  val Sent: Value = Value("Sent")
 
   given format: Format[MessageStatus] = Json.formatEnum(this)
