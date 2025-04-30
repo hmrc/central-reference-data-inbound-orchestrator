@@ -76,7 +76,7 @@ class MessageWrapperRepositoryISpec
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
-      fetchedRecord.value.copy(lastUpdated = instant, receivedTimestamp = instant) mustEqual messageWrapper
+      fetchedRecord.value mustEqual messageWrapper
     }
 
     "must return none if uid not found" in {
@@ -98,6 +98,15 @@ class MessageWrapperRepositoryISpec
 
       insertResult mustEqual true
       fetchedRecord.value mustEqual messageWrapper.copy(status = Pass)
+    }
+
+    "must return none if the message wrapper is not at the expected status" in {
+
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, Fail).futureValue
+      val fetchedRecord = messageRepository.findByUidAndUpdateStatus(messageWrapper.uid, expectedStatus = Received, newStatus = Pass).futureValue
+
+      insertResult mustEqual true
+      fetchedRecord must be(None)
     }
 
     "must return none if uid not found" in {
