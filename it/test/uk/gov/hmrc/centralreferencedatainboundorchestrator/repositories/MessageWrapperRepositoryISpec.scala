@@ -23,9 +23,10 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageWrapper, NoMatchingUIDInMongoError}
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
@@ -125,34 +126,39 @@ class MessageWrapperRepositoryISpec
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val fetchedBeforeUpdateRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
-      val updatedRecord = messageRepository.updateStatus(messageWrapper.uid, expectedStatus = messageWrapper.status, newStatus = Pass).futureValue
+      messageRepository.updateStatus(messageWrapper.uid, expectedStatus = messageWrapper.status, newStatus = Pass).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
       fetchedBeforeUpdateRecord.value.status mustEqual Received
-      updatedRecord mustEqual true
       fetchedRecord.value.status mustEqual Pass
     }
 
     "must return message unchanged if the existing message wrapper is not in the expected status" in {
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
-      val updatedRecord = messageRepository.updateStatus("1234", expectedStatus = Pass, newStatus = Submitted).futureValue
+
+      recoverToExceptionIf[NoMatchingUIDInMongoError] {
+        messageRepository.updateStatus("1234", expectedStatus = Pass, newStatus = Submitted)
+      }
+
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
-      updatedRecord mustEqual true
       fetchedRecord.value.status mustEqual Received
     }
 
     "must return status unchanged if uid not found and updating status doesn't happen" in {
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
-      val updatedRecord = messageRepository.updateStatus("1234", expectedStatus = messageWrapper.status, Pass).futureValue
+
+      recoverToExceptionIf[NoMatchingUIDInMongoError] {
+        messageRepository.updateStatus("1234", expectedStatus = messageWrapper.status, Pass)
+      }
+
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
-      updatedRecord mustEqual true
       fetchedRecord.value.status mustEqual Received
     }
   }

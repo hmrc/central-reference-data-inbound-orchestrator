@@ -68,7 +68,8 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
 
   private val testBody: Elem = <Body></Body>
 
-  private def messageWrapper(id: String) = MessageWrapper(id, testBody.toString, Received)
+  private def messageWrapper(id: String, status: MessageStatus = Received) =
+    MessageWrapper(id, testBody.toString, status)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -102,7 +103,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       when(mockEISWorkItemRepository.set(eqTo(expectedRequest)))
         .thenReturn(Future.successful(wi))
 
-      val result = sdesService
+      sdesService
         .processCallback(
           SdesCallbackResponse(
             "FileProcessed",
@@ -118,8 +119,6 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
         )
         .futureValue
 
-      result shouldBe s"Message with UID: $uid, successfully queued"
-
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any, any)(using any())
       verify(mockMessageWrapperRepository, times(1)).findByUidAndUpdateStatus(any, eqTo(Pass), eqTo(Submitted))(using
         any()
@@ -130,10 +129,10 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
 
     "should return av scan passed when accepting a FileReceived notification" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Received), eqTo(Pass))(using any()))
-        .thenReturn(Future.successful(true))
+      when(mockMessageWrapperRepository.findByUidAndUpdateStatus(eqTo(uid), eqTo(Received), eqTo(Pass))(using any()))
+        .thenReturn(Future.successful(Some(messageWrapper(uid))))
 
-      val result = sdesService
+      sdesService
         .processCallback(
           SdesCallbackResponse(
             "FileReceived",
@@ -149,20 +148,20 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
         )
         .futureValue
 
-      result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-
-      verify(mockMessageWrapperRepository, times(1)).updateStatus(any, eqTo(Received), eqTo(Pass))(using any())
-      verify(mockMessageWrapperRepository, times(0)).findByUidAndUpdateStatus(any, any, any)(using any())
+      verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any, any)(using any())
+      verify(mockMessageWrapperRepository, times(1)).findByUidAndUpdateStatus(any, eqTo(Received), eqTo(Pass))(using
+        any()
+      )
       verify(mockEISWorkItemRepository, times(0)).set(any)
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
 
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Received), eqTo(Fail))(using any()))
-        .thenReturn(Future.successful(true))
+      when(mockMessageWrapperRepository.findByUidAndUpdateStatus(eqTo(uid), eqTo(Received), eqTo(Fail))(using any()))
+        .thenReturn(Future.successful(Some(messageWrapper(uid))))
 
-      val result = sdesService
+      sdesService
         .processCallback(
           SdesCallbackResponse(
             "FileProcessingFailure",
@@ -178,10 +177,10 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
         )
         .futureValue
 
-      result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-
-      verify(mockMessageWrapperRepository, times(1)).updateStatus(any, eqTo(Received), eqTo(Fail))(using any())
-      verify(mockMessageWrapperRepository, times(0)).findByUidAndUpdateStatus(any, any, any)(using any())
+      verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any, any)(using any())
+      verify(mockMessageWrapperRepository, times(1)).findByUidAndUpdateStatus(any, eqTo(Received), eqTo(Fail))(using
+        any()
+      )
       verify(mockEISWorkItemRepository, times(0)).set(any)
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
@@ -233,9 +232,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Submitted), eqTo(Sent))(using any()))
         .thenReturn(Future.successful(true))
 
-      val result = sdesService.updateStatus(true, uid).futureValue
-
-      result shouldBe s"Message with UID: $uid, successfully sent to EIS and status updated to sent."
+      sdesService.updateStatus(true, uid).futureValue
 
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, eqTo(Submitted), eqTo(Sent))(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUidAndUpdateStatus(any, any, any)(using any())
@@ -243,16 +240,16 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
 
-    "update wrapper status on successful call to EIS with status update failure" in {
+    "pass through MongoWriteError when unable to update message wrapper status after successfully forwarding to EIS" in {
       val uid = UUID.randomUUID().toString
 
       when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Submitted), eqTo(Sent))(using any()))
-        .thenReturn(Future.successful(false))
+        .thenReturn(Future.failed(MongoWriteError(s"Failed to update message wrapper with ID $uid to status $Sent")))
 
       val result = sdesService.updateStatus(true, uid)
 
       recoverToExceptionIf[MongoWriteError](result).map { mwe =>
-        mwe.message shouldBe s"failed to update message wrappers status to failed with uid: $uid"
+        mwe.message shouldBe s"Failed to update message wrapper with ID $uid to status $Sent"
       }.futureValue
 
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, eqTo(Submitted), eqTo(Sent))(using any())
@@ -279,10 +276,10 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
 
-    "should return exception MongoWriteError when accepting a FileProcessingFailure notification but Mongo fails to write" in {
+    "should pass through MongoWriteError when accepting a FileProcessingFailure notification but Mongo fails to write" in {
       val uid = "32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
-      when(mockMessageWrapperRepository.updateStatus(eqTo(uid), eqTo(Received), eqTo(Fail))(using any()))
-        .thenReturn(Future.successful(false))
+      when(mockMessageWrapperRepository.findByUidAndUpdateStatus(eqTo(uid), eqTo(Received), eqTo(Fail))(using any()))
+        .thenReturn(Future.failed(MongoWriteError(s"Failed to update message wrapper with ID $uid to status $Fail")))
 
       val result = sdesService.processCallback(
         SdesCallbackResponse(
@@ -299,11 +296,13 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       )
 
       recoverToExceptionIf[MongoWriteError](result).map { mwe =>
-        mwe.message shouldBe s"failed to update message wrappers status to failed with uid: $uid"
+        mwe.message shouldBe s"Failed to update message wrapper with ID $uid to status $Fail"
       }.futureValue
 
-      verify(mockMessageWrapperRepository, times(1)).updateStatus(any, eqTo(Received), eqTo(Fail))(using any())
-      verify(mockMessageWrapperRepository, times(0)).findByUidAndUpdateStatus(any, any, any)(using any())
+      verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any, any)(using any())
+      verify(mockMessageWrapperRepository, times(1)).findByUidAndUpdateStatus(any, eqTo(Received), eqTo(Fail))(using
+        any()
+      )
       verify(mockEISWorkItemRepository, times(0)).set(any)
       verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
     }
@@ -329,7 +328,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       )
 
       recoverToExceptionIf[NoMatchingUIDInMongoError](result).map { mwe =>
-        mwe.message shouldBe s"Failed to find a UID in Mongo matching: $uid"
+        mwe.message shouldBe s"Failed to find a message wrapper with ID $uid and status ScanPassed"
       }.futureValue
 
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any, any)(using any())

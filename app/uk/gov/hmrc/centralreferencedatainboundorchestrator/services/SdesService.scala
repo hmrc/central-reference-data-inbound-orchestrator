@@ -37,7 +37,7 @@ class SdesService @Inject() (
 )(using executionContext: ExecutionContext)
     extends Logging:
 
-  def processCallback(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier): Future[String] =
+  def processCallback(sdesCallback: SdesCallbackResponse)(using hc: HeaderCarrier): Future[Unit] =
     sdesCallback.notification match {
       case "FileReceived" =>
         logger.info(s"AV Scan passed Successfully for uid: ${sdesCallback.correlationID}")
@@ -59,24 +59,11 @@ class SdesService @Inject() (
   def sendMessage(payload: String)(using hc: HeaderCarrier): Future[Boolean] =
     eisConnector.forwardMessage(loadString(payload))
 
-  def updateStatus(messageSent: Boolean, correlationID: String): Future[String] =
+  def updateStatus(messageSent: Boolean, correlationID: String): Future[Unit] =
     if messageSent then
-      messageWrapperRepository
-        .updateStatus(
-          correlationID,
-          expectedStatus = Submitted,
-          newStatus = Sent
-        )
-        .flatMap {
-          case true  =>
-            Future.successful(s"Message with UID: $correlationID, successfully sent to EIS and status updated to sent.")
-          case false =>
-            Future.failed(
-              MongoWriteError(s"failed to update message wrappers status to failed with uid: $correlationID")
-            )
-        }
+      messageWrapperRepository.updateStatus(correlationID, expectedStatus = Submitted, newStatus = Sent)
     else
-      logger.error("Message not sent")
+      logger.error(s"Unable to send message to EIS after ${appConfig.maxRetryCount} attempts")
       Future.failed(EisResponseError(s"Unable to send message to EIS after ${appConfig.maxRetryCount} attempts"))
 
   private def updateMessageStatus(
@@ -84,11 +71,16 @@ class SdesService @Inject() (
     expectedStatus: MessageStatus,
     newStatus: MessageStatus
   ) =
-    messageWrapperRepository.updateStatus(sdesCallback.correlationID, expectedStatus, newStatus) flatMap {
-      case true  => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}")
-      case false =>
+    messageWrapperRepository.findByUidAndUpdateStatus(sdesCallback.correlationID, expectedStatus, newStatus).flatMap {
+      case Some(messageWrapper) => Future.unit
+      case None                 =>
+        logger.error(
+          s"Failed to find a message wrapper with ID ${sdesCallback.correlationID} and status $expectedStatus"
+        )
         Future.failed(
-          MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}")
+          NoMatchingUIDInMongoError(
+            s"Failed to find a message wrapper with ID ${sdesCallback.correlationID} and status $expectedStatus"
+          )
         )
     }
 
@@ -101,12 +93,12 @@ class SdesService @Inject() (
       )
       .flatMap {
         case Some(messageWrapper) =>
-          workItemRepo
-            .set(EISRequest(messageWrapper.payload, sdesCallback.correlationID))
-            .map(_ => s"Message with UID: ${sdesCallback.correlationID}, successfully queued")
+          workItemRepo.set(EISRequest(messageWrapper.payload, sdesCallback.correlationID)).map(_ => ())
         case None                 =>
-          logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallback.correlationID}")
+          logger.error(s"Failed to find a message wrapper with ID ${sdesCallback.correlationID} and status $Pass")
           Future.failed(
-            NoMatchingUIDInMongoError(s"Failed to find a UID in Mongo matching: ${sdesCallback.correlationID}")
+            NoMatchingUIDInMongoError(
+              s"Failed to find a message wrapper with ID ${sdesCallback.correlationID} and status $Pass"
+            )
           )
       }

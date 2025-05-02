@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
-abstract class CRDLErrors(message: String) extends Throwable(message)
-case class InvalidXMLContentError(message: String) extends CRDLErrors(message)
+abstract class CRDLErrors(message: String, cause: Throwable) extends Throwable(message, cause)
 
-case class MongoWriteError(message: String) extends CRDLErrors(message)
+case class InvalidXMLContentError(message: String) extends CRDLErrors(message, null)
 
-case class MongoReadError(message: String) extends CRDLErrors(message)
+case class MongoWriteError(message: String, cause: Throwable = null) extends CRDLErrors(message, cause)
 
-case class EisResponseError(message: String) extends CRDLErrors(message)
+case class MongoReadError(message: String, cause: Throwable = null) extends CRDLErrors(message, cause)
 
-case class AVScanFailureError(message: String) extends CRDLErrors(message)
+case class EisResponseError(message: String) extends CRDLErrors(message, null)
 
-case class NoMatchingUIDInMongoError(message: String) extends CRDLErrors(message)
+case class NoMatchingUIDInMongoError(message: String) extends CRDLErrors(message, null)
 
-case class InvalidSDESNotificationError(message: String) extends CRDLErrors(message)
+case class InvalidSDESNotificationError(message: String) extends CRDLErrors(message, null)
