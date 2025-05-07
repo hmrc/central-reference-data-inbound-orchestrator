@@ -74,6 +74,12 @@ After the request has passed this validation, we extract the fields required fro
 
 Sample messages can be found [here](it/test/helpers/InboundSoapMessage.scala).
 
+In the event that the simplified XML schema is inaccurate and rejects legitimate messages, we have provided a feature flag that disables XSD validation.
+
+The configuration key for this feature flag is `microservice.features.xsdValidation`, and it is provided with a default value of `true` in [application.conf](./conf/application.conf).
+
+This default value can be overridden via environment-specific app-config in the event that it needs to be turned off in a particular environment.
+
 ## Databases
 ### Message wrapper Collection
 When we receive a successful POST request to our root endpoint `inboundController` we create a record in the Message wrapper collection. This contains the XML payload forwarded from public-soap-proxy along with various pieces of metadata such as the UID of the file.
