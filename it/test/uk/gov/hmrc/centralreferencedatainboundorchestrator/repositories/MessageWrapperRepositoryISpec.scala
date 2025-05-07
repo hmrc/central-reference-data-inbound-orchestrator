@@ -23,14 +23,15 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.RecoverMethods.recoverToExceptionIf
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageWrapper, NoMatchingUIDInMongoError}
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import java.time.temporal.ChronoUnit
-import java.time.Instant
+import java.time.{Clock, Instant, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class MessageWrapperRepositoryISpec
@@ -44,14 +45,15 @@ class MessageWrapperRepositoryISpec
 
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
 
-  private val messageWrapper = MessageWrapper("id", "<Body/>", Received)
+  private val messageWrapper = MessageWrapper("id", "<Body/>", Received, instant, instant)
 
   private val mockAppConfig = mock[AppConfig]
   when(mockAppConfig.cacheTtl).thenReturn(1.toLong)
 
   val messageRepository = new MessageWrapperRepository(
     mongoComponent = mongoComponent,
-    appConfig = mockAppConfig
+    appConfig = mockAppConfig,
+    clock = Clock.fixed(instant, ZoneOffset.UTC)
   )
   override protected val repository: PlayMongoRepository[MessageWrapper] = messageRepository //unused
 
@@ -59,13 +61,11 @@ class MessageWrapperRepositoryISpec
 
     "must insert a message wrapper successfully" in {
 
-      val expectedResult = messageWrapper.copy(lastUpdated = instant, receivedTimestamp = instant)
-
       val insertResult     = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val fetchedRecord    = find(Filters.equal("uid", messageWrapper.uid)).futureValue.headOption.value
 
       insertResult mustEqual true
-      fetchedRecord.uid mustEqual expectedResult.uid
+      fetchedRecord.uid mustEqual messageWrapper.uid
     }
   }
 
@@ -73,13 +73,11 @@ class MessageWrapperRepositoryISpec
 
     "must be able to retrieve a message wrapper successfully using a uid" in {
 
-      val expectedResult = messageWrapper.copy(lastUpdated = instant, receivedTimestamp = instant)
-
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
-      fetchedRecord.value.copy(lastUpdated = instant, receivedTimestamp = instant) mustEqual expectedResult
+      fetchedRecord.value mustEqual messageWrapper
     }
 
     "must return none if uid not found" in {
@@ -92,29 +90,75 @@ class MessageWrapperRepositoryISpec
     }
   }
 
+  ".findByUidAndUpdate" - {
+
+    "must be able to retrieve a message wrapper successfully using a uid when it matches the expected status" in {
+
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
+      val fetchedRecord = messageRepository.findByUidAndUpdateStatus(messageWrapper.uid, expectedStatus = Received, newStatus = Pass).futureValue
+
+      insertResult mustEqual true
+      fetchedRecord.value mustEqual messageWrapper.copy(status = Pass)
+    }
+
+    "must return none if the message wrapper is not at the expected status" in {
+
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, Fail).futureValue
+      val fetchedRecord = messageRepository.findByUidAndUpdateStatus(messageWrapper.uid, expectedStatus = Received, newStatus = Pass).futureValue
+
+      insertResult mustEqual true
+      fetchedRecord must be(None)
+    }
+
+    "must return none if uid not found" in {
+
+      val insertResult = messageRepository.insertMessageWrapper("1234", messageWrapper.payload, messageWrapper.status).futureValue
+      val fetchedRecord = messageRepository.findByUidAndUpdateStatus(messageWrapper.uid, expectedStatus = Received, newStatus = Pass).futureValue
+
+      insertResult mustEqual true
+      fetchedRecord must be(None)
+    }
+  }
+
   ".updateStatus" - {
 
-    "must be able to update the status of an existing message wrapper" in {
+    "must be able to update the status of an existing message wrapper that matches the expected status" in {
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
       val fetchedBeforeUpdateRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
-      val updatedRecord = messageRepository.updateStatus(messageWrapper.uid, Sent).futureValue
+      messageRepository.updateStatus(messageWrapper.uid, expectedStatus = messageWrapper.status, newStatus = Pass).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
       fetchedBeforeUpdateRecord.value.status mustEqual Received
-      updatedRecord mustEqual true
-      fetchedRecord.value.status mustEqual Sent
+      fetchedRecord.value.status mustEqual Pass
+    }
+
+    "must return message unchanged if the existing message wrapper is not in the expected status" in {
+
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
+
+      recoverToExceptionIf[NoMatchingUIDInMongoError] {
+        messageRepository.updateStatus("1234", expectedStatus = Pass, newStatus = Submitted)
+      }
+
+      val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
+
+      insertResult mustEqual true
+      fetchedRecord.value.status mustEqual Received
     }
 
     "must return status unchanged if uid not found and updating status doesn't happen" in {
 
       val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
-      val updatedRecord = messageRepository.updateStatus("1234", Sent).futureValue
+
+      recoverToExceptionIf[NoMatchingUIDInMongoError] {
+        messageRepository.updateStatus("1234", expectedStatus = messageWrapper.status, Pass)
+      }
+
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
-      updatedRecord mustEqual true
       fetchedRecord.value.status mustEqual Received
     }
   }

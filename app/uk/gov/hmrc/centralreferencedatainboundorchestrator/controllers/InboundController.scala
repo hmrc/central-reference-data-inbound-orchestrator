@@ -77,9 +77,9 @@ class InboundController @Inject() (
         Success(Accepted)
       case Failure(err: Throwable) =>
         err match {
-          case InvalidXMLContentError(_)              => Success(BadRequest)
-          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
-          case _                                      => Success(InternalServerError)
+          case InvalidXMLContentError(_)                    => Success(BadRequest)
+          case MongoReadError(_, _) | MongoWriteError(_, _) => Success(InternalServerError)
+          case _                                            => Success(InternalServerError)
         }
     }
 

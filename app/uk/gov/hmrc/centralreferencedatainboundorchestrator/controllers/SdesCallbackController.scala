@@ -37,9 +37,9 @@ class SdesCallbackController @Inject() (sdesService: SdesService, cc: Controller
       case Success(_)              => Success(Accepted)
       case Failure(err: Throwable) =>
         err match
-          case NoMatchingUIDInMongoError(_)           => Success(NotFound)
-          case InvalidSDESNotificationError(_)        => Success(BadRequest)
-          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
-          case _                                      => Success(InternalServerError)
+          case NoMatchingUIDInMongoError(_)                 => Success(NotFound)
+          case InvalidSDESNotificationError(_)              => Success(BadRequest)
+          case MongoReadError(_, _) | MongoWriteError(_, _) => Success(InternalServerError)
+          case _                                            => Success(InternalServerError)
     }
   }

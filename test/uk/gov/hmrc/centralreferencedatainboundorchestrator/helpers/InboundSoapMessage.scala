@@ -20,7 +20,7 @@ import scala.xml.Elem
 
 object InboundSoapMessage {
 
-  val valid_soap_message: Elem =
+  def valid_soap_message_with_id(uid: String): Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
                    xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
                    xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
@@ -39,10 +39,12 @@ object InboundSoapMessage {
             <v2:timeCreation>2023-10-03T16:00:00</v2:timeCreation>
           </v41:MessageHeader>
           <v41:TaskIdentifier>TASKID12345</v41:TaskIdentifier>
-          <v41:ReceiveReferenceDataRequestResult>c04a1612-705d-4373-8840-9d137b14b301</v41:ReceiveReferenceDataRequestResult>
+          <v41:ReceiveReferenceDataRequestResult>{uid}</v41:ReceiveReferenceDataRequestResult>
         </v4:ReceiveReferenceDataReqMsg>
       </soap:Body>
     </soap:Envelope>
+
+  val valid_soap_message: Elem = valid_soap_message_with_id("c04a1612-705d-4373-8840-9d137b14b301")
 
   val valid_soap_is_alive_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
