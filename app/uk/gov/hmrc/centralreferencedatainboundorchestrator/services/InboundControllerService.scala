@@ -31,10 +31,10 @@ class InboundControllerService @Inject() (
 )(using ec: ExecutionContext)
     extends Logging:
 
-  def processMessage(xml: NodeSeq): Future[Boolean] =
+  def processMessage(xml: NodeSeq, action: SoapAction): Future[Boolean] =
     for
       uid   <- getUID(xml)
-      dbRes <- messageWrapperRepository.insertMessageWrapper(uid, xml.toString, Received)
+      dbRes <- messageWrapperRepository.insertMessageWrapper(uid, xml.toString, Received, action)
     yield dbRes
 
   private def getUID(xml: NodeSeq): Future[String] =

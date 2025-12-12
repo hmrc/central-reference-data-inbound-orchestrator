@@ -27,6 +27,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
 
 import scala.concurrent.Future
 import scala.xml.NodeBuffer
@@ -59,19 +60,19 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
   "processMessage" should {
     "return true when retrieving UID from XML and storing xml message in Mongo successfully" in {
-      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
+      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.successful(true))
 
-      val result = controller.processMessage(validTestBody).futureValue
+      val result = controller.processMessage(validTestBody, ReceiveReferenceData).futureValue
 
       result shouldBe true
     }
 
     "return MongoWriteError when failing to store message in Mongo" in {
-      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
+      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
-      val result = controller.processMessage(validTestBody)
+      val result = controller.processMessage(validTestBody, ReceiveReferenceData)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
         rt.getMessage shouldBe "failed"
@@ -79,10 +80,10 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
     }
 
     "Throw an exception if UID is missing in XML" in {
-      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any())(using any()))
+      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
-      val result = controller.processMessage(invalidTestBody)
+      val result = controller.processMessage(invalidTestBody, ReceiveReferenceData)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
         rt.getMessage shouldBe "Failed to find UID in xml - potentially an error report"

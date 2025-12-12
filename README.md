@@ -109,6 +109,7 @@ If a message is received with the following header: `x-files-included: true` the
   "receivedTimestamp": {
     "$date": "2024-08-08T10:07:24.435Z"
   },
+  "messageType" : "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData",
   "status": "Received",
   "uid": "c04a1612-705d-4373-8840-9d137b14b30a"
 }

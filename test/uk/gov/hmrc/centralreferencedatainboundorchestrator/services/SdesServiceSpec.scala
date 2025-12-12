@@ -33,6 +33,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
@@ -68,7 +69,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
 
   private val testBody: Elem = <Body></Body>
 
-  private def messageWrapper(id: String) = MessageWrapper(id, testBody.toString, Received)
+  private def messageWrapper(id: String) = MessageWrapper(id, testBody.toString, Received, ReceiveReferenceData)
 
   override def beforeEach(): Unit = {
     super.beforeEach()

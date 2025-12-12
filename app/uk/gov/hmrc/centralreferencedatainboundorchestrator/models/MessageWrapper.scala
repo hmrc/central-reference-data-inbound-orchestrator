@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
+import play.api.libs.json.{Format, Json, OFormat, OWrites, Reads, __}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
@@ -26,13 +28,33 @@ case class MessageWrapper(
   uid: String,
   payload: String,
   status: MessageStatus,
+  messageType: SoapAction = ReceiveReferenceData,
   lastUpdated: Instant,
   receivedTimestamp: Instant
 )
 
 object MessageWrapper:
-  def apply(uid: String, payload: String, status: MessageStatus): MessageWrapper =
-    MessageWrapper(uid, payload, status, Instant.now, Instant.now)
+//  def apply(uid: String, payload: String, status: MessageStatus): MessageWrapper =
+//    MessageWrapper(uid, payload, status, ReceiveReferenceData, Instant.now, Instant.now)
 
-  given dateFormat: Format[Instant]         = MongoJavatimeFormats.instantFormat
-  given mongoFormat: Format[MessageWrapper] = Json.format[MessageWrapper]
+  def apply(uid: String, payload: String, status: MessageStatus, messageType: SoapAction): MessageWrapper =
+    MessageWrapper(uid, payload, status, messageType, Instant.now, Instant.now)
+
+  given dateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
+
+  // 👇 custom Reads that defaults messageType when missing
+  private val mongoReads: Reads[MessageWrapper] =
+    (
+      (__ \ "uid").read[String] and
+        (__ \ "payload").read[String] and
+        (__ \ "status").read[MessageStatus] and
+        (__ \ "lastUpdated").read[Instant](dateFormat) and
+        (__ \ "receivedTimestamp").read[Instant](dateFormat) and
+        (__ \ "messageType").readNullable[SoapAction].map(_.getOrElse(ReceiveReferenceData))
+    ) { (uid, payload, status, lastUpdated, receivedTimestamp, messageType) =>
+      MessageWrapper(uid, payload, status, messageType, lastUpdated, receivedTimestamp)
+    }
+
+  private val mongoWrites: OWrites[MessageWrapper] = Json.writes[MessageWrapper]
+
+  given mongoFormat: OFormat[MessageWrapper] = OFormat(mongoReads, mongoWrites)

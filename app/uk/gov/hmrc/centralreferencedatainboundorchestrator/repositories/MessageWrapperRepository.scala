@@ -56,12 +56,12 @@ class MessageWrapperRepository @Inject() (
     ),
       Logging:
 
-  def insertMessageWrapper(uid: String, payload: String, status: MessageStatus)(using
+  def insertMessageWrapper(uid: String, payload: String, status: MessageStatus, action: SoapAction)(using
     ec: ExecutionContext
   ): Future[Boolean] = {
     logger.info(s"Inserting a message wrapper in $collectionName table with uid: $uid")
     collection
-      .insertOne(MessageWrapper(uid, payload, status))
+      .insertOne(MessageWrapper(uid, payload, status, action))
       .head()
       .map(_ =>
         logger.info(s"Inserted a message wrapper in $collectionName table with uid: $uid")

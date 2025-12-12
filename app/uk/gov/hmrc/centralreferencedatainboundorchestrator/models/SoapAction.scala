@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
+import play.api.libs.json.{Format, JsonValidationError, Reads, Writes}
+
 enum SoapAction(private val action: String) {
   case ReceiveReferenceData extends SoapAction(SoapAction.ReceiveReferenceDataAction)
   case IsAlive extends SoapAction(SoapAction.IsAliveAction)
@@ -27,4 +29,14 @@ object SoapAction {
   private lazy val IsAliveAction                     = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
   def fromString(action: String): Option[SoapAction] =
     SoapAction.values.find(_.action == action)
+
+  private[models] val actions = values.map(_.action)
+
+  given Format[SoapAction] = Format(
+    Reads
+      .of[String]
+      .filter(JsonValidationError("Unknown operation code"))(actions.contains)
+      .map(value => SoapAction.fromString(value).get),
+    Writes.of[String].contramap(_.action)
+  )
 }
