@@ -35,7 +35,7 @@ object SoapAction {
   given Format[SoapAction] = Format(
     Reads
       .of[String]
-      .filter(JsonValidationError("Unknown operation code"))(actions.contains)
+      .filter(JsonValidationError("Unknown soap action"))(actions.contains)
       .map(value => SoapAction.fromString(value).get),
     Writes.of[String].contramap(_.action)
   )

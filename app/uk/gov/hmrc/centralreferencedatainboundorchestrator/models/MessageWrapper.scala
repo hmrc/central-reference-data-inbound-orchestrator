@@ -34,9 +34,6 @@ case class MessageWrapper(
 )
 
 object MessageWrapper:
-//  def apply(uid: String, payload: String, status: MessageStatus): MessageWrapper =
-//    MessageWrapper(uid, payload, status, ReceiveReferenceData, Instant.now, Instant.now)
-
   def apply(uid: String, payload: String, status: MessageStatus, messageType: SoapAction): MessageWrapper =
     MessageWrapper(uid, payload, status, messageType, Instant.now, Instant.now)
 
