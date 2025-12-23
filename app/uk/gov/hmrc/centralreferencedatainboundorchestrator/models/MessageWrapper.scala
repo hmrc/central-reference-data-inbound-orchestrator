@@ -39,7 +39,6 @@ object MessageWrapper:
 
   given dateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-  // 👇 custom Reads that defaults messageType when missing
   private val mongoReads: Reads[MessageWrapper] =
     (
       (__ \ "uid").read[String] and
