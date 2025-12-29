@@ -66,13 +66,13 @@ class InboundController @Inject() (
       hasFilesHeader <- getHasFilesHeader
       if hasFilesHeader
       innerMessage   <- validationService.extractInnerMessage(validatedMessage)
-    yield processInboundMessage(innerMessage)
+    yield processInboundMessage(innerMessage, SoapAction.ReceiveReferenceData)
 
     result.getOrElse(Future.successful(BadRequest))
   }
 
-  private def processInboundMessage(body: NodeSeq): Future[Status] =
-    inboundControllerService.processMessage(body).transform {
+  private def processInboundMessage(body: NodeSeq, action: SoapAction): Future[Status] =
+    inboundControllerService.processMessage(body, action).transform {
       case Success(_)              =>
         Success(Accepted)
       case Failure(err: Throwable) =>

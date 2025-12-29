@@ -26,6 +26,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReceiveReferenceData}
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
@@ -44,7 +45,7 @@ class MessageWrapperRepositoryISpec
 
   private val instant = Instant.now.truncatedTo(ChronoUnit.MILLIS)
 
-  private val messageWrapper = MessageWrapper("id", "<Body/>", Received)
+  private val messageWrapper = MessageWrapper("id", "<Body/>", Received, ReceiveReferenceData)
 
   private val mockAppConfig = mock[AppConfig]
   when(mockAppConfig.cacheTtl).thenReturn(1.toLong)
@@ -61,11 +62,12 @@ class MessageWrapperRepositoryISpec
 
       val expectedResult = messageWrapper.copy(lastUpdated = instant, receivedTimestamp = instant)
 
-      val insertResult     = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
+      val insertResult     = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status, ReceiveReferenceData).futureValue
       val fetchedRecord    = find(Filters.equal("uid", messageWrapper.uid)).futureValue.headOption.value
 
       insertResult mustEqual true
       fetchedRecord.uid mustEqual expectedResult.uid
+      fetchedRecord.messageType mustEqual expectedResult.messageType
     }
   }
 
@@ -75,7 +77,7 @@ class MessageWrapperRepositoryISpec
 
       val expectedResult = messageWrapper.copy(lastUpdated = instant, receivedTimestamp = instant)
 
-      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status, ReceiveReferenceData).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
@@ -84,7 +86,7 @@ class MessageWrapperRepositoryISpec
 
     "must return none if uid not found" in {
 
-      val insertResult = messageRepository.insertMessageWrapper("1234", messageWrapper.payload, messageWrapper.status).futureValue
+      val insertResult = messageRepository.insertMessageWrapper("1234", messageWrapper.payload, messageWrapper.status, ReceiveReferenceData).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
@@ -96,25 +98,27 @@ class MessageWrapperRepositoryISpec
 
     "must be able to update the status of an existing message wrapper" in {
 
-      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status, ReceiveReferenceData).futureValue
       val fetchedBeforeUpdateRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
       val updatedRecord = messageRepository.updateStatus(messageWrapper.uid, Sent).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
       fetchedBeforeUpdateRecord.value.status mustEqual Received
+      fetchedBeforeUpdateRecord.value.messageType mustEqual ReceiveReferenceData
       updatedRecord mustEqual true
       fetchedRecord.value.status mustEqual Sent
     }
 
     "must return status unchanged if uid not found and updating status doesn't happen" in {
 
-      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status).futureValue
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status, IsAlive).futureValue
       val updatedRecord = messageRepository.updateStatus("1234", Sent).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
       updatedRecord mustEqual true
       fetchedRecord.value.status mustEqual Received
+      fetchedRecord.value.messageType mustEqual IsAlive
     }
   }
