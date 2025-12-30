@@ -31,6 +31,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Logger}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.IsAlive
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.module.OrchestratorModule
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.mongo.TimestampSupport
@@ -162,6 +163,34 @@ class OrchestratorPollerSpec
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(0)).updateStatus(any, any)
+      verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(Failed), any)
+    }
+
+    "fail to process item works when message handler is not present" in {
+      val wi = WorkItem[EISRequest](
+        new ObjectId(),
+        now,
+        now,
+        now,
+        ToDo,
+        0,
+        EISRequest("Test Payload", correlationID, IsAlive)
+      )
+      when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
+        .thenReturn(Future.successful(Some(wi)))
+
+      withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
+        poller.poller()
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.ERROR &&
+              event.getFormattedMessage == s"No message handler for messageType ${wi.item.messageType}"
+          ) shouldBe 1
+        }
+      }
+
+      verify(sdesService, times(0)).sendMessage(any)(using any)
       verify(sdesService, times(0)).updateStatus(any, any)
       verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(Failed), any)
     }

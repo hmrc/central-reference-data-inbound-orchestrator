@@ -19,18 +19,27 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
 
 class EISRequestSpec extends AnyWordSpec, Matchers:
 
-  private val testRequest: EISRequest = EISRequest("Some payload", "correlationID")
+  private val testRequest: EISRequest = EISRequest("Some payload", "correlationID", ReceiveReferenceData)
+  private val testRequestWithoutMessageType: EISRequest = EISRequest("Some payload", "correlationID")
   private val testJson: JsObject      = Json.obj(
     "payload"       -> "Some payload",
-    "correlationID" -> "correlationID"
+    "correlationID" -> "correlationID",
+    "messageType"   -> "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData"
   )
 
   "EISRequest" should {
     "serialise properly" in {
       val actual = Json.toJson(testRequest)
+
+      actual shouldBe testJson
+    }
+
+    "serialise properly when messageType not exist" in {
+      val actual = Json.toJson(testRequestWithoutMessageType)
 
       actual shouldBe testJson
     }
