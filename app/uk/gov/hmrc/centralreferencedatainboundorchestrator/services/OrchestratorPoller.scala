@@ -20,6 +20,7 @@ import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.TimestampSupport
@@ -77,34 +78,45 @@ class OrchestratorPoller @Inject() (
         logger.debug("We did not find any requests")
         Future.successful(true)
       case Some(wi) =>
-        try
-          sdesService.sendMessage(wi.item.payload) transform {
-            case Success(true)                                               =>
-              logger.info("Successfully sent message")
-              sdesService.updateStatus(true, wi.item.correlationID)
-              workItemRepo.completeAndDelete(wi.id)
-              Success(true)
-            case Success(false) if wi.failureCount < appConfig.maxRetryCount =>
-              logger.warn(s"failed to send work item `${wi.id}` for correlation Id `${wi.item.correlationID}`")
-              failedAttempt(wi)
-              Success(false)
-            case Success(false)                                              =>
-              logger.error(
-                s"failed to send work item `${wi.id}` ${wi.failureCount + 1} times. For correlation Id `${wi.item.correlationID}`"
-              )
-              failedAttempt(wi)
-              Success(false)
-            case Failure(ex)                                                 =>
-              logger.error("We got an error processing an item", ex)
-              failedAttempt(wi)
-              Success(false)
-          }
-        catch {
-          case ex: Throwable =>
-            logger.error(s"We got an exception $ex")
+        wi.item.messageType match {
+          case ReceiveReferenceData =>  sendMessageToEIS(wi)
+          case _ =>
+            logger.error(s"No message handler for messageType ${wi.item.messageType}")
             failedAttempt(wi)
             Future.successful(false)
         }
+       
+    }
+  }
+
+  private def sendMessageToEIS(wi: WorkItem[EISRequest]) = {
+    try
+      sdesService.sendMessage(wi.item.payload) transform {
+        case Success(true) =>
+          logger.info("Successfully sent message")
+          sdesService.updateStatus(true, wi.item.correlationID)
+          workItemRepo.completeAndDelete(wi.id)
+          Success(true)
+        case Success(false) if wi.failureCount < appConfig.maxRetryCount =>
+          logger.warn(s"failed to send work item `${wi.id}` for correlation Id `${wi.item.correlationID}`")
+          failedAttempt(wi)
+          Success(false)
+        case Success(false) =>
+          logger.error(
+            s"failed to send work item `${wi.id}` ${wi.failureCount + 1} times. For correlation Id `${wi.item.correlationID}`"
+          )
+          failedAttempt(wi)
+          Success(false)
+        case Failure(ex) =>
+          logger.error("We got an error processing an item", ex)
+          failedAttempt(wi)
+          Success(false)
+      }
+    catch {
+      case ex: Throwable =>
+        logger.error(s"We got an exception $ex")
+        failedAttempt(wi)
+        Future.successful(false)
     }
   }
 
