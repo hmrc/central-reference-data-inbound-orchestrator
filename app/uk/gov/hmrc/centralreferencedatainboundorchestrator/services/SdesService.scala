@@ -84,7 +84,7 @@ class SdesService @Inject() (
     messageWrapperRepository.findByUid(sdesCallback.correlationID) flatMap {
       case Some(messageWrapper) =>
         workItemRepo
-          .set(EISRequest(messageWrapper.payload, sdesCallback.correlationID))
+          .set(EISRequest(messageWrapper.payload, sdesCallback.correlationID, messageWrapper.messageType))
           .map(_ => s"Message with UID: ${sdesCallback.correlationID}, successfully queued")
       case None                 =>
         logger.error(s"failed to retrieve message wrapper with uid: ${sdesCallback.correlationID}")
