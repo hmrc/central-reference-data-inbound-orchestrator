@@ -4,7 +4,6 @@
            targetNamespace="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
            elementFormDefault="qualified" attributeFormDefault="unqualified">
 
-    <!-- ReceiveReferenceDataRequestType element in MSG namespace -->
     <xs:element name="ReceiveReferenceDataRequestType">
         <xs:complexType>
             <xs:sequence>
@@ -30,5 +29,4 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-
 </xs:schema>

@@ -353,8 +353,7 @@ class InboundControllerISpec extends AnyWordSpec,
       response.status shouldBe OK
       response.body.toString should include("12345678-1234-1234-1234-123456789012")
       response.body.toString should include("successfully queued")
-
-      // Verify work item was created in the repository
+      
       val workItems = await(workItemRepository.collection.find().toFuture())
       workItems.size shouldBe 1
       workItems.head.status shouldBe ProcessingStatus.ToDo

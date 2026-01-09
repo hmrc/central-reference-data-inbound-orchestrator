@@ -38,7 +38,7 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: Validat
   private def validateSoapMessage(loader: XMLLoader[Elem], soapMessage: String, action: SoapAction): Option[Elem] = {
     loader match {
       case validatingLoader: ValidatingXmlLoader => validatingLoader.setSchemaForAction(action)
-      case _                                     => // No schema validation for regular XML loader
+      case _                                     =>
     }
 
     val loadMessage = Try(loader.loadString(soapMessage))

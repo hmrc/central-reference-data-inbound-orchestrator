@@ -5,7 +5,6 @@
            targetNamespace="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
            elementFormDefault="qualified" attributeFormDefault="unqualified">
 
-    <!-- ReceiveReferenceDataReqMsg element in CSRD namespace -->
     <xs:element name="ReceiveReferenceDataReqMsg">
         <xs:complexType>
             <xs:sequence>
@@ -13,5 +12,4 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-
 </xs:schema>
