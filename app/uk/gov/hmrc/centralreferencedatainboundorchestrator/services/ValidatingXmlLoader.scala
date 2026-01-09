@@ -46,7 +46,7 @@ class ValidatingXmlLoader extends XMLLoader[Elem]:
 
   private def getSchemaForAction(action: SoapAction): Schema =
     action match
-      case ReferenceDataExport | IsAlive => referenceDataExportSchema // TODO check this
+      case ReferenceDataExport | IsAlive => referenceDataExportSchema
       case ReferenceDataSubscription     => referenceDataSubscriptionSchema
 
   private val currentSchema: ThreadLocal[Schema] =
