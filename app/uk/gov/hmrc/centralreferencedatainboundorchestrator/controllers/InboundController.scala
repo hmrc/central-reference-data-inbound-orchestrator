@@ -20,6 +20,7 @@ import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -33,7 +34,8 @@ class InboundController @Inject() (
   cc: ControllerComponents,
   inboundControllerService: InboundControllerService,
   validationService: ValidationService,
-  auditHandler: AuditHandler
+  auditHandler: AuditHandler,
+  workItemRepo: EISWorkItemRepository
 )(using ec: ExecutionContext)
     extends BackendController(cc)
     with Logging:
@@ -43,10 +45,10 @@ class InboundController @Inject() (
   def submit(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
     auditHandler.auditNewMessageWrapper(request.body)
 
-    val result = for
-      validatedMessage <- validationService.validateSoapMessage(request.body)
-      soapAction       <- validationService.extractSoapAction(validatedMessage)
-    yield handleInboundMessage(soapAction, validatedMessage)
+    val result = validationService.validateAndExtractAction(request.body) match {
+      case Some((soapAction, validatedMessage)) => Some(handleInboundMessage(soapAction, validatedMessage))
+      case None                                 => None
+    }
 
     result.getOrElse(Future.successful(BadRequest))
   }
@@ -55,9 +57,11 @@ class InboundController @Inject() (
     request: Request[?]
   ): Future[Result] =
     action match {
-      case SoapAction.ReceiveReferenceData =>
+      case SoapAction.ReferenceDataExport       =>
         handleReferenceDataMessage(validatedMessage)
-      case SoapAction.IsAlive              =>
+      case SoapAction.ReferenceDataSubscription =>
+        handleReferenceDataSubscription(validatedMessage)
+      case SoapAction.IsAlive                   =>
         Future.successful(Ok(IsAliveResponse.xml))
     }
 
@@ -66,10 +70,37 @@ class InboundController @Inject() (
       hasFilesHeader <- getHasFilesHeader
       if hasFilesHeader
       innerMessage   <- validationService.extractInnerMessage(validatedMessage)
-    yield processInboundMessage(innerMessage, SoapAction.ReceiveReferenceData)
+    yield processInboundMessage(innerMessage, SoapAction.ReferenceDataExport)
 
     result.getOrElse(Future.successful(BadRequest))
   }
+
+  private def handleReferenceDataSubscription(validatedMessage: NodeSeq): Future[Result] = {
+    val hasRDEntityList = (validatedMessage \\ "ReceiveReferenceDataRequestType" \ "RDEntityList").nonEmpty
+    val hasErrorReport  = (validatedMessage \\ "ReceiveReferenceDataRequestType" \ "ErrorReport").nonEmpty
+
+    (hasRDEntityList, hasErrorReport) match {
+      case (true, _)     =>
+        extractUuid(validatedMessage) match {
+          case Some(uuid) =>
+            workItemRepo
+              .set(EISRequest(validatedMessage.toString, uuid, SoapAction.ReferenceDataSubscription))
+              .map(_ => Ok(s"Message with UID: $uuid, successfully queued"))
+          case None       =>
+            Future.successful(BadRequest("Missing or invalid UUID in MessageID"))
+        }
+      case (false, true) =>
+        Future.successful(BadRequest("Error message is not yet implemented"))
+      case _             =>
+        Future.successful(BadRequest("Payload must contain either RDEntityList or ErrorReport"))
+    }
+  }
+
+  private def extractUuid(soapMessage: NodeSeq): Option[String] =
+    for
+      messageIDNode <- (soapMessage \\ "Header" \ "MessageID").headOption
+      uuid           = messageIDNode.text.trim.stripPrefix("uuid:")
+    yield uuid
 
   private def processInboundMessage(body: NodeSeq, action: SoapAction): Future[Status] =
     inboundControllerService.processMessage(body, action).transform {

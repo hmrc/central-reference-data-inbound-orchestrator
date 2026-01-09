@@ -19,13 +19,16 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 import play.api.libs.json.{Format, JsonValidationError, Reads, Writes}
 
 enum SoapAction(private val action: String) {
-  case ReceiveReferenceData extends SoapAction(SoapAction.ReceiveReferenceDataAction)
+  case ReferenceDataExport extends SoapAction(SoapAction.ReferenceDataExportAction)
+  case ReferenceDataSubscription extends SoapAction(SoapAction.ReferenceDataSubscriptionAction)
   case IsAlive extends SoapAction(SoapAction.IsAliveAction)
 }
 
 object SoapAction {
-  private lazy val ReceiveReferenceDataAction        =
+  private lazy val ReferenceDataExportAction         =
     "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData"
+  private lazy val ReferenceDataSubscriptionAction   =
+    "CCN2.Service.Customs.Default.CSRD2.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData"
   private lazy val IsAliveAction                     = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
   def fromString(action: String): Option[SoapAction] =
     SoapAction.values.find(_.action == action)

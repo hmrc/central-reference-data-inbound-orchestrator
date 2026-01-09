@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:msg="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
+           targetNamespace="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- ReceiveReferenceDataRequestType element in MSG namespace -->
+    <xs:element name="ReceiveReferenceDataRequestType">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="MessageHeader">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:any namespace="##any" processContents="lax" minOccurs="1" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                        <xs:anyAttribute namespace="##any" processContents="lax"/>
+                    </xs:complexType>
+                </xs:element>
+                <xs:choice>
+                    <xs:element name="RDEntityList">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                            <xs:anyAttribute namespace="##any" processContents="lax"/>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="ErrorReport" type="xs:base64Binary"/>
+                </xs:choice>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

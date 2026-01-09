@@ -26,13 +26,26 @@ import scala.xml.Utility.trim
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, Node, NodeSeq, XML}
 
-class ValidationService @Inject() (val appConfig: AppConfig, val loader: XMLLoader[Elem]) extends Logging:
-  private def validateSoapMessage(loader: XMLLoader[Elem], soapMessage: String): Option[Elem] = {
+class ValidationService @Inject() (val appConfig: AppConfig, val loader: ValidatingXmlLoader) extends Logging:
+
+  def validateAndExtractAction(soapMessage: String): Option[(SoapAction, Node)] =
+    for
+      preliminaryParse <- scala.util.Try(XML.loadString(soapMessage)).toOption
+      soapAction       <- extractSoapAction(preliminaryParse)
+      validatedMessage <- validateSoapMessage(soapMessage, soapAction)
+    yield (soapAction, validatedMessage)
+
+  private def validateSoapMessage(loader: XMLLoader[Elem], soapMessage: String, action: SoapAction): Option[Elem] = {
+    loader match {
+      case validatingLoader: ValidatingXmlLoader => validatingLoader.setSchemaForAction(action)
+      case _                                     => // No schema validation for regular XML loader
+    }
+
     val loadMessage = Try(loader.loadString(soapMessage))
 
     loadMessage.failed.foreach { ex =>
       logger.error(
-        s"Failed to validate schema of message: $soapMessage",
+        s"Failed to validate schema of message for action $action: $soapMessage",
         ex
       )
     }
@@ -65,5 +78,5 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: XMLLoad
       action     <- SoapAction.fromString(actionNode.text.trim)
     yield action
 
-  def validateSoapMessage(soapMessage: String): Option[Node] =
-    validateSoapMessage(if appConfig.xsdValidation then loader else XML, soapMessage)
+  private def validateSoapMessage(soapMessage: String, action: SoapAction): Option[Node] =
+    validateSoapMessage(if appConfig.xsdValidation then loader else XML, soapMessage, action)

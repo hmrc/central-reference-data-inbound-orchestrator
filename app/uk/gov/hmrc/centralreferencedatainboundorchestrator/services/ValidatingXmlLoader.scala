@@ -17,36 +17,57 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import org.xml.sax.SAXParseException
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReferenceDataExport, ReferenceDataSubscription}
 
 import javax.xml.XMLConstants
 import javax.xml.parsers.{SAXParser, SAXParserFactory}
+import javax.xml.transform.Source
+import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.{Schema, SchemaFactory}
 import scala.xml.Elem
 import scala.xml.factory.XMLLoader
 import scala.xml.parsing.{FactoryAdapter, NoBindingFactoryAdapter}
 
 class ValidatingXmlLoader extends XMLLoader[Elem]:
-  private lazy val soapSchema: Schema =
+
+  private lazy val referenceDataExportSchema: Schema =
     val factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
     factory.newSchema(getClass.getResource("/schemas/soap-envelope.xsd"))
 
-  private lazy val parserInstance: ThreadLocal[SAXParser] =
-    ThreadLocal.withInitial { () =>
-      val factory = SAXParserFactory.newInstance()
-      factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-      factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-      factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-      factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-      factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-      factory.setFeature("http://xml.org/sax/features/resolve-dtd-uris", false)
-      factory.setNamespaceAware(true)
-      factory.setXIncludeAware(false)
-      factory.setSchema(soapSchema)
-      factory.newSAXParser()
-    }
+  private lazy val referenceDataSubscriptionSchema: Schema =
+    val factory                = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+    val schemas: Array[Source] = Array(
+      new StreamSource(getClass.getResourceAsStream("/schemas/subscription/request-message-types.xsd")),
+      new StreamSource(getClass.getResourceAsStream("/schemas/subscription/soap-envelop.xsd")),
+      new StreamSource(getClass.getResourceAsStream("/schemas/subscription/request-type.xsd"))
+    )
+    factory.newSchema(schemas)
+
+  private def getSchemaForAction(action: SoapAction): Schema =
+    action match
+      case ReferenceDataExport | IsAlive => referenceDataExportSchema // TODO check this
+      case ReferenceDataSubscription     => referenceDataSubscriptionSchema
+
+  private val currentSchema: ThreadLocal[Schema] =
+    ThreadLocal.withInitial(() => referenceDataExportSchema)
+
+  def setSchemaForAction(action: SoapAction): Unit =
+    currentSchema.set(getSchemaForAction(action))
 
   override def adapter: FactoryAdapter = new NoBindingFactoryAdapter {
     override def error(e: SAXParseException): Unit = throw e
   }
 
-  override def parser: SAXParser = parserInstance.get()
+  override def parser: SAXParser =
+    val factory = SAXParserFactory.newInstance()
+    factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+    factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
+    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+    factory.setFeature("http://xml.org/sax/features/resolve-dtd-uris", false)
+    factory.setNamespaceAware(true)
+    factory.setXIncludeAware(false)
+    factory.setSchema(currentSchema.get())
+    factory.newSAXParser()

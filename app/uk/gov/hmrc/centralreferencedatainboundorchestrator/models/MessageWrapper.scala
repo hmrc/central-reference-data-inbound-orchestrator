@@ -19,7 +19,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{Format, Json, OFormat, OWrites, Reads, __}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
@@ -28,7 +28,7 @@ case class MessageWrapper(
   uid: String,
   payload: String,
   status: MessageStatus,
-  messageType: SoapAction = ReceiveReferenceData,
+  messageType: SoapAction = ReferenceDataExport,
   lastUpdated: Instant,
   receivedTimestamp: Instant
 )
@@ -46,7 +46,7 @@ object MessageWrapper:
         (__ \ "status").read[MessageStatus] and
         (__ \ "lastUpdated").read[Instant](dateFormat) and
         (__ \ "receivedTimestamp").read[Instant](dateFormat) and
-        (__ \ "messageType").readNullable[SoapAction].map(_.getOrElse(ReceiveReferenceData))
+        (__ \ "messageType").readNullable[SoapAction].map(_.getOrElse(ReferenceDataExport))
     ) { (uid, payload, status, lastUpdated, receivedTimestamp, messageType) =>
       MessageWrapper(uid, payload, status, messageType, lastUpdated, receivedTimestamp)
     }

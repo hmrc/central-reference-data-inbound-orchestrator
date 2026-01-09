@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:csrd="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
+           xmlns:msg="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
+           targetNamespace="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <!-- ReceiveReferenceDataReqMsg element in CSRD namespace -->
+    <xs:element name="ReceiveReferenceDataReqMsg">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:any namespace="##other" processContents="strict" minOccurs="1" maxOccurs="1"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
