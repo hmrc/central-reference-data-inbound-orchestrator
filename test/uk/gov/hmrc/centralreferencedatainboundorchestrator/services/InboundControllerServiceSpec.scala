@@ -27,7 +27,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
 
 import scala.concurrent.Future
 import scala.xml.NodeBuffer
@@ -63,7 +63,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.successful(true))
 
-      val result = controller.processMessage(validTestBody, ReceiveReferenceData).futureValue
+      val result = controller.processMessage(validTestBody, ReferenceDataExport).futureValue
 
       result shouldBe true
     }
@@ -72,7 +72,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
-      val result = controller.processMessage(validTestBody, ReceiveReferenceData)
+      val result = controller.processMessage(validTestBody, ReferenceDataExport)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
         rt.getMessage shouldBe "failed"
@@ -83,7 +83,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
-      val result = controller.processMessage(invalidTestBody, ReceiveReferenceData)
+      val result = controller.processMessage(invalidTestBody, ReferenceDataExport)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
         rt.getMessage shouldBe "Failed to find UID in xml - potentially an error report"

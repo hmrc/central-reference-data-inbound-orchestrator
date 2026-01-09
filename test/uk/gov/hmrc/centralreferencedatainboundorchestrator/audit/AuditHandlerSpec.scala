@@ -27,7 +27,7 @@ import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.{MessageWrapper, SdesCallbackResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
@@ -76,7 +76,7 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers, BeforeAndAfterEach, ScalaF
       "properties"        -> Json.arr()
     )
   )
-  val testMessageWrapper: MessageWrapper         = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReceiveReferenceData)
+  val testMessageWrapper: MessageWrapper         = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport)
 
   val successfulAudit: Future[AuditResult] = Future.successful(Success)
 

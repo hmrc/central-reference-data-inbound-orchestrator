@@ -20,7 +20,7 @@ import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.TimestampSupport
@@ -79,20 +79,20 @@ class OrchestratorPoller @Inject() (
         Future.successful(true)
       case Some(wi) =>
         wi.item.messageType match {
-          case ReceiveReferenceData =>  sendMessageToEIS(wi)
-          case _ =>
+          case ReferenceDataExport => sendMessageToEIS(wi)
+          case _                   =>
             logger.error(s"No message handler for messageType ${wi.item.messageType}")
             failedAttempt(wi)
             Future.successful(false)
         }
-       
+
     }
   }
 
-  private def sendMessageToEIS(wi: WorkItem[EISRequest]) = {
+  private def sendMessageToEIS(wi: WorkItem[EISRequest]) =
     try
       sdesService.sendMessage(wi.item.payload) transform {
-        case Success(true) =>
+        case Success(true)                                               =>
           logger.info("Successfully sent message")
           sdesService.updateStatus(true, wi.item.correlationID)
           workItemRepo.completeAndDelete(wi.id)
@@ -101,13 +101,13 @@ class OrchestratorPoller @Inject() (
           logger.warn(s"failed to send work item `${wi.id}` for correlation Id `${wi.item.correlationID}`")
           failedAttempt(wi)
           Success(false)
-        case Success(false) =>
+        case Success(false)                                              =>
           logger.error(
             s"failed to send work item `${wi.id}` ${wi.failureCount + 1} times. For correlation Id `${wi.item.correlationID}`"
           )
           failedAttempt(wi)
           Success(false)
-        case Failure(ex) =>
+        case Failure(ex)                                                 =>
           logger.error("We got an error processing an item", ex)
           failedAttempt(wi)
           Success(false)
@@ -118,7 +118,6 @@ class OrchestratorPoller @Inject() (
         failedAttempt(wi)
         Future.successful(false)
     }
-  }
 
   private def failedAttempt(wi: WorkItem[EISRequest]): Future[Boolean] =
     if wi.failureCount < appConfig.maxRetryCount then workItemRepo.markAs(wi.id, ProcessingStatus.Failed)

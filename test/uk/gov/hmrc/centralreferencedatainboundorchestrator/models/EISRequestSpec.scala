@@ -19,11 +19,10 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
 
 class EISRequestSpec extends AnyWordSpec, Matchers:
 
-  private val testRequest: EISRequest = EISRequest("Some payload", "correlationID", ReceiveReferenceData)
+  private val testRequest: EISRequest = EISRequest("Some payload", "correlationID")
   private val testRequestWithoutMessageType: EISRequest = EISRequest("Some payload", "correlationID")
   private val testJson: JsObject      = Json.obj(
     "payload"       -> "Some payload",

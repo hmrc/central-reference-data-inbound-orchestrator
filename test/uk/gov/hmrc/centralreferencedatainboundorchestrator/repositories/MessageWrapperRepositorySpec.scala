@@ -22,7 +22,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.Received
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReceiveReferenceData
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 
 import java.util.UUID
@@ -40,12 +40,12 @@ class MessageWrapperRepositorySpec
 
   "MessageWrapperRepository" should {
     "Delete all existing documents" in {
-      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReceiveReferenceData).futureValue
-      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReceiveReferenceData).futureValue
-      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReceiveReferenceData).futureValue
-      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReceiveReferenceData).futureValue
-      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReceiveReferenceData).futureValue
-      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReceiveReferenceData).futureValue
+      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport).futureValue
+      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport).futureValue
+      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport).futureValue
+      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport).futureValue
+      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport).futureValue
+      repository.insertMessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport).futureValue
 
       repository.deleteAll().futureValue
 
