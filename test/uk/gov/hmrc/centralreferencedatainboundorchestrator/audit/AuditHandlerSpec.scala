@@ -76,7 +76,8 @@ class AuditHandlerSpec extends AnyWordSpec, Matchers, BeforeAndAfterEach, ScalaF
       "properties"        -> Json.arr()
     )
   )
-  val testMessageWrapper: MessageWrapper         = MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport)
+  val testMessageWrapper: MessageWrapper         =
+    MessageWrapper(UUID.randomUUID().toString, "PAYLOAD", Received, ReferenceDataExport)
 
   val successfulAudit: Future[AuditResult] = Future.successful(Success)
 

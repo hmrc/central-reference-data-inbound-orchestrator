@@ -196,7 +196,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(subscriptionMessageWithRDEntityList.toString)
       )
 
-      status(result) shouldBe OK
+      status(result)        shouldBe OK
       contentAsString(result) should include("12345678-1234-1234-1234-123456789abc")
       contentAsString(result) should include("successfully queued")
 
@@ -235,7 +235,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(subscriptionMessageWithoutEither.toString)
       )
 
-      status(result) shouldBe BAD_REQUEST
+      status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Payload must contain either RDEntityList or ErrorReport")
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
@@ -254,7 +254,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(subscriptionMessageWithoutUUID.toString)
       )
 
-      status(result) shouldBe BAD_REQUEST
+      status(result)        shouldBe BAD_REQUEST
       contentAsString(result) should include("Missing or invalid UUID in MessageID")
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)

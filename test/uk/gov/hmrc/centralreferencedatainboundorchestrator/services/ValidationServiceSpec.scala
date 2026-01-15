@@ -201,24 +201,24 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       "succeed when validating a good soap message" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
         val actual = validationService.validateAndExtractAction(valid_soap_message.toString)
-        actual shouldBe defined
-        actual.value._1 shouldBe SoapAction.ReferenceDataExport
+        actual               shouldBe defined
+        actual.value._1      shouldBe SoapAction.ReferenceDataExport
         actual.value._2.head shouldBe trim(valid_soap_message)
       }
 
       "succeed when validating a good is alive soap message" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
         val actual = validationService.validateAndExtractAction(valid_is_alive_soap_message.toString)
-        actual shouldBe defined
-        actual.value._1 shouldBe SoapAction.IsAlive
+        actual               shouldBe defined
+        actual.value._1      shouldBe SoapAction.IsAlive
         actual.value._2.head shouldBe trim(valid_is_alive_soap_message)
       }
 
       "succeed when validating a good error report soap message" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
         val actual = validationService.validateAndExtractAction(valid_error_report_soap_message.toString)
-        actual shouldBe defined
-        actual.value._1 shouldBe SoapAction.ReferenceDataExport
+        actual               shouldBe defined
+        actual.value._1      shouldBe SoapAction.ReferenceDataExport
         actual.value._2.head shouldBe trim(valid_error_report_soap_message)
       }
 
@@ -230,7 +230,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       "succeed when validating a reference soap message with unexpected extra elements when XSD validation is disabled" in {
         when(mockAppConfig.xsdValidation).thenReturn(false)
         val actual = validationService.validateAndExtractAction(invalid_soap_message.toString)
-        actual shouldBe defined
+        actual          shouldBe defined
         actual.value._1 shouldBe SoapAction.ReferenceDataExport
         actual.value._2 shouldBe invalid_soap_message
       }
@@ -243,7 +243,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       "succeed when validating an is alive soap message with unexpected extra elements when XSD validation is disabled" in {
         when(mockAppConfig.xsdValidation).thenReturn(false)
         val actual = validationService.validateAndExtractAction(invalid_is_alive_soap_message.toString)
-        actual shouldBe defined
+        actual          shouldBe defined
         actual.value._1 shouldBe SoapAction.IsAlive
         actual.value._2 shouldBe invalid_is_alive_soap_message
       }
@@ -256,7 +256,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       "succeed when validating a good soap message with missing details in the body when XSD validation is disabled" in {
         when(mockAppConfig.xsdValidation).thenReturn(false)
         val actual = validationService.validateAndExtractAction(valid_soap_message_with_invalid_body.toString)
-        actual shouldBe defined
+        actual          shouldBe defined
         actual.value._1 shouldBe SoapAction.ReferenceDataExport
         actual.value._2 shouldBe valid_soap_message_with_invalid_body
       }
