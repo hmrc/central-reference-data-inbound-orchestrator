@@ -389,3 +389,58 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       verify(mockInboundService, times(1)).processMessage(any, any)
     }
   }
+
+  "extractUuid" should {
+
+    "extract valid UUID with uuid: prefix" in {
+      val soapMessage =
+        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+          <soap:Header>
+            <MessageID>uuid:123e4567-e89b-12d3-a456-426614174000</MessageID>
+          </soap:Header>
+        </soap:Envelope>
+
+      val method = controller.getClass.getDeclaredMethod("extractUuid", classOf[NodeSeq])
+      method.setAccessible(true)
+      method.invoke(controller, soapMessage) shouldBe Some("123e4567-e89b-12d3-a456-426614174000")
+    }
+
+    "return None when UUID is invalid or missing" in {
+      val soapMessage =
+        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+          <soap:Header>
+            <MessageID>uuid:invalid-uuid-format</MessageID>
+          </soap:Header>
+        </soap:Envelope>
+
+      val method = controller.getClass.getDeclaredMethod("extractUuid", classOf[NodeSeq])
+      method.setAccessible(true)
+      method.invoke(controller, soapMessage) shouldBe None
+    }
+
+    "return None when MessageID is empty" in {
+      val soapMessage =
+        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+          <soap:Header>
+            <MessageID></MessageID>
+          </soap:Header>
+        </soap:Envelope>
+
+      val method = controller.getClass.getDeclaredMethod("extractUuid", classOf[NodeSeq])
+      method.setAccessible(true)
+      method.invoke(controller, soapMessage) shouldBe None
+    }
+
+    "return None when MessageID has less than 32 (UUID.length) characters" in {
+      val soapMessage =
+        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+          <soap:Header>
+            <MessageID>uuid:123</MessageID>
+          </soap:Header>
+        </soap:Envelope>
+
+      val method = controller.getClass.getDeclaredMethod("extractUuid", classOf[NodeSeq])
+      method.setAccessible(true)
+      method.invoke(controller, soapMessage) shouldBe None
+    }
+  }

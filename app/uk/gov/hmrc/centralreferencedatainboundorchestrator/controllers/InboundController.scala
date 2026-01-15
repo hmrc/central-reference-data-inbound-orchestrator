@@ -23,6 +23,8 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import java.util.UUID
+import scala.util.Try
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -97,10 +99,10 @@ class InboundController @Inject() (
   }
 
   private def extractUuid(soapMessage: NodeSeq): Option[String] =
-    for
-      messageIDNode <- (soapMessage \\ "Header" \ "MessageID").headOption
-      uuid           = messageIDNode.text.trim.stripPrefix("uuid:")
-    yield uuid
+    (soapMessage \\ "Header" \ "MessageID").headOption
+      .map(_.text.trim.stripPrefix("uuid:"))
+      .filter(_.nonEmpty)
+      .flatMap(uuid => Try(UUID.fromString(uuid)).toOption.map(_.toString))
 
   private def processInboundMessage(body: NodeSeq, action: SoapAction): Future[Status] =
     inboundControllerService.processMessage(body, action).transform {
