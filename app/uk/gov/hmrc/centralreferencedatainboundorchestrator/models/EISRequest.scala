@@ -18,7 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class EISRequest(payload: String, correlationID: String, messageType: SoapAction = SoapAction.ReceiveReferenceData)
+case class EISRequest(payload: String, correlationID: String, messageType: SoapAction = SoapAction.ReferenceDataExport)
 
 object EISRequest:
   given EISRequestFormat: OFormat[EISRequest] = Json.format[EISRequest]

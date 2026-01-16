@@ -35,26 +35,26 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
 
   private val valid_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-      xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
-      xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
-      xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
-        <soap:Header>
-            <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData</Action>
-            <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
-        </soap:Header>
-        <soap:Body>
-            <v4:ReceiveReferenceDataReqMsg>
-                <v41:MessageHeader>
-                    <v2:messageID>testMessageId123</v2:messageID>
-                    <v2:messageName>test message name</v2:messageName>
-                    <v2:sender>CS/RD2</v2:sender>
-                    <v2:recipient>DPS</v2:recipient>
-                    <v2:timeCreation>2023-10-03T16:00:00</v2:timeCreation>
-                </v41:MessageHeader>
-                <v41:TaskIdentifier>TASKID12345</v41:TaskIdentifier>
-                <v41:ReceiveReferenceDataRequestResult>c04a1612-705d-4373-8840-9d137b14b301</v41:ReceiveReferenceDataRequestResult>
-            </v4:ReceiveReferenceDataReqMsg>
-        </soap:Body>
+                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+                   xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
+                   xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v4:ReceiveReferenceDataReqMsg>
+          <v41:MessageHeader>
+            <v2:messageID>testMessageId123</v2:messageID>
+            <v2:messageName>test message name</v2:messageName>
+            <v2:sender>CS/RD2</v2:sender>
+            <v2:recipient>DPS</v2:recipient>
+            <v2:timeCreation>2023-10-03T16:00:00</v2:timeCreation>
+          </v41:MessageHeader>
+          <v41:TaskIdentifier>TASKID12345</v41:TaskIdentifier>
+          <v41:ReceiveReferenceDataRequestResult>c04a1612-705d-4373-8840-9d137b14b301</v41:ReceiveReferenceDataRequestResult>
+        </v4:ReceiveReferenceDataReqMsg>
+      </soap:Body>
     </soap:Envelope>
 
   private val valid_is_alive_soap_message: Elem =
@@ -83,27 +83,27 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
 
   private val valid_error_report_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-                     xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
-                     xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
-                     xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
-        <soap:Header>
-          <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData</Action>
-          <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
-        </soap:Header>
-        <soap:Body>
-          <v4:ReceiveReferenceDataReqMsg>
-            <v41:MessageHeader>
-              <v2:messageID>testMessageId123</v2:messageID>
-              <v2:messageName>test message name</v2:messageName>
-              <v2:sender>CS/RD2</v2:sender>
-              <v2:recipient>DPS</v2:recipient>
-              <v2:timeCreation>2023-10-03T16:00:00</v2:timeCreation>
-            </v41:MessageHeader>
-            <v41:TaskIdentifier>TASKID12345</v41:TaskIdentifier>
-            <v41:ErrorReport>c04a1612-705d-4373-8840-9d137b14b301</v41:ErrorReport>
-          </v4:ReceiveReferenceDataReqMsg>
-        </soap:Body>
-      </soap:Envelope>
+                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+                   xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
+                   xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v4:ReceiveReferenceDataReqMsg>
+          <v41:MessageHeader>
+            <v2:messageID>testMessageId123</v2:messageID>
+            <v2:messageName>test message name</v2:messageName>
+            <v2:sender>CS/RD2</v2:sender>
+            <v2:recipient>DPS</v2:recipient>
+            <v2:timeCreation>2023-10-03T16:00:00</v2:timeCreation>
+          </v41:MessageHeader>
+          <v41:TaskIdentifier>TASKID12345</v41:TaskIdentifier>
+          <v41:ErrorReport>c04a1612-705d-4373-8840-9d137b14b301</v41:ErrorReport>
+        </v4:ReceiveReferenceDataReqMsg>
+      </soap:Body>
+    </soap:Envelope>
 
   private val invalid_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
@@ -160,100 +160,121 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
 
   private val valid_soap_message_with_invalid_body: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-                     xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
-                     xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
-                     xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
-        <soap:Header>
-          <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData</Action>
-          <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
-        </soap:Header>
-        <soap:Body>
-          <v4:ReceiveReferenceDataReqMsg>
-            <ExtraNode>
-              <Should>
-                <Not>
-                  <Be>
-                    <Present/>
-                  </Be>
-                </Not>
-              </Should>
-            </ExtraNode>
-          </v4:ReceiveReferenceDataReqMsg>
-        </soap:Body>
-      </soap:Envelope>
+                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+                   xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
+                   xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v4:ReceiveReferenceDataReqMsg>
+          <ExtraNode>
+            <Should>
+              <Not>
+                <Be>
+                  <Present/>
+                </Be>
+              </Not>
+            </Should>
+          </ExtraNode>
+        </v4:ReceiveReferenceDataReqMsg>
+      </soap:Body>
+    </soap:Envelope>
 
   private val valid_inner_message: Elem =
     <MainMessage>
-        <Body>
-            <TaskIdentifier>TASKID12345</TaskIdentifier>
-            <AttributeName>ReferenceData</AttributeName>
-            <MessageType>gZip</MessageType>
-            <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b301</IncludedBinaryObject>
-            <MessageSender>CS/RD2</MessageSender>
-        </Body>
+      <Body>
+        <TaskIdentifier>TASKID12345</TaskIdentifier>
+        <AttributeName>ReferenceData</AttributeName>
+        <MessageType>gZip</MessageType>
+        <IncludedBinaryObject>c04a1612-705d-4373-8840-9d137b14b301</IncludedBinaryObject>
+        <MessageSender>CS/RD2</MessageSender>
+      </Body>
     </MainMessage>
 
   override def beforeEach(): Unit =
     reset(mockAppConfig)
 
   "ValidationService" when {
-    "validating SOAP message" should {
+    "validating and extracting action from SOAP message" should {
       "succeed when validating a good soap message" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
-        val actual = validationService.validateSoapMessage(valid_soap_message.toString)
-        actual.value.head shouldBe trim(valid_soap_message)
+        val actual = validationService.validateAndExtractAction(valid_soap_message.toString)
+        actual               shouldBe defined
+        actual.value._1      shouldBe SoapAction.ReferenceDataExport
+        actual.value._2.head shouldBe trim(valid_soap_message)
       }
 
       "succeed when validating a good is alive soap message" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
-        val actual = validationService.validateSoapMessage(valid_is_alive_soap_message.toString)
-        actual.value.head shouldBe trim(valid_is_alive_soap_message)
+        val actual = validationService.validateAndExtractAction(valid_is_alive_soap_message.toString)
+        actual               shouldBe defined
+        actual.value._1      shouldBe SoapAction.IsAlive
+        actual.value._2.head shouldBe trim(valid_is_alive_soap_message)
       }
 
       "succeed when validating a good error report soap message" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
-        val actual = validationService.validateSoapMessage(valid_error_report_soap_message.toString)
-        actual.value.head shouldBe trim(valid_error_report_soap_message)
+        val actual = validationService.validateAndExtractAction(valid_error_report_soap_message.toString)
+        actual               shouldBe defined
+        actual.value._1      shouldBe SoapAction.ReferenceDataExport
+        actual.value._2.head shouldBe trim(valid_error_report_soap_message)
       }
 
       "fail when validating a reference data soap message with unexpected extra elements" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
-        validationService.validateSoapMessage(invalid_soap_message.toString) shouldBe None
+        validationService.validateAndExtractAction(invalid_soap_message.toString) shouldBe None
       }
 
       "succeed when validating a reference soap message with unexpected extra elements when XSD validation is disabled" in {
         when(mockAppConfig.xsdValidation).thenReturn(false)
-        validationService.validateSoapMessage(invalid_soap_message.toString) shouldBe Some(invalid_soap_message)
+        val actual = validationService.validateAndExtractAction(invalid_soap_message.toString)
+        actual          shouldBe defined
+        actual.value._1 shouldBe SoapAction.ReferenceDataExport
+        actual.value._2 shouldBe invalid_soap_message
       }
 
       "fail when validating an is alive soap message with unexpected extra elements" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
-        validationService.validateSoapMessage(invalid_is_alive_soap_message.toString) shouldBe None
+        validationService.validateAndExtractAction(invalid_is_alive_soap_message.toString) shouldBe None
       }
 
       "succeed when validating an is alive soap message with unexpected extra elements when XSD validation is disabled" in {
         when(mockAppConfig.xsdValidation).thenReturn(false)
-        validationService.validateSoapMessage(invalid_is_alive_soap_message.toString) shouldBe Some(
-          invalid_is_alive_soap_message
-        )
+        val actual = validationService.validateAndExtractAction(invalid_is_alive_soap_message.toString)
+        actual          shouldBe defined
+        actual.value._1 shouldBe SoapAction.IsAlive
+        actual.value._2 shouldBe invalid_is_alive_soap_message
       }
 
       "fail when validating a good soap message with missing details in the body" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
-        validationService.validateSoapMessage(valid_soap_message_with_invalid_body.toString) shouldBe None
+        validationService.validateAndExtractAction(valid_soap_message_with_invalid_body.toString) shouldBe None
       }
 
       "succeed when validating a good soap message with missing details in the body when XSD validation is disabled" in {
         when(mockAppConfig.xsdValidation).thenReturn(false)
-        validationService.validateSoapMessage(valid_soap_message_with_invalid_body.toString) shouldBe Some(
-          valid_soap_message_with_invalid_body
-        )
+        val actual = validationService.validateAndExtractAction(valid_soap_message_with_invalid_body.toString)
+        actual          shouldBe defined
+        actual.value._1 shouldBe SoapAction.ReferenceDataExport
+        actual.value._2 shouldBe valid_soap_message_with_invalid_body
+      }
+
+      "fail when the action cannot be extracted" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        validationService.validateAndExtractAction(invalid_soap_action_message.toString) shouldBe None
+      }
+
+      "fail when the message is not valid XML" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        validationService.validateAndExtractAction("not valid xml") shouldBe None
       }
     }
 
     "extracting SOAP Action" should {
       "succeed when given a valid reference data message" in {
-        validationService.extractSoapAction(valid_soap_message) shouldBe Some(SoapAction.ReceiveReferenceData)
+        validationService.extractSoapAction(valid_soap_message) shouldBe Some(SoapAction.ReferenceDataExport)
       }
 
       "succeed when given a valid isAlive message" in {
