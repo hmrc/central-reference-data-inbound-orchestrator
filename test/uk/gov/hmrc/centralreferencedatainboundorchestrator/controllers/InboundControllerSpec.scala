@@ -223,6 +223,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
       verify(mockValidationService, times(1)).validateAndExtractAction(any)
       verify(mockWorkItemRepo, times(0)).set(any[EISRequest])
+      verify(mockInboundService, times(1)).processMessage(any, any)
     }
 
     "return Bad Request for ReferenceDataSubscription without RDEntityList or ErrorReport" in {
