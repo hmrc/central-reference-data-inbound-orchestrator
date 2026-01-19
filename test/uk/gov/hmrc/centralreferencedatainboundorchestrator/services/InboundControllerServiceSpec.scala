@@ -27,7 +27,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{ReferenceDataExport, ReferenceDataSubscription}
 
 import scala.concurrent.Future
 import scala.xml.NodeBuffer
@@ -37,8 +37,6 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
   lazy val mockMessageWrapperRepository: MessageWrapperRepository = mock[MessageWrapperRepository]
   private val controller                                          = new InboundControllerService(mockMessageWrapperRepository)
 
-  // This is the expected body we need to send to EIS, using this for test purposes
-  // until we get a real sample input file.
   private val validTestBody = <MainMessage>
     <Body>
       <TaskIdentifier>780912</TaskIdentifier>
@@ -58,8 +56,52 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
     </Body>
   </MainMessage>
 
+  private val validSubscriptionErrorMessage = <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                                                     xmlns:csrd="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
+                                                     xmlns:msg="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
+                                                     xmlns:hdr="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
+    <soap:Header>
+      <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">
+        CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
+      </wsa:Action>
+      <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">
+        uuid:444852eb-fd52-4705-a9c4-e860b05ccd52
+      </wsa:MessageID>
+    </soap:Header>
+    <soap:Body>
+      <csrd:ReceiveReferenceDataReqMsg>
+        <msg:ReceiveReferenceDataRequestType>
+          <msg:MessageHeader>
+            <hdr:MessageID>MSG-2024-12-30-003</hdr:MessageID>
+            <hdr:MessageTimestamp>2024-12-30T12:00:00Z</hdr:MessageTimestamp>
+            <hdr:SenderID>CUSTOMS_AUTHORITY_FR</hdr:SenderID>
+            <hdr:ReceiverID>SUBSCRIBER_SYSTEM_03</hdr:ReceiverID>
+          </msg:MessageHeader>
+          <msg:ErrorReport>eSBmb3JtYXQu</msg:ErrorReport>
+        </msg:ReceiveReferenceDataRequestType>
+      </csrd:ReceiveReferenceDataReqMsg>
+    </soap:Body>
+  </soap:Envelope>
+
+  private val invalidSubscriptionErrorMessage = <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+    <soap:Header>
+      <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">
+        CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
+      </wsa:Action>
+    </soap:Header>
+    <soap:Body>
+      <csrd:ReceiveReferenceDataReqMsg>
+        <msg:ReceiveReferenceDataRequestType>
+          <msg:MessageHeader>
+            <hdr:MessageID>MSG-2024-12-30-003</hdr:MessageID>
+          </msg:MessageHeader>
+        </msg:ReceiveReferenceDataRequestType>
+      </csrd:ReceiveReferenceDataReqMsg>
+    </soap:Body>
+  </soap:Envelope>
+
   "processMessage" should {
-    "return true when retrieving UID from XML and storing xml message in Mongo successfully" in {
+    "return true when retrieving UID from XML and storing xml message in Mongo successfully for ReferenceDataExport" in {
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.successful(true))
 
@@ -68,7 +110,16 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       result shouldBe true
     }
 
-    "return MongoWriteError when failing to store message in Mongo" in {
+    "return true when retrieving UUID from MessageID and storing xml message in Mongo successfully for ReferenceDataSubscription" in {
+      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
+        .thenReturn(Future.successful(true))
+
+      val result = controller.processMessage(validSubscriptionErrorMessage, ReferenceDataSubscription).futureValue
+
+      result shouldBe true
+    }
+
+    "return MongoWriteError when failing to store message in Mongo for ReferenceDataExport" in {
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
@@ -79,7 +130,18 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       }
     }
 
-    "Throw an exception if UID is missing in XML" in {
+    "return MongoWriteError when failing to store message in Mongo for ReferenceDataSubscription" in {
+      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
+        .thenReturn(Future.failed(MongoWriteError("failed")))
+
+      val result = controller.processMessage(validSubscriptionErrorMessage, ReferenceDataSubscription)
+
+      recoverToExceptionIf[Throwable](result).map { rt =>
+        rt.getMessage shouldBe "failed"
+      }
+    }
+
+    "throw an exception if UID is missing in XML for ReferenceDataExport" in {
       when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
         .thenReturn(Future.failed(MongoWriteError("failed")))
 
@@ -87,6 +149,17 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
 
       recoverToExceptionIf[Throwable](result).map { rt =>
         rt.getMessage shouldBe "Failed to find UID in xml - potentially an error report"
+      }.futureValue
+    }
+
+    "throw an exception if UUID is missing in MessageID for ReferenceDataSubscription" in {
+      when(mockMessageWrapperRepository.insertMessageWrapper(any(), any(), any(), any())(using any()))
+        .thenReturn(Future.failed(MongoWriteError("failed")))
+
+      val result = controller.processMessage(invalidSubscriptionErrorMessage, ReferenceDataSubscription)
+
+      recoverToExceptionIf[Throwable](result).map { rt =>
+        rt.getMessage shouldBe "Failed to find UUID in MessageID"
       }.futureValue
     }
   }

@@ -33,16 +33,22 @@ class InboundControllerService @Inject() (
 
   def processMessage(xml: NodeSeq, action: SoapAction): Future[Boolean] =
     for
-      uid   <- getUID(xml)
+      uid   <- getUID(xml, action)
       dbRes <- messageWrapperRepository.insertMessageWrapper(uid, xml.toString, Received, action)
     yield dbRes
 
-  private def getUID(xml: NodeSeq): Future[String] =
-    (xml \\ "IncludedBinaryObject").text.trim match {
-      case uid if uid != "" =>
-        logger.info(s"Successfully extracted UID: $uid")
-        Future.successful(uid)
-      case _                =>
-        logger.error("Failed to find UID in xml - potentially an error report")
-        Future.failed(InvalidXMLContentError("Failed to find UID in xml - potentially an error report"))
+  private def getUID(xml: NodeSeq, action: SoapAction): Future[String] =
+    action match {
+      case SoapAction.ReferenceDataSubscription =>
+        (xml \ "Header" \ "MessageID").text.trim.stripPrefix("uuid:") match {
+          case uid if uid.nonEmpty => Future.successful(uid)
+          case _                   => Future.failed(InvalidXMLContentError("Failed to find UUID in MessageID"))
+        }
+      case _                                    =>
+        (xml \\ "IncludedBinaryObject").text.trim match {
+          case uid if uid.nonEmpty => Future.successful(uid)
+          case _                   =>
+            logger.error("Failed to find UID in xml - potentially an error report")
+            Future.failed(InvalidXMLContentError("Failed to find UID in xml - potentially an error report"))
+        }
     }

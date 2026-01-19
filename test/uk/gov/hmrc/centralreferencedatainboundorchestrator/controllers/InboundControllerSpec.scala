@@ -196,7 +196,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(subscriptionMessageWithRDEntityList.toString)
       )
 
-      status(result)        shouldBe OK
+      status(result)        shouldBe ACCEPTED
       contentAsString(result) should include("12345678-1234-1234-1234-123456789abc")
       contentAsString(result) should include("successfully queued")
 
@@ -218,7 +218,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
           .withBody(subscriptionMessageWithErrorReport.toString)
       )
 
-      status(result) shouldBe BAD_REQUEST
+      status(result) shouldBe ACCEPTED
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
       verify(mockValidationService, times(1)).validateAndExtractAction(any)
