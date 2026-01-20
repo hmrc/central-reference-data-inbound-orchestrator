@@ -87,12 +87,12 @@ class InboundController @Inject() (
           case Some(uuid) =>
             workItemRepo
               .set(EISRequest(validatedMessage.toString, uuid, SoapAction.ReferenceDataSubscription))
-              .map(_ => Ok(s"Message with UID: $uuid, successfully queued"))
+              .map(_ => Accepted(s"Message with UID: $uuid, successfully queued"))
           case None       =>
             Future.successful(BadRequest("Missing or invalid UUID in MessageID"))
         }
       case (false, true) =>
-        Future.successful(BadRequest("Error message is not yet implemented"))
+        processInboundMessage(validatedMessage, SoapAction.ReferenceDataSubscription)
       case _             =>
         Future.successful(BadRequest("Payload must contain either RDEntityList or ErrorReport"))
     }

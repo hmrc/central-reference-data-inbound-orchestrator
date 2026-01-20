@@ -30,6 +30,9 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.readableAsXml
 import play.api.test.Helpers.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.{InboundSoapMessage, OutboundSoapMessage}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.{MessageStatus, Received}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataSubscription
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.mongo.test.MongoSupport
@@ -76,7 +79,7 @@ class InboundControllerISpec extends AnyWordSpec,
       |               xmlns:lsd="http://xmlns.ec.eu/BusinessObjects/CSRD2/LsdListType/V2">
       |  <soap:Header>
       |    <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">
-      |      CCN2.Service.Customs.Default.CSRD2.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
+      |      CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
       |    </wsa:Action>
       |    <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">
       |      uuid:12345678-1234-1234-1234-123456789012
@@ -128,10 +131,10 @@ class InboundControllerISpec extends AnyWordSpec,
       |               xmlns:hdr="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
       |  <soap:Header>
       |    <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">
-      |      CCN2.Service.Customs.Default.CSRD2.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
+      |      CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
       |    </wsa:Action>
       |        <wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">
-      |      uuid:{{$randomUUID}}
+      |      uuid:31de7ecf-9fe4-4fee-a617-0a985e0fa01a
       |    </wsa:MessageID>
       |  </soap:Header>
       |  <soap:Body>
@@ -161,7 +164,7 @@ class InboundControllerISpec extends AnyWordSpec,
       |               xmlns:lsd="http://xmlns.ec.eu/BusinessObjects/CSRD2/LsdListType/V2">
       |  <soap:Header>
       |    <wsa:Action xmlns:wsa="http://www.w3.org/2005/08/addressing">
-      |      CCN2.Service.Customs.Default.CSRD2.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
+      |      CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData
       |    </wsa:Action>
       |  </soap:Header>
       |  <soap:Body>
@@ -350,7 +353,7 @@ class InboundControllerISpec extends AnyWordSpec,
           .post(subscriptionMessageWithRDEntityList)
           .futureValue
 
-      response.status shouldBe OK
+      response.status shouldBe ACCEPTED
       response.body.toString should include("12345678-1234-1234-1234-123456789012")
       response.body.toString should include("successfully queued")
       
@@ -376,9 +379,13 @@ class InboundControllerISpec extends AnyWordSpec,
           .post(subscriptionMessageWithErrorReport)
           .futureValue
 
-      response.status shouldBe BAD_REQUEST
-      response.body.toString should include("Error message is not yet implemented")
+      response.status shouldBe ACCEPTED
 
+      val messages = await(messageWrapperRepository.collection.find().toFuture())
+      messages.size shouldBe 1
+      messages.head.uid shouldBe "31de7ecf-9fe4-4fee-a617-0a985e0fa01a"
+      messages.head.status shouldBe MessageStatus.Received
+      messages.head.messageType shouldBe ReferenceDataSubscription
     }
 
     "return Bad Request for subscription message without RDEntityList or ErrorReport or messageId" in {

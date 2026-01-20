@@ -28,7 +28,7 @@ object SoapAction {
   private lazy val ReferenceDataExportAction         =
     "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData"
   private lazy val ReferenceDataSubscriptionAction   =
-    "CCN2.Service.Customs.Default.CSRD2.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData"
+    "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData"
   private lazy val IsAliveAction                     = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
   def fromString(action: String): Option[SoapAction] =
     SoapAction.values.find(_.action == action)
