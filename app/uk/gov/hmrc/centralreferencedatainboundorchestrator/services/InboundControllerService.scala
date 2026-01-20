@@ -48,7 +48,7 @@ class InboundControllerService @Inject() (
         (xml \\ "IncludedBinaryObject").text.trim match {
           case uid if uid.nonEmpty => Future.successful(uid)
           case _                   =>
-            logger.error("Failed to find UID in xml - potentially an error report")
-            Future.failed(InvalidXMLContentError("Failed to find UID in xml - potentially an error report"))
+            logger.error("Failed to find UID in xml")
+            Future.failed(InvalidXMLContentError("Failed to find UID in xml"))
         }
     }

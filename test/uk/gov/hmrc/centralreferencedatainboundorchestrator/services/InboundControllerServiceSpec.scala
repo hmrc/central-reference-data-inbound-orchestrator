@@ -148,7 +148,7 @@ class InboundControllerServiceSpec extends AnyWordSpec, Matchers, ScalaFutures:
       val result = controller.processMessage(invalidTestBody, ReferenceDataExport)
 
       recoverToExceptionIf[Throwable](result).map { rt =>
-        rt.getMessage shouldBe "Failed to find UID in xml - potentially an error report"
+        rt.getMessage shouldBe "Failed to find UID in xml"
       }.futureValue
     }
 
