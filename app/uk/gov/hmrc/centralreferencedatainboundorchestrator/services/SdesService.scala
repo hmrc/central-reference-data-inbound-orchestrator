@@ -21,6 +21,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{ReferenceDataExport, ReferenceDataSubscription}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -56,8 +57,14 @@ class SdesService @Inject() (
         Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
     }
 
-  def sendMessage(payload: String)(using hc: HeaderCarrier): Future[Boolean] =
-    eisConnector.forwardMessage(loadString(payload))
+  def sendMessage(eisRequest: EISRequest)(using hc: HeaderCarrier): Future[Boolean] =
+    eisRequest.messageType match {
+      case ReferenceDataExport       => eisConnector.forwardMessage(eisRequest.messageType, loadString(eisRequest.payload))
+      case ReferenceDataSubscription =>
+        val hmrcDataMessage = SubscriptionMessageConverter.convertSoapString(eisRequest.payload)
+        eisConnector.forwardMessage(eisRequest.messageType, loadString(hmrcDataMessage))
+      case _                         => Future.failed(Exception("Message type is not supported"))
+    }
 
   def updateStatus(messageSent: Boolean, correlationID: String): Future[String] =
     if messageSent then

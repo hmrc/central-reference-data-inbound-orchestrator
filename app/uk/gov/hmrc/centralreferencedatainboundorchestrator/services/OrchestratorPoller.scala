@@ -20,7 +20,7 @@ import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import play.api.Logging
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{ReferenceDataExport, ReferenceDataSubscription}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.TimestampSupport
@@ -79,8 +79,8 @@ class OrchestratorPoller @Inject() (
         Future.successful(true)
       case Some(wi) =>
         wi.item.messageType match {
-          case ReferenceDataExport => sendMessageToEIS(wi)
-          case _                   =>
+          case ReferenceDataExport | ReferenceDataSubscription => sendMessageToEIS(wi)
+          case _                                               =>
             logger.error(s"No message handler for messageType ${wi.item.messageType}")
             failedAttempt(wi)
             Future.successful(false)
@@ -91,9 +91,9 @@ class OrchestratorPoller @Inject() (
 
   private def sendMessageToEIS(wi: WorkItem[EISRequest]) =
     try
-      sdesService.sendMessage(wi.item.payload) transform {
+      sdesService.sendMessage(wi.item) transform {
         case Success(true)                                               =>
-          logger.info("Successfully sent message")
+          logger.info(s"Successfully sent message with uuid ${wi.item.correlationID}")
           sdesService.updateStatus(true, wi.item.correlationID)
           workItemRepo.completeAndDelete(wi.id)
           Success(true)

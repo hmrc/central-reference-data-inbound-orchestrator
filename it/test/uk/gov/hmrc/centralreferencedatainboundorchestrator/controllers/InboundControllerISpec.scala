@@ -31,7 +31,7 @@ import play.api.libs.ws.readableAsXml
 import play.api.test.Helpers.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.{InboundSoapMessage, OutboundSoapMessage}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.{MessageStatus, Received}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataSubscription
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.test.ExternalWireMockSupport

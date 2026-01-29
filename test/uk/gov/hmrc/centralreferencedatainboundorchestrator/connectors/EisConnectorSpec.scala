@@ -27,6 +27,8 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status.*
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{ReferenceDataExport, ReferenceDataSubscription}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
@@ -51,10 +53,12 @@ class EisConnectorSpec
   private val httpClientV2: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
   when(appConfig.eisUrl).thenReturn(s"http://$externalWireMockHost:$externalWireMockPort")
-  when(appConfig.eisPath).thenReturn("/csrd/referencedataupdate/v1")
+  when(appConfig.eisExportMessagePath).thenReturn("/csrd/referencedataupdate/v1")
+  when(appConfig.eisSubscriptionMessagePath).thenReturn("/crdl/deltareferencemessagewrapper/v1")
   when(appConfig.eisBearerToken).thenReturn("test")
 
-  private val path = "/csrd/referencedataupdate/v1"
+  private val referenceDataExportPath    = "/csrd/referencedataupdate/v1"
+  private val eisSubscriptionMessagePath = "/crdl/deltareferencemessagewrapper/v1"
 
   private val connector = new EisConnector(httpClientV2, appConfig, Clock.systemUTC())
 
@@ -69,48 +73,100 @@ class EisConnectorSpec
       </Body>
     </MainMessage>
 
-  "EIS Connector" should {
-    "return successfully if the service is running" in {
+  "EIS Connector" when {
+    "using ReferenceDataExport message type" should {
+      "return successfully if the service is running" in {
 
-      stubFor(
-        post(urlEqualTo(path))
-          .withRequestBody(equalToXml(testBody.toString))
-          .willReturn(
-            aResponse().withStatus(ACCEPTED)
-          )
-      )
+        stubFor(
+          post(urlEqualTo(referenceDataExportPath))
+            .withRequestBody(equalToXml(testBody.toString))
+            .willReturn(
+              aResponse().withStatus(ACCEPTED)
+            )
+        )
 
-      val result = await(connector.forwardMessage(testBody))
+        val result = await(connector.forwardMessage(ReferenceDataExport, testBody))
 
-      result shouldBe true
+        result shouldBe true
+      }
+
+      "return false when EIS returns BAD REQUEST" in {
+        stubFor(
+          post(urlEqualTo(referenceDataExportPath))
+            .withRequestBody(equalToXml(testBody.toString))
+            .willReturn(
+              aResponse().withStatus(BAD_REQUEST)
+            )
+        )
+
+        val result = await(connector.forwardMessage(ReferenceDataExport, testBody))
+
+        result shouldBe false
+      }
+
+      "return false when EIS returns INTERNAL SERVER ERROR" in {
+        stubFor(
+          post(urlEqualTo(referenceDataExportPath))
+            .withRequestBody(equalToXml(testBody.toString))
+            .willReturn(
+              aResponse().withStatus(INTERNAL_SERVER_ERROR)
+            )
+        )
+
+        val result = await(connector.forwardMessage(ReferenceDataExport, testBody))
+
+        result shouldBe false
+      }
     }
 
-    "eis returns BAD REQUEST" in {
-      stubFor(
-        post(urlEqualTo(path))
-          .withRequestBody(equalToXml(testBody.toString))
-          .willReturn(
-            aResponse().withStatus(BAD_REQUEST)
-          )
-      )
+    "using ReferenceDataSubscription message type" should {
 
-      val result = await(connector.forwardMessage(testBody))
+      val messageType = ReferenceDataSubscription
 
-      result shouldBe false
-    }
+      "use the SubscriptionMessage path and return successfully" in {
+        stubFor(
+          post(urlEqualTo(eisSubscriptionMessagePath))
+            .withRequestBody(equalToXml(testBody.toString))
+            .willReturn(
+              aResponse().withStatus(ACCEPTED)
+            )
+        )
 
-    "eis returns INTERNAL SERVER ERROR" in {
-      stubFor(
-        post(urlEqualTo(path))
-          .withRequestBody(equalToXml(testBody.toString))
-          .willReturn(
-            aResponse().withStatus(INTERNAL_SERVER_ERROR)
-          )
-      )
+        val result = await(connector.forwardMessage(messageType, testBody))
 
-      val result = await(connector.forwardMessage(testBody))
+        result shouldBe true
+      }
 
-      result shouldBe false
+      "return false when EIS returns BAD REQUEST on SubscriptionMessage path" in {
+        stubFor(
+          post(urlEqualTo(eisSubscriptionMessagePath))
+            .withRequestBody(equalToXml(testBody.toString))
+            .willReturn(
+              aResponse().withStatus(BAD_REQUEST)
+            )
+        )
+
+        val result = await(connector.forwardMessage(messageType, testBody))
+
+        result shouldBe false
+
+      }
+
+      "return false when EIS returns INTERNAL SERVER ERROR on SubscriptionMessage path" in {
+
+        stubFor(
+          post(urlEqualTo(eisSubscriptionMessagePath))
+            .withRequestBody(equalToXml(testBody.toString))
+            .willReturn(
+              aResponse().withStatus(INTERNAL_SERVER_ERROR)
+            )
+        )
+
+        val result = await(connector.forwardMessage(messageType, testBody))
+
+        result shouldBe false
+
+      }
     }
   }
 }

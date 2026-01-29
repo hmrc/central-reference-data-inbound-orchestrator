@@ -33,7 +33,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.connectors.EisConnector
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{ReferenceDataExport, ReferenceDataSubscription}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
@@ -67,9 +67,61 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       mockAppConfig
     )
 
-  private val testBody: Elem = <Body></Body>
+  private val testBody: Elem                = <Body></Body>
+  private val testExportRequest: EISRequest = EISRequest("<Body></Body>", "correlationID", ReferenceDataExport)
 
-  private def messageWrapper(id: String) = MessageWrapper(id, testBody.toString, Received, ReferenceDataExport)
+  private val testSubscriptionPayload = """<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+               xmlns:csrd="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
+               xmlns:msg="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
+               xmlns:hdr="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2"
+               xmlns:rdlist="http://xmlns.ec.eu/BusinessObjects/CSRD2/RDEntityEntryListType/V3"
+               xmlns:rdentity="http://xmlns.ec.eu/BusinessObjects/CSRD2/RDEntityType/V3"
+               xmlns:rdentry="http://xmlns.ec.eu/BusinessObjects/CSRD2/RDEntryType/V3"
+               xmlns:rdstatus="http://xmlns.ec.eu/BusinessObjects/CSRD2/RDStatusType/V3"
+               xmlns:lsd="http://xmlns.ec.eu/BusinessObjects/CSRD2/LsdListType/V2"
+               xmlns:wsa="http://www.w3.org/2005/08/addressing">
+  <soap:Header>
+    <wsa:Action>CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData</wsa:Action>
+    <wsa:MessageID>test-msg-123</wsa:MessageID>
+  </soap:Header>
+  <soap:Body>
+    <csrd:ReceiveReferenceDataReqMsg>
+      <msg:ReceiveReferenceDataRequestType>
+        <msg:MessageHeader>
+          <hdr:MessageID>MSG-TEST-001</hdr:MessageID>
+          <hdr:MessageTimestamp>2024-01-01T10:00:00Z</hdr:MessageTimestamp>
+          <hdr:SenderID>TEST_SENDER</hdr:SenderID>
+          <hdr:ReceiverID>TEST_RECEIVER</hdr:ReceiverID>
+        </msg:MessageHeader>
+        <msg:RDEntityList>
+          <rdlist:RDEntity>
+            <rdentity:name>TestEntity</rdentity:name>
+            <rdentity:version>1.0</rdentity:version>
+            <rdentity:RDEntry>
+              <rdentry:RDEntryStatus>
+                <rdstatus:status>Active</rdstatus:status>
+                <rdstatus:validFrom>2024-01-01</rdstatus:validFrom>
+              </rdentry:RDEntryStatus>
+              <rdentry:dataItem name="code">TEST</rdentry:dataItem>
+              <rdentry:LsdList>
+                <lsd:Lsd>
+                  <lsd:languageCode>EN</lsd:languageCode>
+                  <lsd:description>Test</lsd:description>
+                </lsd:Lsd>
+              </rdentry:LsdList>
+            </rdentity:RDEntry>
+          </rdlist:RDEntity>
+        </msg:RDEntityList>
+      </msg:ReceiveReferenceDataRequestType>
+    </csrd:ReceiveReferenceDataReqMsg>
+  </soap:Body>
+</soap:Envelope>"""
+
+  private val testSubscriptionRequest: EISRequest =
+    EISRequest(testSubscriptionPayload, "correlationID", ReferenceDataSubscription)
+
+  private def messageWrapper(id: String, messageType: SoapAction = ReferenceDataExport) =
+    MessageWrapper(id, testExportRequest.payload, Received, messageType)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -88,7 +140,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       when(mockMessageWrapperRepository.findByUid(eqTo(uid))(using any()))
         .thenReturn(Future.successful(Some(message)))
 
-      val expectedRequest: EISRequest = EISRequest(message.payload, uid)
+      val expectedRequest: EISRequest = EISRequest(message.payload, uid, ReferenceDataExport)
 
       val wi = WorkItem(
         new ObjectId(),
@@ -124,7 +176,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(1)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "should return av scan passed when accepting a FileReceived notification" in {
@@ -153,7 +205,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
@@ -182,7 +234,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "should fail if SDES notification is not valid" in {
@@ -209,21 +261,47 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
-    "forward a payload to EIS" in {
-      when(mockEisConnector.forwardMessage(eqTo(testBody))(using any(), any()))
+    "forward a ReferenceDataExport payload to EIS" in {
+      when(mockEisConnector.forwardMessage(eqTo(ReferenceDataExport), eqTo(testBody))(using any(), any()))
         .thenReturn(Future.successful(true))
 
-      val result = sdesService.sendMessage(testBody.toString).futureValue
+      val result = sdesService.sendMessage(testExportRequest).futureValue
 
       result shouldBe true
 
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(1)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(1)).forwardMessage(eqTo(ReferenceDataExport), any)(using any(), any())
+    }
+
+    "forward a ReferenceDataSubscription payload to EIS after conversion" in {
+      when(mockEisConnector.forwardMessage(eqTo(ReferenceDataSubscription), any)(using any(), any()))
+        .thenReturn(Future.successful(true))
+
+      val result = sdesService.sendMessage(testSubscriptionRequest).futureValue
+
+      result shouldBe true
+
+      verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
+      verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
+      verify(mockEISWorkItemRepository, times(0)).set(any)
+      verify(mockEisConnector, times(1)).forwardMessage(eqTo(ReferenceDataSubscription), any)(using any(), any())
+    }
+
+    "fail when sendMessage receives an unsupported message type" in {
+      val unsupportedRequest = EISRequest("<Body></Body>", "correlationID", null)
+
+      val result = sdesService.sendMessage(unsupportedRequest)
+
+      recoverToExceptionIf[Exception](result).map { ex =>
+        ex.getMessage shouldBe "Message type is not supported"
+      }.futureValue
+
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "update wrapper status on successful call to EIS" in {
@@ -239,7 +317,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "update wrapper status on successful call to EIS with status update failure" in {
@@ -257,7 +335,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "update wrapper status on failed call to EIS" in {
@@ -275,7 +353,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "should return exception MongoWriteError when accepting a FileProcessingFailure notification but Mongo fails to write" in {
@@ -304,7 +382,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
 
     "should return exception NoMatchingUIDInMongoError when forwarding a message but Mongo fails to find UID in Mongo Matching" in {
@@ -334,6 +412,6 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
     }
   }
