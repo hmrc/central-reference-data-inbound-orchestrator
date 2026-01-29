@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories
 
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
@@ -29,11 +30,13 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class MessageWrapperRepositorySpec
-    extends AnyWordSpec,
-      MockitoSugar,
-      GuiceOneAppPerSuite,
-      CleanMongoCollectionSupport,
-      Matchers:
+    extends AnyWordSpec
+    with MockitoSugar
+    with GuiceOneAppPerSuite
+    with CleanMongoCollectionSupport
+    with Matchers
+    with ScalaFutures
+    with IntegrationPatience:
 
   val appConfig: AppConfig                 = mock[AppConfig]
   val repository: MessageWrapperRepository = MessageWrapperRepository(mongoComponent, appConfig)

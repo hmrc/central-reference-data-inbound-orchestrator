@@ -22,6 +22,8 @@ import play.api.http.{ContentTypes, HeaderNames, MimeTypes}
 import play.api.libs.ws.XMLBodyWritables.writeableOf_NodeSeq
 import play.api.mvc.Codec
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataExport
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
@@ -36,11 +38,13 @@ import scala.xml.NodeSeq
 class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, clock: Clock) extends Logging:
   private val httpDateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
 
-  def forwardMessage(body: NodeSeq)(using
+  def forwardMessage(messageType: SoapAction, body: NodeSeq)(using
     ec: ExecutionContext,
     hc: HeaderCarrier
   ): Future[Boolean] =
-    val url           = s"${appConfig.eisUrl}${appConfig.eisPath}"
+    val url           =
+      if messageType == ReferenceDataExport then s"${appConfig.eisUrl}${appConfig.eisExportMessagePath}"
+      else s"${appConfig.eisUrl}${appConfig.eisSubscriptionMessagePath}"
     val now           = clock.instant().atZone(ZoneOffset.UTC)
     val correlationId = UUID.randomUUID().toString
     httpClient
