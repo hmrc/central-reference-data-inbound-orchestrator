@@ -31,7 +31,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Logger}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.IsAlive
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReferenceDataSubscription}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.module.OrchestratorModule
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.mongo.TimestampSupport
@@ -118,7 +118,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item))(using any))
         .thenReturn(Future.successful(true))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -126,12 +126,44 @@ class OrchestratorPollerSpec
         eventually {
           logEvents.count(event =>
             event.getLevel == Level.INFO &&
-              event.getFormattedMessage == "Successfully sent message"
+              event.getFormattedMessage == s"Successfully sent message with uuid ${wi.item.correlationID}"
           ) shouldBe 1
         }
       }
 
       verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(1)).updateStatus(eqTo(true), eqTo(correlationID))
+      verify(workItemRepository, times(1)).completeAndDelete(eqTo(wi.id))
+    }
+
+    "processing a ReferenceDataSubscription item works" in {
+      val subscriptionRequest = EISRequest("Subscription Payload", correlationID, ReferenceDataSubscription)
+      val wi                  = WorkItem[EISRequest](
+        new ObjectId(),
+        now,
+        now,
+        now,
+        ToDo,
+        0,
+        subscriptionRequest
+      )
+      when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
+        .thenReturn(Future.successful(Some(wi)))
+
+      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+        .thenReturn(Future.successful(true))
+
+      withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
+        poller.poller()
+        eventually {
+          logEvents.count(event =>
+            event.getLevel == Level.INFO &&
+              event.getFormattedMessage == s"Successfully sent message with uuid ${wi.item.correlationID}"
+          ) shouldBe 1
+        }
+      }
+
+      verify(sdesService, times(1)).sendMessage(eqTo(wi.item))(using any)
       verify(sdesService, times(1)).updateStatus(eqTo(true), eqTo(correlationID))
       verify(workItemRepository, times(1)).completeAndDelete(eqTo(wi.id))
     }
@@ -149,7 +181,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item))(using any))
         .thenReturn(Future.successful(false))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -208,7 +240,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item))(using any))
         .thenReturn(Future.successful(false))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -240,7 +272,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item))(using any))
         .thenReturn(Future.failed(new IllegalArgumentException))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -271,7 +303,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item))(using any))
         .thenThrow(new IllegalArgumentException)
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -302,7 +334,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item.payload))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item))(using any))
         .thenThrow(new IllegalArgumentException)
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
