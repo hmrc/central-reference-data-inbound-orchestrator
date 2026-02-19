@@ -26,6 +26,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.{InboundSoapMessage, OutboundSoapMessage}
@@ -44,6 +45,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
   lazy val mockAuditHandler: AuditHandler               = mock[AuditHandler]
   lazy val mockValidationService: ValidationService     = mock[ValidationService]
   lazy val mockWorkItemRepo: EISWorkItemRepository      = mock[EISWorkItemRepository]
+  lazy val mockAppConfig: AppConfig                     = mock[AppConfig]
 
   import uk.gov.hmrc.mongo.workitem.WorkItem
 
@@ -53,7 +55,8 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
     mockInboundService,
     mockValidationService,
     mockAuditHandler,
-    mockWorkItemRepo
+    mockWorkItemRepo,
+    mockAppConfig
   )
   given mat: Materializer = app.injector.instanceOf[Materializer]
 
@@ -133,9 +136,12 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
     reset(mockValidationService)
     reset(mockInboundService)
     reset(mockWorkItemRepo)
+    reset(mockAppConfig)
 
     when(mockAuditHandler.auditNewMessageWrapper(any)(any))
       .thenReturn(auditSuccess)
+    when(mockAppConfig.logIncomingMessages)
+      .thenReturn(false)
   }
 
   "POST /" should {

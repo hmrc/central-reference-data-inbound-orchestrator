@@ -19,6 +19,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
@@ -37,7 +38,8 @@ class InboundController @Inject() (
   inboundControllerService: InboundControllerService,
   validationService: ValidationService,
   auditHandler: AuditHandler,
-  workItemRepo: EISWorkItemRepository
+  workItemRepo: EISWorkItemRepository,
+  appConfig: AppConfig
 )(using ec: ExecutionContext)
     extends BackendController(cc)
     with Logging:
@@ -48,8 +50,14 @@ class InboundController @Inject() (
     auditHandler.auditNewMessageWrapper(request.body)
 
     val result = validationService.validateAndExtractAction(request.body) match {
-      case Some((soapAction, validatedMessage)) => Some(handleInboundMessage(soapAction, validatedMessage))
-      case None                                 => None
+      case Some((soapAction, validatedMessage)) =>
+        if appConfig.logIncomingMessages && soapAction != SoapAction.ReferenceDataExport then
+          logger.warn(s"Incoming SOAP message with action $soapAction: ${request.body}")
+        Some(handleInboundMessage(soapAction, validatedMessage))
+      case None                                 =>
+        if appConfig.logIncomingMessages then
+          logger.warn(s"Incoming SOAP message with unrecognised action: ${request.body}")
+        None
     }
 
     result.getOrElse(Future.successful(BadRequest))
