@@ -45,13 +45,16 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, cl
     val url           =
       if messageType == ReferenceDataExport then s"${appConfig.eisUrl}${appConfig.eisExportMessagePath}"
       else s"${appConfig.eisUrl}${appConfig.eisSubscriptionMessagePath}"
+    val bearerToken   =
+      if messageType == ReferenceDataExport then appConfig.eisBearerToken
+      else appConfig.eisSubscriptionBearerToken
     val now           = clock.instant().atZone(ZoneOffset.UTC)
     val correlationId = UUID.randomUUID().toString
     httpClient
       .post(url"$url")
       .setHeader(HeaderNames.ACCEPT -> MimeTypes.XML)
       .setHeader(HeaderNames.CONTENT_TYPE -> ContentTypes.XML(Codec.utf_8))
-      .setHeader(HeaderNames.AUTHORIZATION -> s"Bearer ${appConfig.eisBearerToken}")
+      .setHeader(HeaderNames.AUTHORIZATION -> s"Bearer $bearerToken")
       .setHeader(HeaderNames.X_FORWARDED_HOST -> "central-reference-data-inbound-orchestrator")
       .setHeader("X-Correlation-Id" -> correlationId)
       .setHeader(HeaderNames.DATE -> httpDateFormatter.format(now))
