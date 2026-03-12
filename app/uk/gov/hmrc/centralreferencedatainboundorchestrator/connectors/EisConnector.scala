@@ -46,7 +46,7 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, cl
       if messageType == ReferenceDataExport then s"${appConfig.eisUrl}${appConfig.eisExportMessagePath}"
       else s"${appConfig.eisUrl}${appConfig.eisSubscriptionMessagePath}"
     val bearerToken   =
-      if messageType == ReferenceDataExport then appConfig.eisBearerToken
+      if messageType == ReferenceDataExport then appConfig.eisExtractBearerToken
       else appConfig.eisSubscriptionBearerToken
     val now           = clock.instant().atZone(ZoneOffset.UTC)
     val correlationId = UUID.randomUUID().toString

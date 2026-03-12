@@ -55,7 +55,7 @@ class EisConnectorSpec
   when(appConfig.eisUrl).thenReturn(s"http://$externalWireMockHost:$externalWireMockPort")
   when(appConfig.eisExportMessagePath).thenReturn("/csrd/referencedataupdate/v1")
   when(appConfig.eisSubscriptionMessagePath).thenReturn("/crdl/deltareferencemessagewrapper/v1")
-  when(appConfig.eisBearerToken).thenReturn("export-test-token")
+  when(appConfig.eisExtractBearerToken).thenReturn("export-test-token")
   when(appConfig.eisSubscriptionBearerToken).thenReturn("subscription-test-token")
 
   private val referenceDataExportPath    = "/csrd/referencedataupdate/v1"
