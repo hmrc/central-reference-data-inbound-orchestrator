@@ -55,7 +55,8 @@ class EisConnectorSpec
   when(appConfig.eisUrl).thenReturn(s"http://$externalWireMockHost:$externalWireMockPort")
   when(appConfig.eisExportMessagePath).thenReturn("/csrd/referencedataupdate/v1")
   when(appConfig.eisSubscriptionMessagePath).thenReturn("/crdl/deltareferencemessagewrapper/v1")
-  when(appConfig.eisBearerToken).thenReturn("test")
+  when(appConfig.eisExtractBearerToken).thenReturn("export-test-token")
+  when(appConfig.eisSubscriptionBearerToken).thenReturn("subscription-test-token")
 
   private val referenceDataExportPath    = "/csrd/referencedataupdate/v1"
   private val eisSubscriptionMessagePath = "/crdl/deltareferencemessagewrapper/v1"
@@ -80,6 +81,7 @@ class EisConnectorSpec
         stubFor(
           post(urlEqualTo(referenceDataExportPath))
             .withRequestBody(equalToXml(testBody.toString))
+            .withHeader("Authorization", equalTo("Bearer export-test-token"))
             .willReturn(
               aResponse().withStatus(ACCEPTED)
             )
@@ -127,6 +129,7 @@ class EisConnectorSpec
         stubFor(
           post(urlEqualTo(eisSubscriptionMessagePath))
             .withRequestBody(equalToXml(testBody.toString))
+            .withHeader("Authorization", equalTo("Bearer subscription-test-token"))
             .willReturn(
               aResponse().withStatus(ACCEPTED)
             )
