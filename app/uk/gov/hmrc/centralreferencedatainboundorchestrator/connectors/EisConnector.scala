@@ -50,10 +50,12 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, cl
       else appConfig.eisSubscriptionBearerToken
     val now           = clock.instant().atZone(ZoneOffset.UTC)
     val correlationId = UUID.randomUUID().toString
+    val contentType = if messageType == ReferenceDataExport then ContentTypes.XML(Codec.utf_8) else MimeTypes.XML
+
     httpClient
       .post(url"$url")
       .setHeader(HeaderNames.ACCEPT -> MimeTypes.XML)
-      .setHeader(HeaderNames.CONTENT_TYPE -> ContentTypes.XML(Codec.utf_8))
+      .setHeader(HeaderNames.CONTENT_TYPE -> contentType)
       .setHeader(HeaderNames.AUTHORIZATION -> s"Bearer $bearerToken")
       .setHeader(HeaderNames.X_FORWARDED_HOST -> "central-reference-data-inbound-orchestrator")
       .setHeader("X-Correlation-Id" -> correlationId)

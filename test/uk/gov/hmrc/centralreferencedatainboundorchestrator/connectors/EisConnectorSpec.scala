@@ -130,6 +130,7 @@ class EisConnectorSpec
           post(urlEqualTo(eisSubscriptionMessagePath))
             .withRequestBody(equalToXml(testBody.toString))
             .withHeader("Authorization", equalTo("Bearer subscription-test-token"))
+            .withHeader("Content-type", equalTo("application/xml"))
             .willReturn(
               aResponse().withStatus(ACCEPTED)
             )
@@ -144,6 +145,7 @@ class EisConnectorSpec
         stubFor(
           post(urlEqualTo(eisSubscriptionMessagePath))
             .withRequestBody(equalToXml(testBody.toString))
+            .withHeader("Content-type", equalTo("application/xml"))
             .willReturn(
               aResponse().withStatus(BAD_REQUEST)
             )
@@ -160,6 +162,7 @@ class EisConnectorSpec
         stubFor(
           post(urlEqualTo(eisSubscriptionMessagePath))
             .withRequestBody(equalToXml(testBody.toString))
+            .withHeader("Content-type", equalTo("application/xml"))
             .willReturn(
               aResponse().withStatus(INTERNAL_SERVER_ERROR)
             )
