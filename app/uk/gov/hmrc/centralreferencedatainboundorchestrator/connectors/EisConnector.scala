@@ -50,7 +50,7 @@ class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, cl
       else appConfig.eisSubscriptionBearerToken
     val now           = clock.instant().atZone(ZoneOffset.UTC)
     val correlationId = UUID.randomUUID().toString
-    val contentType = if messageType == ReferenceDataExport then ContentTypes.XML(Codec.utf_8) else MimeTypes.XML
+    val contentType   = if messageType == ReferenceDataExport then ContentTypes.XML(Codec.utf_8) else MimeTypes.XML
 
     httpClient
       .post(url"$url")
