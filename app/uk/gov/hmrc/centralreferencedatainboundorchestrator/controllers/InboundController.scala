@@ -51,7 +51,7 @@ class InboundController @Inject() (
 
     val result = validationService.validateAndExtractAction(request.body) match {
       case Some((soapAction, validatedMessage)) =>
-        if appConfig.logIncomingMessages && soapAction != SoapAction.ReferenceDataExport then
+        if appConfig.logIncomingMessages /*&& soapAction != SoapAction.ReferenceDataExport*/ then
           logger.warn(s"Incoming SOAP message with action $soapAction: ${request.body}")
         Some(handleInboundMessage(soapAction, validatedMessage))
       case None                                 =>
@@ -76,6 +76,9 @@ class InboundController @Inject() (
     }
 
   private def handleReferenceDataMessage(validatedMessage: NodeSeq)(using request: Request[?]): Future[Status] = {
+    if !getHasFilesHeader.getOrElse(false) then {
+      logger.warn(s"Reference Data Export without required '$FileIncludedHeader' header provided")
+    }
     val result = for
       hasFilesHeader <- getHasFilesHeader
       if hasFilesHeader
