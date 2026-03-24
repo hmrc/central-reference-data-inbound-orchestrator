@@ -26,7 +26,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageWrapper
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReferenceDataExport}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAliveExport, ReferenceDataExport}
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
@@ -112,13 +112,13 @@ class MessageWrapperRepositoryISpec
 
     "must return status unchanged if uid not found and updating status doesn't happen" in {
 
-      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status, IsAlive).futureValue
+      val insertResult = messageRepository.insertMessageWrapper(messageWrapper.uid, messageWrapper.payload, messageWrapper.status, IsAliveExport).futureValue
       val updatedRecord = messageRepository.updateStatus("1234", Sent).futureValue
       val fetchedRecord = messageRepository.findByUid(messageWrapper.uid).futureValue
 
       insertResult mustEqual true
       updatedRecord mustEqual true
       fetchedRecord.value.status mustEqual Received
-      fetchedRecord.value.messageType mustEqual IsAlive
+      fetchedRecord.value.messageType mustEqual IsAliveExport
     }
   }

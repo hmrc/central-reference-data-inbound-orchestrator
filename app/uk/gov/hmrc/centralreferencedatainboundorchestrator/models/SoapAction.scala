@@ -21,7 +21,8 @@ import play.api.libs.json.{Format, JsonValidationError, Reads, Writes}
 enum SoapAction(private val action: String) {
   case ReferenceDataExport extends SoapAction(SoapAction.ReferenceDataExportAction)
   case ReferenceDataSubscription extends SoapAction(SoapAction.ReferenceDataSubscriptionAction)
-  case IsAlive extends SoapAction(SoapAction.IsAliveAction)
+  case IsAliveExport extends SoapAction(SoapAction.IsAliveActionExport)
+  case IsAliveSubscription extends SoapAction(SoapAction.IsAliveActionSubscription)
 }
 
 object SoapAction {
@@ -29,7 +30,9 @@ object SoapAction {
     "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData"
   private lazy val ReferenceDataSubscriptionAction   =
     "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData"
-  private lazy val IsAliveAction                     = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
+  private lazy val IsAliveActionExport               = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
+  private lazy val IsAliveActionSubscription         =
+    "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/IsAlive"
   def fromString(action: String): Option[SoapAction] =
     SoapAction.values.find(_.action == action)
 

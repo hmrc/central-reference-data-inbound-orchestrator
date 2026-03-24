@@ -19,10 +19,20 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers
 import scala.xml.Elem
 
 object OutboundSoapMessage:
-  val valid_is_alive_response_message: Elem =
+  val valid_is_alive_export_response_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
       <soap:Header>
         <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAliveResponse</Action>
+      </soap:Header>
+      <soap:Body>
+        <v1:isAliveRespMsg/>
+      </soap:Body>
+    </soap:Envelope>
+
+  val valid_is_alive_export_subscription_message: Elem =
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/IsAlive</Action>
       </soap:Header>
       <soap:Body>
         <v1:isAliveRespMsg/>

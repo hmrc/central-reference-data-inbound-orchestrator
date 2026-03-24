@@ -31,7 +31,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Logger}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.EISRequest
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReferenceDataSubscription}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAliveExport, ReferenceDataSubscription}
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.module.OrchestratorModule
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.mongo.TimestampSupport
@@ -207,7 +207,7 @@ class OrchestratorPollerSpec
         now,
         ToDo,
         0,
-        EISRequest("Test Payload", correlationID, IsAlive)
+        EISRequest("Test Payload", correlationID, IsAliveExport)
       )
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
