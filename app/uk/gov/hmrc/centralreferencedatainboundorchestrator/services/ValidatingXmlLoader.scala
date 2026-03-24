@@ -18,7 +18,7 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.services
 
 import org.xml.sax.SAXParseException
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReferenceDataExport, ReferenceDataSubscription}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.*
 
 import javax.xml.XMLConstants
 import javax.xml.parsers.{SAXParser, SAXParserFactory}
@@ -46,8 +46,8 @@ class ValidatingXmlLoader extends XMLLoader[Elem]:
 
   private def getSchemaForAction(action: SoapAction): Schema =
     action match
-      case ReferenceDataExport | IsAlive => referenceDataExportSchema
-      case ReferenceDataSubscription     => referenceDataSubscriptionSchema
+      case ReferenceDataExport | IsAliveExport => referenceDataExportSchema
+      case ReferenceDataSubscription | IsAliveSubscription  => referenceDataSubscriptionSchema
 
   private val currentSchema: ThreadLocal[Schema] =
     ThreadLocal.withInitial(() => referenceDataExportSchema)

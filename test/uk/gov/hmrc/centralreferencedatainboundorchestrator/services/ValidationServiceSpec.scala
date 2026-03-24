@@ -57,11 +57,23 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       </soap:Body>
     </soap:Envelope>
 
-  private val valid_is_alive_soap_message: Elem =
+  private val valid_is_alive_soap_message_export: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
                    xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
       <soap:Header>
         <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive</Action>
+        <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
+      </soap:Header>
+      <soap:Body>
+        <v1:isAliveReqMsg />
+      </soap:Body>
+    </soap:Envelope>
+
+  private val valid_is_alive_soap_message_subscription: Elem =
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:v1="http://xmlns.ec.eu/BusinessMessages/TATAFng/Monitoring/V1">
+      <soap:Header>
+        <Action xmlns="http://www.w3.org/2005/08/addressing">CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/IsAlive</Action>
         <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:fcb0896f-33d1-4542-8f64-1dce8101ca09</MessageID>
       </soap:Header>
       <soap:Body>
@@ -206,12 +218,20 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
         actual.value._2.head shouldBe trim(valid_soap_message)
       }
 
-      "succeed when validating a good is alive soap message" in {
+      "succeed when validating a good is alive export soap message" in {
         when(mockAppConfig.xsdValidation).thenReturn(true)
-        val actual = validationService.validateAndExtractAction(valid_is_alive_soap_message.toString)
+        val actual = validationService.validateAndExtractAction(valid_is_alive_soap_message_export.toString)
         actual               shouldBe defined
-        actual.value._1      shouldBe SoapAction.IsAlive
-        actual.value._2.head shouldBe trim(valid_is_alive_soap_message)
+        actual.value._1      shouldBe SoapAction.IsAliveExport
+        actual.value._2.head shouldBe trim(valid_is_alive_soap_message_export)
+      }
+
+      "succeed when validating a good is alive soap subscription message" in {
+        when(mockAppConfig.xsdValidation).thenReturn(true)
+        val actual = validationService.validateAndExtractAction(valid_is_alive_soap_message_subscription.toString)
+        actual               shouldBe defined
+        actual.value._1      shouldBe SoapAction.IsAliveSubscription
+        actual.value._2.head shouldBe trim(valid_is_alive_soap_message_subscription)
       }
 
       "succeed when validating a good error report soap message" in {
@@ -244,7 +264,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
         when(mockAppConfig.xsdValidation).thenReturn(false)
         val actual = validationService.validateAndExtractAction(invalid_is_alive_soap_message.toString)
         actual          shouldBe defined
-        actual.value._1 shouldBe SoapAction.IsAlive
+        actual.value._1 shouldBe SoapAction.IsAliveExport
         actual.value._2 shouldBe invalid_is_alive_soap_message
       }
 
@@ -278,7 +298,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       }
 
       "succeed when given a valid isAlive message" in {
-        validationService.extractSoapAction(valid_is_alive_soap_message) shouldBe Some(SoapAction.IsAlive)
+        validationService.extractSoapAction(valid_is_alive_soap_message_export) shouldBe Some(SoapAction.IsAliveExport)
       }
 
       "fail when given anything else" in {
@@ -300,7 +320,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       }
 
       "fail when extracting data from any other kind of message" in {
-        validationService.extractInnerMessage(valid_is_alive_soap_message) shouldBe None
+        validationService.extractInnerMessage(valid_is_alive_soap_message_export) shouldBe None
       }
     }
   }

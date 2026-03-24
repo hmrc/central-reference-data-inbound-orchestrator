@@ -30,7 +30,7 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.{InboundSoapMessage, OutboundSoapMessage}
-import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.{IsAlive, ReferenceDataExport, ReferenceDataSubscription}
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.EISWorkItemRepository
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.services.{InboundControllerService, ValidationService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
@@ -169,7 +169,30 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
 
     "accept a valid isAliveReqMsg message" in {
       when(mockValidationService.validateAndExtractAction(any))
-        .thenReturn(Some((IsAlive, validIsAliveRequestMessage)))
+        .thenReturn(Some((IsAliveExport, validIsAliveRequestMessage)))
+
+      val result = controller
+        .submit()(
+          fakeRequest
+            .withHeaders(
+              "x-files-included" -> "true",
+              "Content-Type"     -> "application/xml"
+            )
+            .withBody(validTestBody)
+        )
+        .run()
+      status(result) shouldBe OK
+      contentAsString(result) shouldBe validIsAliveResponseMessage.toString
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockValidationService, times(1)).validateAndExtractAction(any)
+      verify(mockValidationService, times(0)).extractInnerMessage(any)
+      verify(mockInboundService, times(0)).processMessage(any, any)
+    }
+
+    "accept a valid isAliveSubMsg message" in {
+      when(mockValidationService.validateAndExtractAction(any))
+        .thenReturn(Some((IsAliveSubscription, validIsAliveRequestMessage)))
 
       val result = controller
         .submit()(
