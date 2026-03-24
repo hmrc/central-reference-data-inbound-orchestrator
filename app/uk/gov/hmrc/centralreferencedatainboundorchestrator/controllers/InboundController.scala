@@ -67,12 +67,14 @@ class InboundController @Inject() (
     request: Request[?]
   ): Future[Result] =
     action match {
-      case SoapAction.ReferenceDataExport                            =>
+      case SoapAction.ReferenceDataExport       =>
         handleReferenceDataMessage(validatedMessage)
-      case SoapAction.ReferenceDataSubscription                      =>
+      case SoapAction.ReferenceDataSubscription =>
         handleReferenceDataSubscription(validatedMessage)
-      case SoapAction.IsAliveExport | SoapAction.IsAliveSubscription =>
-        Future.successful(Ok(IsAliveResponse.xml))
+      case SoapAction.IsAliveExport             =>
+        Future.successful(Ok(IsAliveResponse.exportXML))
+      case SoapAction.IsAliveSubscription       =>
+        Future.successful(Ok(IsAliveResponse.subscriptionXML))
     }
 
   private def handleReferenceDataMessage(validatedMessage: NodeSeq)(using request: Request[?]): Future[Status] = {

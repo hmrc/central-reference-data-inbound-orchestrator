@@ -20,28 +20,29 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class SoapActionSpec extends AnyWordSpec, Matchers {
-    "fromString" should {
-        "return the expected SoapAction for given action values" should {
-            "Export" in {
-                val expectedValue = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData"
-                SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.ReferenceDataExport)
-            } 
-            "Subscription" in {
-                val expectedValue =  "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData"
-                SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.ReferenceDataSubscription)
-            }
-            "IsAlive (export)" in {
-                val expectedValue =  "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
-                SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.IsAliveExport)
-            }
-            "IsAlive (subscription)" in {
-                val expectedValue =  "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/IsAlive"
-                SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.IsAliveSubscription)
-            }
-        }
-        "return None for an inrecognised action" in {
-            val action = "This is not a recognised action"
-            SoapAction.fromString(action) shouldBe None
-        }
+  "fromString" should {
+    "return the expected SoapAction for given action values" should {
+      "Export" in {
+        val expectedValue = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData"
+        SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.ReferenceDataExport)
+      }
+      "Subscription" in {
+        val expectedValue =
+          "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData"
+        SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.ReferenceDataSubscription)
+      }
+      "IsAlive (export)" in {
+        val expectedValue = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
+        SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.IsAliveExport)
+      }
+      "IsAlive (subscription)" in {
+        val expectedValue = "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/IsAlive"
+        SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.IsAliveSubscription)
+      }
     }
+    "return None for an inrecognised action" in {
+      val action = "This is not a recognised action"
+      SoapAction.fromString(action) shouldBe None
+    }
+  }
 }

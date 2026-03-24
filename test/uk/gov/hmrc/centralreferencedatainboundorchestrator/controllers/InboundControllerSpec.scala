@@ -62,10 +62,12 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
 
   private val auditSuccess = Future.successful(Success)
 
-  private val validReferenceDataMessage  = InboundSoapMessage.valid_soap_message
-  private val validIsAliveRequestMessage = InboundSoapMessage.valid_soap_is_alive_message
+  private val validReferenceDataMessage              = InboundSoapMessage.valid_soap_message
+  private val validIsAliveExportRequestMessage       = InboundSoapMessage.valid_soap_is_alive_export_message
+  private val validIsAliveSubscriptionRequestMessage = InboundSoapMessage.valid_soap_is_alive_subscription_message
 
-  private val validIsAliveResponseMessage = OutboundSoapMessage.valid_is_alive_response_message
+  private val validIsAliveExportResponseMessage       = OutboundSoapMessage.valid_is_alive_export_response_message
+  private val validIsAliveSubscriptionResponseMessage = OutboundSoapMessage.valid_is_alive_export_subscription_message
 
   private val validTestBody: Elem = <MainMessage>
     <Body>
@@ -169,7 +171,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
 
     "accept a valid isAliveReqMsg message" in {
       when(mockValidationService.validateAndExtractAction(any))
-        .thenReturn(Some((IsAliveExport, validIsAliveRequestMessage)))
+        .thenReturn(Some((IsAliveExport, validIsAliveExportRequestMessage)))
 
       val result = controller
         .submit()(
@@ -182,7 +184,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         )
         .run()
       status(result) shouldBe OK
-      contentAsString(result) shouldBe validIsAliveResponseMessage.toString
+      contentAsString(result) shouldBe validIsAliveExportResponseMessage.toString
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
       verify(mockValidationService, times(1)).validateAndExtractAction(any)
@@ -192,7 +194,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
 
     "accept a valid isAliveSubMsg message" in {
       when(mockValidationService.validateAndExtractAction(any))
-        .thenReturn(Some((IsAliveSubscription, validIsAliveRequestMessage)))
+        .thenReturn(Some((IsAliveSubscription, validIsAliveSubscriptionRequestMessage)))
 
       val result = controller
         .submit()(
@@ -205,7 +207,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
         )
         .run()
       status(result) shouldBe OK
-      contentAsString(result) shouldBe validIsAliveResponseMessage.toString
+      contentAsString(result) shouldBe validIsAliveSubscriptionResponseMessage.toString
 
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
       verify(mockValidationService, times(1)).validateAndExtractAction(any)

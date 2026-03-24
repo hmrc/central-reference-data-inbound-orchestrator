@@ -214,7 +214,7 @@ class InboundControllerISpec extends AnyWordSpec,
       response.status shouldBe ACCEPTED
     }
 
-    "return OK with a valid IsAlive request" in {
+    "return OK with a valid IsAlive request (export)" in {
       stubFor(
         post(urlEqualTo("/write/audit"))
           .willReturn(
@@ -230,11 +230,34 @@ class InboundControllerISpec extends AnyWordSpec,
             "x-files-included" -> "true",
             "Content-Type" -> "application/xml"
           )
-          .post(InboundSoapMessage.valid_soap_is_alive_message.toString)
+          .post(InboundSoapMessage.valid_soap_is_alive_export_message.toString)
           .futureValue
 
       response.status shouldBe OK
-      response.body[Elem] shouldBe OutboundSoapMessage.valid_is_alive_response_message
+      response.body[Elem] shouldBe OutboundSoapMessage.valid_is_alive_export_response_message
+    }
+
+    "return OK with a valid IsAlive request (subscription)" in {
+      stubFor(
+        post(urlEqualTo("/write/audit"))
+          .willReturn(
+            aResponse()
+              .withStatus(NO_CONTENT)
+          )
+      )
+
+      val response =
+        wsClient
+          .url(url)
+          .addHttpHeaders(
+            "x-files-included" -> "true",
+            "Content-Type" -> "application/xml"
+          )
+          .post(InboundSoapMessage.valid_soap_is_alive_subscription_message.toString)
+          .futureValue
+
+      response.status shouldBe OK
+      response.body[Elem] shouldBe OutboundSoapMessage.valid_is_alive_export_subscription_message
     }
 
     "return Accepted with a valid Error Report request" in {
