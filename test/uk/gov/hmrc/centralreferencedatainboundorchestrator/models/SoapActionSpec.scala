@@ -40,7 +40,7 @@ class SoapActionSpec extends AnyWordSpec, Matchers {
         SoapAction.fromString(expectedValue) shouldBe Some(SoapAction.IsAliveSubscription)
       }
     }
-    "return None for an inrecognised action" in {
+    "return None for an unrecognised action" in {
       val action = "This is not a recognised action"
       SoapAction.fromString(action) shouldBe None
     }
