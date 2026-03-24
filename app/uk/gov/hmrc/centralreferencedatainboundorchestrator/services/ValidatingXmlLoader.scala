@@ -40,6 +40,7 @@ class ValidatingXmlLoader extends XMLLoader[Elem]:
     val schemas: Array[Source] = Array(
       new StreamSource(getClass.getResourceAsStream("/schemas/subscription/request-message-types.xsd")),
       new StreamSource(getClass.getResourceAsStream("/schemas/subscription/soap-envelop.xsd")),
+      new StreamSource(getClass.getResourceAsStream("/schemas/subscription/isalive-message.xsd")),
       new StreamSource(getClass.getResourceAsStream("/schemas/subscription/request-type.xsd"))
     )
     factory.newSchema(schemas)
