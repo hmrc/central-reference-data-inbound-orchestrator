@@ -95,7 +95,8 @@ object SubscriptionMessageConverter {
     try {
       val body           = (soapXml \\ Elements.Body).head
       val receiveDataMsg = (body \\ Elements.ReceiveReferenceDataReqMsg).head
-      val requestType    = (receiveDataMsg \\ Elements.ReceiveReferenceDataRequestType).head
+      val requestType    =
+        (receiveDataMsg \\ Elements.ReceiveReferenceDataRequestType).headOption.getOrElse(receiveDataMsg)
 
       val header = extractMessageHeader(requestType)
 
