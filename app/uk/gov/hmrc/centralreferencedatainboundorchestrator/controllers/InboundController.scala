@@ -91,8 +91,8 @@ class InboundController @Inject() (
   }
 
   private def handleReferenceDataSubscription(validatedMessage: NodeSeq): Future[Result] = {
-    val hasRDEntityList = (validatedMessage \\ "ReceiveReferenceDataRequestType" \ "RDEntityList").nonEmpty
-    val hasErrorReport  = (validatedMessage \\ "ReceiveReferenceDataRequestType" \ "ErrorReport").nonEmpty
+    val hasRDEntityList = (validatedMessage \\ "RDEntityList").nonEmpty
+    val hasErrorReport  = (validatedMessage \\ "ErrorReport").nonEmpty
 
     (hasRDEntityList, hasErrorReport) match {
       case (true, _)     =>
