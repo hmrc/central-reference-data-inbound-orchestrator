@@ -33,7 +33,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 
-import java.time.Clock
+import java.time.{Clock, Instant, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.Elem
 
@@ -75,6 +75,25 @@ class EisConnectorSpec
     </MainMessage>
 
   "EIS Connector" when {
+    "formatting the Date header" should {
+      "send the Date header in RFC 7231 HTTP-date format (EEE, dd MMM yyyy HH:mm:ss 'GMT')" in {
+        val fixedInstant     = Instant.parse("2026-04-02T02:30:00Z")
+        val fixedClock       = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+        val connectorFixed   = new EisConnector(httpClientV2, appConfig, fixedClock)
+        val expectedDateHeader = "Thu, 02 Apr 2026 02:30:00 GMT"
+
+        stubFor(
+          post(urlEqualTo(referenceDataExportPath))
+            .withHeader("Date", equalTo(expectedDateHeader))
+            .willReturn(aResponse().withStatus(ACCEPTED))
+        )
+
+        val result = await(connectorFixed.forwardMessage(ReferenceDataExport, testBody))
+
+        result shouldBe true
+      }
+    }
+
     "using ReferenceDataExport message type" should {
       "return successfully if the service is running" in {
 

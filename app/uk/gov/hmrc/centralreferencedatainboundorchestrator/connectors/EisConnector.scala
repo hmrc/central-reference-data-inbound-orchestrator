@@ -30,13 +30,14 @@ import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, ZoneOffset}
+import java.util.Locale
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
 
 class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, clock: Clock) extends Logging:
-  private val httpDateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+  private val httpDateFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.ENGLISH)
 
   def forwardMessage(messageType: SoapAction, body: NodeSeq)(using
     ec: ExecutionContext,
