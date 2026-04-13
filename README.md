@@ -2,12 +2,14 @@
 # central-reference-data-inbound-orchestrator
 
 The Central Reference Data Inbound Orchestrator responsibilities:
-- Store the CS/RD2 XML details from [public-soap-proxy](https://github.com/hmrc/aws-ami-public-soap-proxy)
+- Receive and store SOAP XML messages from [public-soap-proxy](https://github.com/hmrc/aws-ami-public-soap-proxy), supporting both CS/RD2 export messages and delta subscription messages
 - Keep track of the AV Scanning progress of an update
+- Forward successfully scanned messages to EIS
 
 ## Development Setup
 - Run mongo: `docker run --restart unless-stopped --name mongodb -p 27017:27017 -d percona/percona-server-mongodb:6.0 --replSet rs0` (please use latest version as per MDTP best practices, this is just an example)
 - Run locally: `sbt run` which runs on port `7250` by default
+- To run with test-only routes enabled: `sbt run -Dapplication.router=testOnlyDoNotUseInAppConf.Routes`
 
 ## Tests
 - Run Unit Tests: `sbt test`
@@ -32,18 +34,26 @@ Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-
 ## Outbound Call to EIS
 
 When we have received confirmation that the reference data file has been successfully 
-processed we need to forward the message wrapper on to EIS(API number CRDL01 a.k.a. CSRD120). There are a few configuration
+processed we need to forward the message wrapper on to EIS(API number CRDL01 a.k.a. CSRD120 and  CSRD130). There are a few configuration
 entries which help define this process.
+
+The service forwards to two different EIS endpoints depending on the inbound message type:
+- **Export messages** (CS/RD2 reference data): EIS API number CRDL01 a.k.a. CSRD120
+- **Subscription messages** (EU delta): EIS subscription endpoint - CSRD130
 
 ### Endpoint definition
 
 The actual endpoint we call is defined using the `microservice.services.eis-api` group.
-The main entries are the standard `host`, `port` and `protocol`. 
+The main entries are the standard `host`, `port` and `protocol`.
 
-We also include a `path` entry which defines the actual endpoint on the EIS server.
+We include two `path` entries which define the actual endpoints on the EIS server:
+- `exportMessagePath`: path for CS/RD2 export (reference data) messages
+- `subscriptionMessagePath`: path for EU delta subscription messages
 
-There is also an entry, `bearerToken` to allow us to define the security token required
-to connect to the EIS server.
+There are also two bearer token entries to allow us to define the security tokens required
+to connect to the EIS server:
+- `extractBearerToken`: token for export (extract) messages
+- `subscriptionBearerToken`: token for subscription messages
 
 ### Asynchronous Configuration Settings
 
@@ -64,9 +74,16 @@ the call if something happens during the call. The configuration entries are all
 
 Upon receiving the inbound soap message XML from public soap proxy, we validate it against the message XML schemas (XSD) before next step message processing.
 
-All inbound SOAP messages are validated against the [SOAP Envelope schema](conf/schemas/soap-envelope.xsd).
+The service recognises four SOAP action types:
+- `IsAlive` — IsAlive health check for the service
+- `ReferenceDataExport` — CS/RD2 reference data export message
+- `ReferenceDataSubscription` — EU delta subscription message
 
-The SOAP envelope schema has been modified with the additional requirement that the body validates against a simplified version of the [ReferenceDataExportReceiverCBS](conf/schemas/request-message.xsd) callback service schema from the CSRD2 Service Specification.
+
+
+**Export messages** are validated against the [SOAP Envelope schema](conf/schemas/soap-envelope.xsd), which has been modified to require the body to validate against a simplified version of the [ReferenceDataExportReceiverCBS](conf/schemas/request-message.xsd) callback service schema from the CSRD2 Service Specification.
+
+**Subscription messages** are validated against a separate set of schemas located in [conf/schemas/subscription/](conf/schemas/subscription/).
 
 Originally, the service did this as a two-step process, first validating the SOAP Envelope and then validating the message body as a standalone document. However, this would not have worked if there were namespaced elements in the message body as the namespace declarations would be on the SOAP Envelope element.
 
@@ -78,13 +95,22 @@ In the event that the simplified XML schema is inaccurate and rejects legitimate
 
 The configuration key for this feature flag is `microservice.features.xsdValidation`, and it is provided with a default value of `true` in [application.conf](./conf/application.conf).
 
-This default value can be overridden via environment-specific app-config in the event that it needs to be turned off in a particular environment.
+There is also a `microservice.features.logIncomingMessages` flag (default: `false`) that when enabled will log the full XML body of inbound messages. This should only be enabled in non-production environments for debugging purposes.
+
+These default values can be overridden via environment-specific app-config.
+
 
 ## Databases
 ### Message wrapper Collection
 When we receive a successful POST request to our root endpoint `inboundController` we create a record in the Message wrapper collection. This contains the XML payload forwarded from public-soap-proxy along with various pieces of metadata such as the UID of the file.
 
 If a message is received with the following header: `x-files-included: true` then the message will be picked up correctly. When AV scanning is successful the message wrapper is forwarded to EIS and marked as `sent`. The current TTL is set to 7 days.
+
+The `messageType` field stores the SOAP action as a string and will be one of:
+- `CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData`
+- `CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData`
+- `CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive`
+- `CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/IsAlive`
 
 <Details>
 <Summary>Message wrapper model</Summary>
@@ -115,6 +141,30 @@ If a message is received with the following header: `x-files-included: true` the
 }
 ```
 </Details>
+
+### Scalafmt
+
+Check all project files are formatted as expected as follows:
+
+> `sbt scalafmtCheckAll`
+
+Format `*.sbt` and `project/*.scala` files as follows:
+
+> `sbt scalafmtSbt`
+
+Format all project files as follows:
+
+> `sbt scalafmtAll`
+
+### Tests
+
+Run all unit tests with command:
+
+> `sbt test`
+
+Run all integration tests command:
+
+> `sbt it/test`
 
 ### All tests and checks
 This is an sbt command alias specific to this project. It will run a scala format
