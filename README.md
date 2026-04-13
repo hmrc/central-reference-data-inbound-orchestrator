@@ -11,11 +11,6 @@ The Central Reference Data Inbound Orchestrator responsibilities:
 - Run locally: `sbt run` which runs on port `7250` by default
 - To run with test-only routes enabled: `sbt run -Dapplication.router=testOnlyDoNotUseInAppConf.Routes`
 
-## Tests
-- Run Unit Tests: `sbt test`
-- Run Integration Tests: `sbt it/test`
-- Run Unit and Integration Tests: `sbt test it/test`
-
 Run Acceptance Tests: see [here](https://github.com/hmrc/central-reference-data-acceptance-tests)
 
 Run Performance Tests see [here](https://github.com/hmrc/central-reference-data-performance-tests)
@@ -164,7 +159,12 @@ Run all unit tests with command:
 
 Run all integration tests command:
 
-> `sbt it/test`
+>  `sbt it/test`
+
+Run Unit and Integration Tests command:
+
+>  `sbt test it/test`
+
 
 ### All tests and checks
 This is an sbt command alias specific to this project. It will run a scala format
