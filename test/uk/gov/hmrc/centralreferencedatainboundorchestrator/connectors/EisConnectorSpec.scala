@@ -77,9 +77,9 @@ class EisConnectorSpec
   "EIS Connector" when {
     "formatting the Date header" should {
       "send the Date header in RFC 7231 HTTP-date format (EEE, dd MMM yyyy HH:mm:ss 'GMT')" in {
-        val fixedInstant     = Instant.parse("2026-04-02T02:30:00Z")
-        val fixedClock       = Clock.fixed(fixedInstant, ZoneOffset.UTC)
-        val connectorFixed   = new EisConnector(httpClientV2, appConfig, fixedClock)
+        val fixedInstant       = Instant.parse("2026-04-02T02:30:00Z")
+        val fixedClock         = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+        val connectorFixed     = new EisConnector(httpClientV2, appConfig, fixedClock)
         val expectedDateHeader = "Thu, 02 Apr 2026 02:30:00 GMT"
 
         stubFor(
