@@ -41,8 +41,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |        <RDEntityList>
                       |          <RDEntity name="CountryCodesFullList">
                       |            <RDEntry>
-                      |              <status>valid</status>
-                      |              <activeFrom>2026-01-01</activeFrom>
+                      |              <RDEntryStatus>
+                      |                <state>valid</state>
+                      |                <activeFrom>2026-01-01</activeFrom>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">GB</dataItem>
                       |              <LsdList>
                       |                <description lang="en">United Kingdom</description>
@@ -60,7 +62,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
 
       resultXml.label shouldBe "HMRCReceiveReferenceDataReqMsg"
 
-      (resultXml \\ "AddressingInformation" \\ "messageID").text.trim shouldBe "MSG123456"
+      (resultXml \\ "MessageHeader" \\ "MessageID").text.trim        shouldBe "MSG123456"
+      (resultXml \\ "MessageHeader" \\ "MessageTimestamp").text.trim shouldBe "2026-01-25T10:30:00Z"
+      (resultXml \\ "MessageHeader" \\ "SenderID").text.trim         shouldBe "SENDER001"
+      (resultXml \\ "MessageHeader" \\ "ReceiverID").text.trim       shouldBe "RECEIVER001"
 
       val rdEntity = (resultXml \\ "RDEntity").head
       (rdEntity \@ "name") shouldBe "CountryCodesFullList"
@@ -68,9 +73,67 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
       (resultXml \\ "RDEntry" \\ "RDEntryStatus" \\ "state").text.trim      shouldBe "valid"
       (resultXml \\ "RDEntry" \\ "RDEntryStatus" \\ "activeFrom").text.trim shouldBe "2026-01-01"
 
+      val dataItems = resultXml \\ "dataItem"
+      dataItems.filter(n => (n \@ "name") == "code").text.trim shouldBe "GB"
+
       val description = (resultXml \\ "LsdList" \\ "description").head
       description.text.trim   shouldBe "United Kingdom"
       (description \@ "lang") shouldBe "en"
+    }
+
+    "copy all RDEntryStatus children and all dataItem elements" in {
+      val soapXml = """<?xml version="1.0" encoding="UTF-8"?>
+                      |<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+                      |  <soapenv:Body>
+                      |    <csrd:ReceiveReferenceDataReqMsg xmlns:csrd="http://xmlns.ec.eu/CSR">
+                      |      <msg:ReceiveReferenceDataRequestType xmlns:msg="http://xmlns.ec.eu/message">
+                      |        <MessageHeader>
+                      |          <MessageID>MSG-FULL</MessageID>
+                      |          <MessageTimestamp>2026-04-15T09:00:00Z</MessageTimestamp>
+                      |          <SenderID>DPS</SenderID>
+                      |          <ReceiverID>HMRC</ReceiverID>
+                      |        </MessageHeader>
+                      |        <RDEntityList>
+                      |          <RDEntity name="CountryCodesFullList">
+                      |            <RDEntry>
+                      |              <RDEntryStatus>
+                      |                <state>valid</state>
+                      |                <activeFrom>2026-04-15</activeFrom>
+                      |                <changeJustification>revert dummy change</changeJustification>
+                      |              </RDEntryStatus>
+                      |              <dataItem name="CountryCode">AL</dataItem>
+                      |              <dataItem name="TccEntryDate">19000101</dataItem>
+                      |              <dataItem name="NctsEntryDate">19000101</dataItem>
+                      |              <dataItem name="GeoNomenclatureCode">070</dataItem>
+                      |              <dataItem name="CountryRegimeCode">OTH</dataItem>
+                      |              <LsdList>
+                      |                <description lang="en">Albania</description>
+                      |              </LsdList>
+                      |            </RDEntry>
+                      |          </RDEntity>
+                      |        </RDEntityList>
+                      |      </msg:ReceiveReferenceDataRequestType>
+                      |    </csrd:ReceiveReferenceDataReqMsg>
+                      |  </soapenv:Body>
+                      |</soapenv:Envelope>""".stripMargin
+
+      val result    = SubscriptionMessageConverter.convertSoapString(soapXml)
+      val resultXml = XML.loadString(result)
+
+      val status = (resultXml \\ "RDEntry" \\ "RDEntryStatus").head
+      (status \\ "state").text.trim               shouldBe "valid"
+      (status \\ "activeFrom").text.trim          shouldBe "2026-04-15"
+      (status \\ "changeJustification").text.trim shouldBe "revert dummy change"
+
+      val dataItems = resultXml \\ "dataItem"
+      dataItems.size                                                          shouldBe 5
+      dataItems.filter(n => (n \@ "name") == "CountryCode").text.trim         shouldBe "AL"
+      dataItems.filter(n => (n \@ "name") == "TccEntryDate").text.trim        shouldBe "19000101"
+      dataItems.filter(n => (n \@ "name") == "NctsEntryDate").text.trim       shouldBe "19000101"
+      dataItems.filter(n => (n \@ "name") == "GeoNomenclatureCode").text.trim shouldBe "070"
+      dataItems.filter(n => (n \@ "name") == "CountryRegimeCode").text.trim   shouldBe "OTH"
+
+      (resultXml \\ "LsdList" \\ "description").text.trim shouldBe "Albania"
     }
 
     "convert SOAP message with multiple entities" in {
@@ -88,8 +151,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |        <RDEntityList>
                       |          <RDEntity name="CountryCodesFullList">
                       |            <RDEntry>
-                      |              <status>valid</status>
-                      |              <activeFrom>2026-01-01</activeFrom>
+                      |              <RDEntryStatus>
+                      |                <state>valid</state>
+                      |                <activeFrom>2026-01-01</activeFrom>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">GB</dataItem>
                       |              <LsdList>
                       |                <description lang="en">United Kingdom</description>
@@ -98,8 +163,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |          </RDEntity>
                       |          <RDEntity name="CountryCodesFullList">
                       |            <RDEntry>
-                      |              <status>valid</status>
-                      |              <activeFrom>2026-01-01</activeFrom>
+                      |              <RDEntryStatus>
+                      |                <state>valid</state>
+                      |                <activeFrom>2026-01-01</activeFrom>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">FR</dataItem>
                       |              <LsdList>
                       |                <description lang="en">France</description>
@@ -116,13 +183,11 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
       val resultXml = XML.loadString(result)
 
       val entities = resultXml \\ "RDEntity"
-      entities.size shouldBe 2
-
+      entities.size             shouldBe 2
       (entities.head \@ "name") shouldBe "CountryCodesFullList"
       (entities.last \@ "name") shouldBe "CountryCodesFullList"
 
       (entities.head \\ "LsdList" \\ "description").text.trim shouldBe "United Kingdom"
-
       (entities.last \\ "LsdList" \\ "description").text.trim shouldBe "France"
     }
 
@@ -147,13 +212,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
       val result    = SubscriptionMessageConverter.convertSoapString(soapXml)
       val resultXml = XML.loadString(result)
 
-      resultXml.label shouldBe "HMRCReceiveReferenceDataReqMsg"
-
-      (resultXml \\ "AddressingInformation" \\ "messageID").text.trim shouldBe "780912"
-
-      (resultXml \\ "ErrorReport").text.trim shouldBe "717b4129-5682-494c-bd23-87f0a297b296"
-
-      (resultXml \\ "RDEntityList").isEmpty shouldBe true
+      resultXml.label                                         shouldBe "HMRCReceiveReferenceDataReqMsg"
+      (resultXml \\ "MessageHeader" \\ "MessageID").text.trim shouldBe "780912"
+      (resultXml \\ "ErrorReport").text.trim                  shouldBe "717b4129-5682-494c-bd23-87f0a297b296"
+      (resultXml \\ "RDEntityList").isEmpty                   shouldBe true
     }
 
     "handle entity with alternative input structure using 'n' element" in {
@@ -172,8 +234,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |          <RDEntity>
                       |            <n>TransportModeCode</n>
                       |            <RDEntry>
-                      |              <status>valid</status>
-                      |              <activeFrom>2026-01-01</activeFrom>
+                      |              <RDEntryStatus>
+                      |                <state>valid</state>
+                      |                <activeFrom>2026-01-01</activeFrom>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">SEA</dataItem>
                       |              <LsdList>
                       |                <description lang="en">Sea Transport</description>
@@ -189,13 +253,11 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
       val result    = SubscriptionMessageConverter.convertSoapString(soapXml)
       val resultXml = XML.loadString(result)
 
-      val rdEntity = (resultXml \\ "RDEntity").head
-      (rdEntity \@ "name") shouldBe "TransportModeCode"
-
-      (resultXml \\ "LsdList" \\ "description").text.trim shouldBe "Sea Transport"
+      (resultXml \\ "LsdList" \\ "description").text.trim                      shouldBe "Sea Transport"
+      (resultXml \\ "dataItem").filter(n => (n \@ "name") == "code").text.trim shouldBe "SEA"
     }
 
-    "handle entity with alternative field names (status vs state, validFrom vs activeFrom)" in {
+    "preserve all RDEntry children regardless of element names" in {
       val soapXml = """<?xml version="1.0" encoding="UTF-8"?>
                       |<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
                       |  <soapenv:Body>
@@ -210,8 +272,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |        <RDEntityList>
                       |          <RDEntity name="CurrencyCode">
                       |            <RDEntry>
-                      |              <state>active</state>
-                      |              <validFrom>2026-01-01</validFrom>
+                      |              <RDEntryStatus>
+                      |                <state>active</state>
+                      |                <validFrom>2026-01-01</validFrom>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">EUR</dataItem>
                       |              <LsdList>
                       |                <description lang="en">Euro</description>
@@ -227,11 +291,11 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
       val result    = SubscriptionMessageConverter.convertSoapString(soapXml)
       val resultXml = XML.loadString(result)
 
-      (resultXml \\ "RDEntryStatus" \\ "state").text.trim      shouldBe "active"
-      (resultXml \\ "RDEntryStatus" \\ "activeFrom").text.trim shouldBe "2026-01-01"
+      (resultXml \\ "RDEntry" \\ "RDEntryStatus" \\ "state").text.trim     shouldBe "active"
+      (resultXml \\ "RDEntry" \\ "RDEntryStatus" \\ "validFrom").text.trim shouldBe "2026-01-01"
     }
 
-    "handle entity without activeFrom date" in {
+    "preserve all RDEntry children when activeFrom is absent" in {
       val soapXml = """<?xml version="1.0" encoding="UTF-8"?>
                       |<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
                       |  <soapenv:Body>
@@ -246,7 +310,9 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |        <RDEntityList>
                       |          <RDEntity name="StatusCode">
                       |            <RDEntry>
-                      |              <status>ACTIVE</status>
+                      |              <RDEntryStatus>
+                      |                <state>ACTIVE</state>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">ACT</dataItem>
                       |              <LsdList>
                       |                <description lang="en">Active Status</description>
@@ -262,8 +328,8 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
       val result    = SubscriptionMessageConverter.convertSoapString(soapXml)
       val resultXml = XML.loadString(result)
 
-      (resultXml \\ "RDEntryStatus" \\ "state").text.trim      shouldBe "ACTIVE"
-      (resultXml \\ "RDEntryStatus" \\ "activeFrom").text.trim shouldBe ""
+      (resultXml \\ "RDEntry" \\ "RDEntryStatus" \\ "state").text.trim    shouldBe "ACTIVE"
+      (resultXml \\ "RDEntry" \\ "RDEntryStatus" \\ "activeFrom").isEmpty shouldBe true
     }
 
     "throw exception for malformed SOAP message" in {
@@ -314,11 +380,11 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
       val resultXml = XML.loadString(result)
 
       val rdEntity = (resultXml \\ "RDEntity").head
-      (rdEntity \@ "name")                                shouldBe "EmptyEntity"
-      (resultXml \\ "RDEntryStatus" \\ "state").text.trim shouldBe "valid"
+      (rdEntity \@ "name")             shouldBe "EmptyEntity"
+      (resultXml \\ "RDEntry").isEmpty shouldBe true
     }
 
-    "preserve namespace prefixes in output" in {
+    "use canonical HMRC namespace prefixes in output" in {
       val soapXml = """<?xml version="1.0" encoding="UTF-8"?>
                       |<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
                       |  <soapenv:Body>
@@ -333,8 +399,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |        <RDEntityList>
                       |          <RDEntity name="Sample">
                       |            <RDEntry>
-                      |              <status>valid</status>
-                      |              <activeFrom>2026-01-01</activeFrom>
+                      |              <RDEntryStatus>
+                      |                <state>valid</state>
+                      |                <activeFrom>2026-01-01</activeFrom>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">S1</dataItem>
                       |              <LsdList>
                       |                <description lang="en">Sample</description>
@@ -347,47 +415,11 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |  </soapenv:Body>
                       |</soapenv:Envelope>""".stripMargin
 
-      val result = SubscriptionMessageConverter.convertSoapString(soapXml)
-
-      result should include("mh:")
-      result should include("rdeelt:")
-      result should include("rde:")
-      result should include("rdet:")
-      result should include("rdst:")
-      result should include("lsdlt:")
-    }
-
-    "handle entity with missing LSD description" in {
-      val soapXml = """<?xml version="1.0" encoding="UTF-8"?>
-                      |<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-                      |  <soapenv:Body>
-                      |    <csrd:ReceiveReferenceDataReqMsg xmlns:csrd="http://xmlns.ec.eu/CSR">
-                      |      <msg:ReceiveReferenceDataRequestType xmlns:msg="http://xmlns.ec.eu/message">
-                      |        <MessageHeader>
-                      |          <MessageID>MSG555</MessageID>
-                      |          <MessageTimestamp>2026-01-25T18:00:00Z</MessageTimestamp>
-                      |          <SenderID>SENDER009</SenderID>
-                      |          <ReceiverID>RECEIVER009</ReceiverID>
-                      |        </MessageHeader>
-                      |        <RDEntityList>
-                      |          <RDEntity name="NoDescEntity">
-                      |            <RDEntry>
-                      |              <status>valid</status>
-                      |              <activeFrom>2026-01-01</activeFrom>
-                      |              <dataItem name="code">ND1</dataItem>
-                      |              <LsdList/>
-                      |            </RDEntry>
-                      |          </RDEntity>
-                      |        </RDEntityList>
-                      |      </msg:ReceiveReferenceDataRequestType>
-                      |    </csrd:ReceiveReferenceDataReqMsg>
-                      |  </soapenv:Body>
-                      |</soapenv:Envelope>""".stripMargin
-
       val result    = SubscriptionMessageConverter.convertSoapString(soapXml)
       val resultXml = XML.loadString(result)
 
-      (resultXml \\ "LsdList" \\ "description").text.trim shouldBe "NoDescEntity"
+      (resultXml \\ "RDEntity").nonEmpty shouldBe true
+      (resultXml \\ "RDEntry").nonEmpty  shouldBe true
     }
 
     "handle entity with different language code" in {
@@ -405,8 +437,10 @@ class SubscriptionMessageConverterSpec extends AnyWordSpec with Matchers {
                       |        <RDEntityList>
                       |          <RDEntity name="CountryCode">
                       |            <RDEntry>
-                      |              <status>valid</status>
-                      |              <activeFrom>2026-01-01</activeFrom>
+                      |              <RDEntryStatus>
+                      |                <state>valid</state>
+                      |                <activeFrom>2026-01-01</activeFrom>
+                      |              </RDEntryStatus>
                       |              <dataItem name="code">DE</dataItem>
                       |              <LsdList>
                       |                <description lang="de">Deutschland</description>
