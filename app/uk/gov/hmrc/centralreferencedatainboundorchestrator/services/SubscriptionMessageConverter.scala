@@ -22,74 +22,61 @@ object SubscriptionMessageConverter {
 
   private object Namespaces {
     val Root: String              = "http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
+    val CommonService: String     = "http://xmlns.ec.eu/BusinessObjects/CSRD2/CommonServiceType/V3"
     val MessageHeader: String     = "http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2"
     val RDEntityEntryList: String = "http://xmlns.ec.eu/BusinessObjects/CSRD2/RDEntityEntryListType/V3"
     val RDEntity: String          = "http://xmlns.ec.eu/BusinessObjects/CSRD2/RDEntityType/V3"
     val RDEntry: String           = "http://xmlns.ec.eu/BusinessObjects/CSRD2/RDEntryType/V3"
     val RDStatus: String          = "http://xmlns.ec.eu/BusinessObjects/CSRD2/RDStatusType/V3"
+    val RDValidityPeriod: String  = "http://xmlns.ec.eu/BusinessObjects/CSRD2/RDValidityPeriodType/V2"
     val LsdList: String           = "http://xmlns.ec.eu/BusinessObjects/CSRD2/LsdListType/V2"
   }
+
+  private val CanonicalPrefixMap: Map[String, String] = Map(
+    Namespaces.Root              -> "ns0",
+    Namespaces.CommonService     -> "ns3",
+    Namespaces.MessageHeader     -> "ns9",
+    Namespaces.RDEntityEntryList -> "ns10",
+    Namespaces.RDEntity          -> "ns12",
+    Namespaces.RDEntry           -> "ns15",
+    Namespaces.RDStatus          -> "ns16",
+    Namespaces.RDValidityPeriod  -> "ns17",
+    Namespaces.LsdList           -> "ns7"
+  )
 
   private object Elements {
     val Body: String                            = "Body"
     val ReceiveReferenceDataReqMsg: String      = "ReceiveReferenceDataReqMsg"
     val ReceiveReferenceDataRequestType: String = "ReceiveReferenceDataRequestType"
     val MessageHeader: String                   = "MessageHeader"
-    val MessageID: String                       = "MessageID"
-    val MessageTimestamp: String                = "MessageTimestamp"
-    val MessageDateTime: String                 = "MessageDateTime"
-    val SenderID: String                        = "SenderID"
-    val ReceiverID: String                      = "ReceiverID"
     val ErrorReport: String                     = "ErrorReport"
     val RDEntityList: String                    = "RDEntityList"
-    val RDEntity: String                        = "RDEntity"
-    val RDEntry: String                         = "RDEntry"
-    val Name: String                            = "name"
-    val NameShort: String                       = "n"
-    val State: String                           = "state"
-    val Status: String                          = "status"
-    val ActiveFrom: String                      = "activeFrom"
-    val ValidFrom: String                       = "validFrom"
-    val LsdList: String                         = "LsdList"
-    val Lsd: String                             = "Lsd"
-    val Description: String                     = "description"
-    val DataItem: String                        = "dataItem"
-    val Code: String                            = "code"
-    val AddressingInformation: String           = "AddressingInformation"
-    val RDEntryStatus: String                   = "RDEntryStatus"
-  }
-
-  private object Attributes {
-    val Name: String = "name"
-    val Lang: String = "lang"
-  }
-
-  private object Defaults {
-    val State: String       = "valid"
-    val Language: String    = "en"
-    val EmptyString: String = ""
   }
 
   private val XmlDeclaration: String = """<?xml version="1.0" encoding="UTF-8"?>"""
 
-  private val PrettyPrinterWidth: Int  = 80
-  private val PrettyPrinterIndent: Int = 2
+  private def remapToCanonical(node: Node): Node = node match {
+    case elem: Elem =>
+      val newPrefix = Option(elem.namespace) match {
+        case Some(uri) => CanonicalPrefixMap.getOrElse(uri, elem.prefix)
+        case None      => elem.prefix
+      }
+      elem.copy(
+        prefix = newPrefix,
+        scope = TopScope,
+        child = elem.child.map(remapToCanonical)
+      )
+    case other      => other
+  }
 
-  case class MessageHeader(
-    messageID: String,
-    messageDateTime: String,
-    senderID: String,
-    receiverID: String
-  )
-
-  case class RDEntity(
-    name: String,
-    state: String,
-    activeFrom: String,
-    description: String,
-    descriptionLang: String = Defaults.Language,
-    code: Option[String] = None
-  )
+  private def normalizeTextNodes(node: Node): Seq[Node] = node match {
+    case elem: Elem =>
+      Seq(elem.copy(scope = TopScope, child = elem.child.flatMap(normalizeTextNodes)))
+    case Text(t)    =>
+      val s = t.trim
+      if s.isEmpty then Seq.empty else Seq(Text(s))
+    case other      => Seq(other)
+  }
 
   private def convertSoapMessage(soapXml: Elem): Elem =
     try {
@@ -98,157 +85,46 @@ object SubscriptionMessageConverter {
       val requestType    =
         (receiveDataMsg \\ Elements.ReceiveReferenceDataRequestType).headOption.getOrElse(receiveDataMsg)
 
-      val header = extractMessageHeader(requestType)
-
-      val errorReport = (requestType \\ Elements.ErrorReport).headOption
+      val msgHeaderNode = (requestType \\ Elements.MessageHeader).head
+      val errorReport   = (requestType \\ Elements.ErrorReport).headOption
 
       errorReport match {
         case Some(error) =>
-          buildErrorMessage(header, error.text)
+          buildErrorMessage(msgHeaderNode, error.text)
         case None        =>
-          val entities = extractEntities(requestType)
-          buildDataMessage(header, entities)
+          buildDataMessage(msgHeaderNode, (requestType \\ Elements.RDEntityList).head)
       }
     } catch {
       case e: Exception =>
         throw new RuntimeException(s"Failed to convert SOAP message: ${e.getMessage}", e)
     }
 
-  private def extractMessageHeader(requestType: Node): MessageHeader = {
-    val msgHeader = (requestType \\ Elements.MessageHeader).head
+  private def buildDataMessage(msgHeaderNode: Node, rdEntityList: Node): Elem =
+    <ns0:HMRCReceiveReferenceDataReqMsg
+      xmlns:ns7={Namespaces.LsdList}
+      xmlns:ns17={Namespaces.RDValidityPeriod}
+      xmlns:ns16={Namespaces.RDStatus}
+      xmlns:ns15={Namespaces.RDEntry}
+      xmlns:ns12={Namespaces.RDEntity}
+      xmlns:ns10={Namespaces.RDEntityEntryList}
+      xmlns:ns9={Namespaces.MessageHeader}
+      xmlns:ns3={Namespaces.CommonService}
+      xmlns:ns0={Namespaces.Root}>
+      {remapToCanonical(msgHeaderNode)}
+      {remapToCanonical(rdEntityList)}
+    </ns0:HMRCReceiveReferenceDataReqMsg>
 
-    val timestamp = (msgHeader \\ Elements.MessageTimestamp).headOption
-      .orElse((msgHeader \\ Elements.MessageDateTime).headOption)
-      .map(_.text)
-      .getOrElse(Defaults.EmptyString)
-
-    MessageHeader(
-      messageID = (msgHeader \\ Elements.MessageID).text,
-      messageDateTime = timestamp,
-      senderID = (msgHeader \\ Elements.SenderID).text,
-      receiverID = (msgHeader \\ Elements.ReceiverID).text
-    )
-  }
-
-  private def extractEntities(requestType: Node): Seq[RDEntity] = {
-    val rdEntityList = (requestType \\ Elements.RDEntityList).head
-    val entities     = rdEntityList \\ Elements.RDEntity
-
-    entities.map { entity =>
-      val name = (entity \@ Attributes.Name) match {
-        case Defaults.EmptyString =>
-          (entity \ Elements.NameShort).headOption
-            .orElse((entity \ Elements.Name).headOption)
-            .map(_.text)
-            .getOrElse(Defaults.EmptyString)
-        case n                    => n
-      }
-
-      val rdEntry = (entity \\ Elements.RDEntry).headOption
-
-      rdEntry match {
-        case Some(entry) =>
-          val state = (entry \\ Elements.State).headOption
-            .orElse((entry \\ Elements.Status).headOption)
-            .map(_.text)
-            .getOrElse(Defaults.State)
-
-          val activeFrom = (entry \\ Elements.ActiveFrom).headOption
-            .orElse((entry \\ Elements.ValidFrom).headOption)
-            .map(_.text)
-            .getOrElse(Defaults.EmptyString)
-
-          val (description, lang) = (entry \\ Elements.LsdList \\ Elements.Description).headOption
-            .orElse((entry \\ Elements.Lsd \\ Elements.Description).headOption) match {
-            case Some(desc) =>
-              val descLang = desc \@ Attributes.Lang match {
-                case Defaults.EmptyString => Defaults.Language
-                case l                    => l
-              }
-              (desc.text, descLang)
-            case None       =>
-              (name, Defaults.Language)
-          }
-
-          val dataItems = (entry \\ Elements.DataItem).map { item =>
-            val itemName  = item \@ Attributes.Name
-            val itemValue = item.text
-            itemName -> itemValue
-          }.toMap
-
-          val code = dataItems.get(Elements.Code)
-
-          RDEntity(
-            name = name,
-            state = state,
-            activeFrom = activeFrom,
-            description = description,
-            descriptionLang = lang,
-            code = code
-          )
-
-        case None =>
-          RDEntity(
-            name = name,
-            state = Defaults.State,
-            activeFrom = Defaults.EmptyString,
-            description = name,
-            code = None
-          )
-      }
-    }
-  }
-
-  private def buildDataMessage(header: MessageHeader, entities: Seq[RDEntity]): Elem = {
-    <HMRCReceiveReferenceDataReqMsg
-    xmlns={Namespaces.Root}
-    xmlns:mh={Namespaces.MessageHeader}
-    xmlns:rdeelt={Namespaces.RDEntityEntryList}
-    xmlns:rde={Namespaces.RDEntity}
-    xmlns:rdet={Namespaces.RDEntry}
-    xmlns:rdst={Namespaces.RDStatus}
-    xmlns:lsdlt={Namespaces.LsdList}>
-      <MessageHeader>
-        <mh:AddressingInformation>
-          <mh:messageID>{header.messageID}</mh:messageID>
-        </mh:AddressingInformation>
-      </MessageHeader>
-      <RDEntityList>
-        {entities.map(buildEntityElement)}
-      </RDEntityList>
-    </HMRCReceiveReferenceDataReqMsg>
-  }
-
-  private def buildErrorMessage(header: MessageHeader, errorText: String): Elem = {
-    <HMRCReceiveReferenceDataReqMsg
-    xmlns={Namespaces.Root}
-    xmlns:mh={Namespaces.MessageHeader}>
-      <MessageHeader>
-        <mh:AddressingInformation>
-          <mh:messageID>{header.messageID}</mh:messageID>
-        </mh:AddressingInformation>
-      </MessageHeader>
-      <ErrorReport>{errorText}</ErrorReport>
-    </HMRCReceiveReferenceDataReqMsg>
-  }
-
-  private def buildEntityElement(entity: RDEntity): Elem = {
-    <rdeelt:RDEntity name={entity.name}>
-      <rde:RDEntry>
-        <rdet:RDEntryStatus>
-          <rdst:state>{entity.state}</rdst:state>
-          <rdst:activeFrom>{entity.activeFrom}</rdst:activeFrom>
-        </rdet:RDEntryStatus>
-        <rdet:LsdList>
-          <lsdlt:description lang={entity.descriptionLang}>{entity.description}</lsdlt:description>
-        </rdet:LsdList>
-      </rde:RDEntry>
-    </rdeelt:RDEntity>
-  }
+  private def buildErrorMessage(msgHeaderNode: Node, errorText: String): Elem =
+    <ns0:HMRCReceiveReferenceDataReqMsg
+      xmlns:ns0={Namespaces.Root}
+      xmlns:ns9={Namespaces.MessageHeader}>
+      {remapToCanonical(msgHeaderNode)}
+      <ns0:ErrorReport>{errorText}</ns0:ErrorReport>
+    </ns0:HMRCReceiveReferenceDataReqMsg>
 
   def convertSoapString(soapXmlString: String): String = {
-    val xmlPayload    = convertSoapMessage(XML.loadString(soapXmlString))
-    val prettyPrinter = new PrettyPrinter(PrettyPrinterWidth, PrettyPrinterIndent)
-    s"$XmlDeclaration\n${prettyPrinter.format(xmlPayload)}"
+    val root       = convertSoapMessage(XML.loadString(soapXmlString))
+    val xmlPayload = root.copy(child = root.child.flatMap(normalizeTextNodes))
+    s"$XmlDeclaration\n$xmlPayload"
   }
 }
