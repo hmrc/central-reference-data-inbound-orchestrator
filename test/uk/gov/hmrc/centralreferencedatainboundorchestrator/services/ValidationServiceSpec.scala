@@ -27,6 +27,8 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
 
 import scala.xml.{Elem, Node}
 import scala.xml.Utility.trim
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.OutboundSoapMessage.valid_is_alive_export_subscription_message
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage.valid_soap_error_report_message
 
 class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, ScalaFutures, OptionValues:
   private val mockAppConfig = mock[AppConfig]
@@ -303,6 +305,44 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
 
       "fail when given anything else" in {
         validationService.extractSoapAction(invalid_soap_action_message) shouldBe None
+      }
+    }
+
+    "validating Soap Action for message" should {
+      "succeed for any Soap Action that is not a ReferenceDataSubscription" should {
+        val nonSubscriptionSoapActions = List(
+          (SoapAction.IsAliveExport, valid_is_alive_soap_message_export),
+          (SoapAction.ReferenceDataExport, valid_soap_message),
+          (SoapAction.IsAliveSubscription, valid_is_alive_soap_message_subscription)
+        )
+        nonSubscriptionSoapActions.foreach((action, validMessage) =>
+          s"- ${action.toString}" in {
+            validationService.validateSoapAction(validMessage, action) shouldBe Some(true)
+          }
+        )
+      }
+
+      "succeed for a ReferenceDataSubscription with an RDEntryList" in {
+        validationService.validateSoapAction(
+          valid_is_alive_export_subscription_message,
+          SoapAction.ReferenceDataSubscription
+        ) shouldBe Some(true)
+      }
+
+      "succeed for a ReferenceDataSubscription with an ErrorReport when AppConfig.handleErrorReports is true" in {
+        when(mockAppConfig.handleErrorReports).thenReturn(true)
+        validationService.validateSoapAction(
+          valid_soap_error_report_message,
+          SoapAction.ReferenceDataSubscription
+        ) shouldBe Some(true)
+      }
+
+      "fail for a ReferenceDataSubscription with an ErrorReport when AppConfig.handleErrorReports is false" in {
+        when(mockAppConfig.handleErrorReports).thenReturn(false)
+        validationService.validateSoapAction(
+          valid_soap_error_report_message,
+          SoapAction.ReferenceDataSubscription
+        ) shouldBe None
       }
     }
 
