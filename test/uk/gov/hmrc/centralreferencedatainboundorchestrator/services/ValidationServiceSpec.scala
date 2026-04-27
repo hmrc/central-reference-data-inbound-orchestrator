@@ -27,11 +27,24 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction
 
 import scala.xml.{Elem, Node}
 import scala.xml.Utility.trim
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.OutboundSoapMessage.valid_is_alive_export_subscription_message
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage.valid_soap_error_report_message
+import uk.gov.hmrc.play.bootstrap.tools.LogCapturing
+import play.api.Logger
+import ch.qos.logback.classic.Level
+import org.scalatest.concurrent.Eventually
 
-class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, ScalaFutures, OptionValues:
+class ValidationServiceSpec
+    extends AnyWordSpec,
+      BeforeAndAfterEach,
+      Matchers,
+      ScalaFutures,
+      OptionValues,
+      LogCapturing,
+      Eventually:
   private val mockAppConfig = mock[AppConfig]
 
-  private val validationService = ValidationService(mockAppConfig, new ValidatingXmlLoader)
+  private val validationService = StubValidationService(mockAppConfig, new ValidatingXmlLoader)
 
   private val valid_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
@@ -119,7 +132,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
 
   private val invalid_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReDerenceDataExportReceiverCBS/V4"
                    xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
                    xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
       <soap:Header>
@@ -306,6 +319,54 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       }
     }
 
+    "validating Soap Action for message" should {
+      "succeed for any Soap Action that is not a ReferenceDataSubscription" should {
+        val nonSubscriptionSoapActions = List(
+          (SoapAction.IsAliveExport, valid_is_alive_soap_message_export),
+          (SoapAction.ReferenceDataExport, valid_soap_message),
+          (SoapAction.IsAliveSubscription, valid_is_alive_soap_message_subscription)
+        )
+        nonSubscriptionSoapActions.foreach((action, validMessage) =>
+          s"- ${action.toString}" in {
+            validationService.validateSoapAction(validMessage, action) shouldBe Some(true)
+          }
+        )
+      }
+
+      "succeed for a ReferenceDataSubscription with an RDEntryList" in {
+        validationService.validateSoapAction(
+          valid_is_alive_export_subscription_message,
+          SoapAction.ReferenceDataSubscription
+        ) shouldBe Some(true)
+      }
+
+      "succeed for a ReferenceDataSubscription with an ErrorReport when AppConfig.handleErrorReports is true" in {
+        when(mockAppConfig.handleErrorReports).thenReturn(true)
+        validationService.validateSoapAction(
+          valid_soap_error_report_message,
+          SoapAction.ReferenceDataSubscription
+        ) shouldBe Some(true)
+      }
+
+      "fail for a ReferenceDataSubscription with an ErrorReport when AppConfig.handleErrorReports is false" in {
+        when(mockAppConfig.handleErrorReports).thenReturn(false)
+
+        withCaptureOfLoggingFrom(validationService.testLogger) { logEvents =>
+          validationService.validateSoapAction(
+            valid_soap_error_report_message,
+            SoapAction.ReferenceDataSubscription
+          ) shouldBe None
+          eventually {
+            logEvents.count(event =>
+              event.getLevel() == Level.WARN && event.getFormattedMessage.startsWith(
+                s"Unexpected ReferenceDataSubscription identified containing an ErrorReport:\n${valid_soap_error_report_message}"
+              )
+            ) shouldBe 1
+          }
+        }
+      }
+    }
+
     "extracting inner message" should {
       "succeed when extracting data from a good reference data soap message" in {
         validationService.extractInnerMessage(valid_soap_message) shouldBe Some(trim(valid_inner_message))
@@ -324,3 +385,13 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       }
     }
   }
+
+// A test stub to expose the logger.
+class StubValidationService(
+  appConfig: AppConfig,
+  validatingXmlLoader: ValidatingXmlLoader
+) extends ValidationService(
+      appConfig,
+      validatingXmlLoader
+    ):
+  val testLogger: Logger = logger

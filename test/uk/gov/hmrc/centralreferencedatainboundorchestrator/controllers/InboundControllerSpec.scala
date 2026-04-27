@@ -237,7 +237,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       verify(mockInboundService, times(0)).processMessage(any, any)
     }
 
-    "handle ReferenceDataSubscription message with ErrorReport" in {
+    "handle ReferenceDataSubscription message with ErrorReport - when handling Error Reports is enabled" in {
       when(mockValidationService.validateAndExtractAction(any))
         .thenReturn(Some((ReferenceDataSubscription, subscriptionMessageWithErrorReport)))
       when(mockInboundService.processMessage(any(), any()))
@@ -255,6 +255,24 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       verify(mockValidationService, times(1)).validateAndExtractAction(any)
       verify(mockWorkItemRepo, times(0)).set(any[EISRequest])
       verify(mockInboundService, times(1)).processMessage(any, any)
+    }
+
+    "handle ReferenceDataSubscription message with ErrorReport - when handling Error Reports is disabled" in {
+      when(mockValidationService.validateAndExtractAction(any))
+        .thenReturn(None)
+
+      val result = controller.submit()(
+        fakeRequest
+          .withHeaders("Content-Type" -> "application/xml")
+          .withBody(subscriptionMessageWithErrorReport.toString)
+      )
+
+      status(result) shouldBe BAD_REQUEST
+
+      verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
+      verify(mockValidationService, times(1)).validateAndExtractAction(any)
+      verify(mockWorkItemRepo, times(0)).set(any[EISRequest])
+      verify(mockInboundService, times(0)).processMessage(any, any)
     }
 
     "return Bad Request for ReferenceDataSubscription without RDEntityList or ErrorReport" in {

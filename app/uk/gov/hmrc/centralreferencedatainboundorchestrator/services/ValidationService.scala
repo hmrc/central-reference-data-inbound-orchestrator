@@ -33,6 +33,7 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: Validat
       preliminaryParse <- scala.util.Try(XML.loadString(soapMessage)).toOption
       soapAction       <- extractSoapAction(preliminaryParse)
       validatedMessage <- validateSoapMessage(soapMessage, soapAction)
+      _                <- validateSoapAction(validatedMessage, soapAction)
     yield (soapAction, validatedMessage)
 
   private def validateSoapMessage(loader: XMLLoader[Elem], soapMessage: String, action: SoapAction): Option[Elem] = {
@@ -77,6 +78,14 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: Validat
       actionNode <- (soapMessage \\ "Header" \ "Action").headOption
       action     <- SoapAction.fromString(actionNode.text.trim)
     yield action
+
+  def validateSoapAction(soapMessage: NodeSeq, soapAction: SoapAction): Option[Boolean] =
+    (appConfig.handleErrorReports, soapAction, (soapMessage \\ "ErrorReport").headOption) match {
+      case (false, SoapAction.ReferenceDataSubscription, Some(_)) =>
+        logger.warn(s"Unexpected ReferenceDataSubscription identified containing an ErrorReport:\n$soapMessage")
+        None
+      case _                                                      => Some(true)
+    }
 
   private def validateSoapMessage(soapMessage: String, action: SoapAction): Option[Node] =
     validateSoapMessage(if appConfig.xsdValidation then loader else XML, soapMessage, action)
