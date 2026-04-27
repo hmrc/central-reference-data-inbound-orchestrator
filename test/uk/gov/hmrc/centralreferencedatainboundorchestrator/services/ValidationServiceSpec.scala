@@ -29,11 +29,22 @@ import scala.xml.{Elem, Node}
 import scala.xml.Utility.trim
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.OutboundSoapMessage.valid_is_alive_export_subscription_message
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.InboundSoapMessage.valid_soap_error_report_message
+import uk.gov.hmrc.play.bootstrap.tools.LogCapturing
+import play.api.Logger
+import ch.qos.logback.classic.Level
+import org.scalatest.concurrent.Eventually
 
-class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, ScalaFutures, OptionValues:
+class ValidationServiceSpec
+    extends AnyWordSpec,
+      BeforeAndAfterEach,
+      Matchers,
+      ScalaFutures,
+      OptionValues,
+      LogCapturing,
+      Eventually:
   private val mockAppConfig = mock[AppConfig]
 
-  private val validationService = ValidationService(mockAppConfig, new ValidatingXmlLoader)
+  private val validationService = StubValidationService(mockAppConfig, new ValidatingXmlLoader)
 
   private val valid_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
@@ -121,7 +132,7 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
 
   private val invalid_soap_message: Elem =
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataExportReceiverCBS/V4"
+                   xmlns:v4="http://xmlns.ec.eu/CallbackService/CSRD2/IReDerenceDataExportReceiverCBS/V4"
                    xmlns:v41="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataExportReceiverCBSServiceType/V4"
                    xmlns:v2="http://xmlns.ec.eu/BusinessObjects/CSRD2/MessageHeaderType/V2">
       <soap:Header>
@@ -339,10 +350,20 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
 
       "fail for a ReferenceDataSubscription with an ErrorReport when AppConfig.handleErrorReports is false" in {
         when(mockAppConfig.handleErrorReports).thenReturn(false)
-        validationService.validateSoapAction(
-          valid_soap_error_report_message,
-          SoapAction.ReferenceDataSubscription
-        ) shouldBe None
+
+        withCaptureOfLoggingFrom(validationService.testLogger) { logEvents =>
+          validationService.validateSoapAction(
+            valid_soap_error_report_message,
+            SoapAction.ReferenceDataSubscription
+          ) shouldBe None
+          eventually {
+            logEvents.count(event =>
+              event.getLevel() == Level.WARN && event.getFormattedMessage.startsWith(
+                s"Unexpected ReferenceDataSubscription identified containing an ErrorReport:\n${valid_soap_error_report_message}"
+              )
+            ) shouldBe 1
+          }
+        }
       }
     }
 
@@ -364,3 +385,13 @@ class ValidationServiceSpec extends AnyWordSpec, BeforeAndAfterEach, Matchers, S
       }
     }
   }
+
+// A test stub to expose the logger.
+class StubValidationService(
+  appConfig: AppConfig,
+  validatingXmlLoader: ValidatingXmlLoader
+) extends ValidationService(
+      appConfig,
+      validatingXmlLoader
+    ):
+  val testLogger: Logger = logger

@@ -81,7 +81,9 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: Validat
 
   def validateSoapAction(soapMessage: NodeSeq, soapAction: SoapAction): Option[Boolean] =
     (appConfig.handleErrorReports, soapAction, (soapMessage \\ "ErrorReport").headOption) match {
-      case (false, SoapAction.ReferenceDataSubscription, Some(_)) => None
+      case (false, SoapAction.ReferenceDataSubscription, Some(_)) =>
+        logger.warn(s"Unexpected ReferenceDataSubscription identified containing an ErrorReport:\n$soapMessage")
+        None
       case _                                                      => Some(true)
     }
 
