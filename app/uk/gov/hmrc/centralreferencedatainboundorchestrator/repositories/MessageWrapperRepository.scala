@@ -68,7 +68,7 @@ class MessageWrapperRepository @Inject() (
         true
       )
       .recoverWith { case e =>
-        logger.error(s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}")
+        logger.error(s"Failed to insert message wrapper with uid '$uid' into $collectionName table", e)
         Future.failed(
           MongoWriteError(
             s"failed to insert message wrapper with uid: $uid into $collectionName table with ${e.getMessage}"
@@ -82,7 +82,7 @@ class MessageWrapperRepository @Inject() (
       .find(Filters.equal("uid", uid))
       .headOption()
       .recoverWith { case e =>
-        logger.error(s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}")
+        logger.error(s"Failed to retrieve message wrapper with uid '$uid' from $collectionName table", e)
         Future.failed(
           MongoReadError(
             s"failed to retrieve message wrapper with uid: $uid in $collectionName table with ${e.getMessage}"
@@ -106,12 +106,12 @@ class MessageWrapperRepository @Inject() (
       .map(_.wasAcknowledged())
       .recoverWith { case e =>
         logger.error(
-          s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"
+          s"Failed to update status to '$status' for uid '$uid' in $collectionName table",
+          e
         )
         Future.failed(
           MongoWriteError(
             s"failed to update message wrappers status with uid: $uid & status: $status in $collectionName table with ${e.getMessage}"
           )
         )
-
       }

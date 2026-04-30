@@ -53,7 +53,9 @@ class SdesService @Inject() (
         updateMessageStatus(sdesCallback, Fail)
 
       case invalidNotification =>
-        logger.warn(s"SDES notification not recognised: $invalidNotification")
+        logger.warn(
+          s"SDES notification '$invalidNotification' not recognised for correlationId '${sdesCallback.correlationID}'"
+        )
         Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
     }
 
@@ -63,7 +65,9 @@ class SdesService @Inject() (
       case ReferenceDataSubscription =>
         val hmrcDataMessage = SubscriptionMessageConverter.convertSoapString(eisRequest.payload)
         eisConnector.forwardMessage(eisRequest.messageType, loadString(hmrcDataMessage))
-      case _                         => Future.failed(Exception("Message type is not supported"))
+      case unsupported               =>
+        logger.error(s"Unsupported message type '$unsupported' for correlationId '${eisRequest.correlationID}'")
+        Future.failed(Exception(s"Message type '$unsupported' is not supported"))
     }
 
   def updateStatus(messageSent: Boolean, correlationID: String): Future[String] =
@@ -72,18 +76,26 @@ class SdesService @Inject() (
         case true  =>
           Future.successful(s"Message with UID: $correlationID, successfully sent to EIS and status updated to sent.")
         case false =>
-          Future.failed(MongoWriteError(s"failed to update message wrappers status to failed with uid: $correlationID"))
+          logger.error(s"Failed to update status to Sent in Mongo for correlationId '$correlationID'")
+          Future.failed(MongoWriteError(s"failed to update message wrapper status to Sent with uid: $correlationID"))
       }
     else
-      logger.error("Message not sent")
+      logger.error(
+        s"Message not sent to EIS for correlationId '$correlationID' after ${appConfig.maxRetryCount} attempts"
+      )
       Future.failed(EisResponseError(s"Unable to send message to EIS after ${appConfig.maxRetryCount} attempts"))
 
   private def updateMessageStatus(sdesCallback: SdesCallbackResponse, status: MessageStatus) =
     messageWrapperRepository.updateStatus(sdesCallback.correlationID, status) flatMap {
-      case true  => Future.successful(s"status updated to failed for uid: ${sdesCallback.correlationID}")
+      case true  => Future.successful(s"status updated to $status for uid: ${sdesCallback.correlationID}")
       case false =>
+        logger.error(
+          s"Failed to update status to $status in Mongo for correlationId '${sdesCallback.correlationID}'"
+        )
         Future.failed(
-          MongoWriteError(s"failed to update message wrappers status to failed with uid: ${sdesCallback.correlationID}")
+          MongoWriteError(
+            s"failed to update message wrapper status to $status with uid: ${sdesCallback.correlationID}"
+          )
         )
     }
 

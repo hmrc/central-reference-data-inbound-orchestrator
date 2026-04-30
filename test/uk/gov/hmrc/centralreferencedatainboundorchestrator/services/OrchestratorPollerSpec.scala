@@ -217,7 +217,7 @@ class OrchestratorPollerSpec
         eventually {
           logEvents.count(event =>
             event.getLevel == Level.ERROR &&
-              event.getFormattedMessage == s"No message handler for messageType ${wi.item.messageType}"
+              event.getFormattedMessage == s"No message handler for messageType '${wi.item.messageType}' and correlationId '${wi.item.correlationID}'"
           ) shouldBe 1
         }
       }
@@ -280,7 +280,7 @@ class OrchestratorPollerSpec
         eventually {
           logEvents.count(event =>
             event.getLevel == Level.ERROR &&
-              event.getFormattedMessage == "We got an error processing an item"
+              event.getFormattedMessage == s"Exception processing work item '${wi.id}' for correlationId '${wi.item.correlationID}'"
           ) shouldBe 1
         }
       }
@@ -311,7 +311,7 @@ class OrchestratorPollerSpec
         eventually {
           logEvents.count(event =>
             event.getLevel == Level.ERROR &&
-              event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
+              event.getFormattedMessage == s"Unexpected exception processing work item '${wi.id}' for correlationId '${wi.item.correlationID}'"
           ) shouldBe 1
         }
       }
@@ -342,7 +342,7 @@ class OrchestratorPollerSpec
         eventually {
           logEvents.count(event =>
             event.getLevel == Level.ERROR &&
-              event.getFormattedMessage == "We got an exception java.lang.IllegalArgumentException"
+              event.getFormattedMessage == s"Unexpected exception processing work item '${wi.id}' for correlationId '${wi.item.correlationID}'"
           ) shouldBe 1
         }
       }

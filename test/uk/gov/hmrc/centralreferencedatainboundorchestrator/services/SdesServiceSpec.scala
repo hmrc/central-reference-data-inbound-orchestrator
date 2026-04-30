@@ -200,7 +200,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
         )
         .futureValue
 
-      result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+      result shouldBe "status updated to ScanPassed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
 
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
@@ -229,7 +229,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
         )
         .futureValue
 
-      result shouldBe "status updated to failed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
+      result shouldBe "status updated to ScanFailed for uid: 32f2c4f7-c635-45e0-bee2-0bdd97a4a70d"
 
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
@@ -298,7 +298,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       val result = sdesService.sendMessage(unsupportedRequest)
 
       recoverToExceptionIf[Exception](result).map { ex =>
-        ex.getMessage shouldBe "Message type is not supported"
+        ex.getMessage shouldBe "Message type 'null' is not supported"
       }.futureValue
 
       verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
@@ -329,7 +329,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       val result = sdesService.updateStatus(true, uid)
 
       recoverToExceptionIf[MongoWriteError](result).map { mwe =>
-        mwe.message shouldBe s"failed to update message wrappers status to failed with uid: $uid"
+        mwe.message shouldBe s"failed to update message wrapper status to Sent with uid: $uid"
       }.futureValue
 
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
@@ -376,7 +376,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       )
 
       recoverToExceptionIf[MongoWriteError](result).map { mwe =>
-        mwe.message shouldBe s"failed to update message wrappers status to failed with uid: $uid"
+        mwe.message shouldBe s"failed to update message wrapper status to ScanFailed with uid: $uid"
       }.futureValue
 
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())

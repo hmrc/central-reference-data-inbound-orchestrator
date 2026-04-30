@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
+import play.api.Logging
 import play.api.mvc.*
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.audit.AuditHandler
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.*
@@ -29,7 +30,8 @@ import scala.util.{Failure, Success}
 @Singleton
 class SdesCallbackController @Inject() (sdesService: SdesService, cc: ControllerComponents, auditHandler: AuditHandler)(
   using executionContext: ExecutionContext
-) extends BackendController(cc):
+) extends BackendController(cc)
+    with Logging:
 
   def sdesCallback: Action[SdesCallbackResponse] = Action.async(parse.json[SdesCallbackResponse]) { implicit request =>
     auditHandler.auditFileProcessed(request.body)
@@ -37,9 +39,32 @@ class SdesCallbackController @Inject() (sdesService: SdesService, cc: Controller
       case Success(_)              => Success(Accepted)
       case Failure(err: Throwable) =>
         err match
-          case NoMatchingUIDInMongoError(_)           => Success(NotFound)
-          case InvalidSDESNotificationError(_)        => Success(BadRequest)
-          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
-          case _                                      => Success(InternalServerError)
+          case e: NoMatchingUIDInMongoError    =>
+            logger.error(
+              s"No matching UID in Mongo for SDES callback with correlationId '${request.body.correlationID}': ${e.getMessage}",
+              e
+            )
+            Success(NotFound)
+          case e: InvalidSDESNotificationError =>
+            logger.warn(s"Invalid SDES notification for correlationId '${request.body.correlationID}': ${e.getMessage}")
+            Success(BadRequest)
+          case e: MongoReadError               =>
+            logger.error(
+              s"Mongo read error processing SDES callback for correlationId '${request.body.correlationID}': ${e.getMessage}",
+              e
+            )
+            Success(InternalServerError)
+          case e: MongoWriteError              =>
+            logger.error(
+              s"Mongo write error processing SDES callback for correlationId '${request.body.correlationID}': ${e.getMessage}",
+              e
+            )
+            Success(InternalServerError)
+          case e                               =>
+            logger.error(
+              s"Unexpected error processing SDES callback for correlationId '${request.body.correlationID}': ${e.getMessage}",
+              e
+            )
+            Success(InternalServerError)
     }
   }
