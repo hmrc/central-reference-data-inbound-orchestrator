@@ -81,7 +81,9 @@ class OrchestratorPoller @Inject() (
         wi.item.messageType match {
           case ReferenceDataExport | ReferenceDataSubscription => sendMessageToEIS(wi)
           case _                                               =>
-            logger.error(s"No message handler for messageType ${wi.item.messageType}")
+            logger.error(
+              s"No message handler for messageType '${wi.item.messageType}' and correlationId '${wi.item.correlationID}'"
+            )
             failedAttempt(wi)
             Future.successful(false)
         }
@@ -108,13 +110,19 @@ class OrchestratorPoller @Inject() (
           failedAttempt(wi)
           Success(false)
         case Failure(ex)                                                 =>
-          logger.error("We got an error processing an item", ex)
+          logger.error(
+            s"Exception processing work item '${wi.id}' for correlationId '${wi.item.correlationID}'",
+            ex
+          )
           failedAttempt(wi)
           Success(false)
       }
     catch {
       case ex: Throwable =>
-        logger.error(s"We got an exception $ex")
+        logger.error(
+          s"Unexpected exception processing work item '${wi.id}' for correlationId '${wi.item.correlationID}'",
+          ex
+        )
         failedAttempt(wi)
         Future.successful(false)
     }

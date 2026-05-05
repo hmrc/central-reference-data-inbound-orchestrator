@@ -82,7 +82,10 @@ class ValidationService @Inject() (val appConfig: AppConfig, val loader: Validat
   def validateSoapAction(soapMessage: NodeSeq, soapAction: SoapAction): Option[Boolean] =
     (appConfig.handleErrorReports, soapAction, (soapMessage \\ "ErrorReport").headOption) match {
       case (false, SoapAction.ReferenceDataSubscription, Some(_)) =>
-        logger.warn(s"Unexpected ReferenceDataSubscription identified containing an ErrorReport:\n$soapMessage")
+        val messageId = (soapMessage \\ "Header" \ "MessageID").headOption.map(_.text.trim).getOrElse("not present")
+        logger.warn(
+          s"Unexpected ReferenceDataSubscription with MessageID '$messageId' identified containing an ErrorReport"
+        )
         None
       case _                                                      => Some(true)
     }

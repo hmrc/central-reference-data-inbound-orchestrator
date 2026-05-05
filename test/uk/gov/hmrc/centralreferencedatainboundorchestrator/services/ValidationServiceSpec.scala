@@ -359,8 +359,8 @@ class ValidationServiceSpec
           eventually {
             logEvents.count(event =>
               event.getLevel() == Level.WARN && event.getFormattedMessage.startsWith(
-                s"Unexpected ReferenceDataSubscription identified containing an ErrorReport:\n${valid_soap_error_report_message}"
-              )
+                "Unexpected ReferenceDataSubscription with MessageID"
+              ) && event.getFormattedMessage.contains("identified containing an ErrorReport")
             ) shouldBe 1
           }
         }

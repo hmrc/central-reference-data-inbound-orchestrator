@@ -102,6 +102,9 @@ class InboundController @Inject() (
               .set(EISRequest(validatedMessage.toString, uuid, SoapAction.ReferenceDataSubscription))
               .map(_ => Accepted(s"Message with UID: $uuid, successfully queued"))
           case None       =>
+            val rawMessageId =
+              (validatedMessage \\ "Header" \ "MessageID").headOption.map(_.text.trim).getOrElse("not present")
+            logger.warn(s"Missing or invalid UUID in MessageID for ReferenceDataSubscription: '$rawMessageId'")
             Future.successful(BadRequest("Missing or invalid UUID in MessageID"))
         }
       case (false, true) =>
@@ -123,9 +126,18 @@ class InboundController @Inject() (
         Success(Accepted)
       case Failure(err: Throwable) =>
         err match {
-          case InvalidXMLContentError(_)              => Success(BadRequest)
-          case MongoReadError(_) | MongoWriteError(_) => Success(InternalServerError)
-          case _                                      => Success(InternalServerError)
+          case e: InvalidXMLContentError =>
+            logger.warn(s"Invalid XML content processing $action message: ${e.getMessage}")
+            Success(BadRequest)
+          case e: MongoReadError         =>
+            logger.error(s"Mongo read error processing $action message: ${e.getMessage}", e)
+            Success(InternalServerError)
+          case e: MongoWriteError        =>
+            logger.error(s"Mongo write error processing $action message: ${e.getMessage}", e)
+            Success(InternalServerError)
+          case e                         =>
+            logger.error(s"Unexpected error processing $action message: ${e.getMessage}", e)
+            Success(InternalServerError)
         }
     }
 

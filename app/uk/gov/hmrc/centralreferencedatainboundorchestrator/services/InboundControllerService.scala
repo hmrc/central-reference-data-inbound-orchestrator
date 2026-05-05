@@ -40,9 +40,14 @@ class InboundControllerService @Inject() (
   private def getUID(xml: NodeSeq, action: SoapAction): Future[String] =
     action match {
       case SoapAction.ReferenceDataSubscription =>
-        (xml \ "Header" \ "MessageID").text.trim.stripPrefix("uuid:") match {
+        val rawMessageId = (xml \ "Header" \ "MessageID").headOption.map(_.text.trim)
+        rawMessageId.getOrElse("").stripPrefix("uuid:") match {
           case uid if uid.nonEmpty => Future.successful(uid)
-          case _                   => Future.failed(InvalidXMLContentError("Failed to find UUID in MessageID"))
+          case _                   =>
+            logger.error(
+              s"Failed to parse UUID from MessageID '${rawMessageId.getOrElse("not present")}' for ReferenceDataSubscription message"
+            )
+            Future.failed(InvalidXMLContentError("Failed to find UUID in MessageID"))
         }
       case _                                    =>
         (xml \\ "IncludedBinaryObject").text.trim match {
