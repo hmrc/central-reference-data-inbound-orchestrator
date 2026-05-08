@@ -28,6 +28,7 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, ScheduledLockService}
 import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItem}
 
 import java.time.Duration
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -92,10 +93,11 @@ class OrchestratorPoller @Inject() (
   }
 
   private def sendMessageToEIS(wi: WorkItem[EISRequest]) =
+    val correlationId = UUID.randomUUID().toString
     try
-      sdesService.sendMessage(wi.item) transform {
+      sdesService.sendMessage(wi.item, correlationId) transform {
         case Success(true)                                               =>
-          logger.info(s"Successfully sent message with uuid ${wi.item.correlationID}")
+          logger.info(s"Successfully sent message with uuid ${wi.item.correlationID} and correlationId $correlationId")
           sdesService.updateStatus(true, wi.item.correlationID)
           workItemRepo.completeAndDelete(wi.id)
           Success(true)

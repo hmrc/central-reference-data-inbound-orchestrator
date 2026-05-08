@@ -31,7 +31,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, ZoneOffset}
 import java.util.Locale
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
@@ -39,19 +38,18 @@ import scala.xml.NodeSeq
 class EisConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig, clock: Clock) extends Logging:
   private val httpDateFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.ENGLISH)
 
-  def forwardMessage(messageType: SoapAction, body: NodeSeq)(using
+  def forwardMessage(messageType: SoapAction, body: NodeSeq, correlationId: String)(using
     ec: ExecutionContext,
     hc: HeaderCarrier
   ): Future[Boolean] =
-    val url           =
+    val url         =
       if messageType == ReferenceDataExport then s"${appConfig.eisUrl}${appConfig.eisExportMessagePath}"
       else s"${appConfig.eisUrl}${appConfig.eisSubscriptionMessagePath}"
-    val bearerToken   =
+    val bearerToken =
       if messageType == ReferenceDataExport then appConfig.eisExtractBearerToken
       else appConfig.eisSubscriptionBearerToken
-    val now           = clock.instant().atZone(ZoneOffset.UTC)
-    val correlationId = UUID.randomUUID().toString
-    val contentType   = if messageType == ReferenceDataExport then ContentTypes.XML(Codec.utf_8) else MimeTypes.XML
+    val now         = clock.instant().atZone(ZoneOffset.UTC)
+    val contentType = if messageType == ReferenceDataExport then ContentTypes.XML(Codec.utf_8) else MimeTypes.XML
 
     httpClient
       .post(url"$url")

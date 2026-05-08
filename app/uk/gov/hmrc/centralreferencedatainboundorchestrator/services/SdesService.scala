@@ -59,12 +59,13 @@ class SdesService @Inject() (
         Future.failed(InvalidSDESNotificationError(s"SDES notification not recognised: $invalidNotification"))
     }
 
-  def sendMessage(eisRequest: EISRequest)(using hc: HeaderCarrier): Future[Boolean] =
+  def sendMessage(eisRequest: EISRequest, correlationId: String)(using hc: HeaderCarrier): Future[Boolean] =
     eisRequest.messageType match {
-      case ReferenceDataExport       => eisConnector.forwardMessage(eisRequest.messageType, loadString(eisRequest.payload))
+      case ReferenceDataExport       =>
+        eisConnector.forwardMessage(eisRequest.messageType, loadString(eisRequest.payload), correlationId)
       case ReferenceDataSubscription =>
         val hmrcDataMessage = SubscriptionMessageConverter.convertSoapString(eisRequest.payload)
-        eisConnector.forwardMessage(eisRequest.messageType, loadString(hmrcDataMessage))
+        eisConnector.forwardMessage(eisRequest.messageType, loadString(hmrcDataMessage), correlationId)
       case unsupported               =>
         logger.error(s"Unsupported message type '$unsupported' for correlationId '${eisRequest.correlationID}'")
         Future.failed(Exception(s"Message type '$unsupported' is not supported"))
