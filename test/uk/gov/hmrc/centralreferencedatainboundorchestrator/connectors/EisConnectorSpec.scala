@@ -61,7 +61,8 @@ class EisConnectorSpec
   private val referenceDataExportPath    = "/csrd/referencedataupdate/v1"
   private val eisSubscriptionMessagePath = "/crdl/deltareferencemessagewrapper/v1"
 
-  private val connector = new EisConnector(httpClientV2, appConfig, Clock.systemUTC())
+  private val connector         = new EisConnector(httpClientV2, appConfig, Clock.systemUTC())
+  private val testCorrelationId = "test-correlation-id"
 
   private val testBody: Elem =
     <MainMessage>
@@ -88,7 +89,7 @@ class EisConnectorSpec
             .willReturn(aResponse().withStatus(ACCEPTED))
         )
 
-        val result = await(connectorFixed.forwardMessage(ReferenceDataExport, testBody))
+        val result = await(connectorFixed.forwardMessage(ReferenceDataExport, testBody, testCorrelationId))
 
         result shouldBe true
       }
@@ -106,7 +107,7 @@ class EisConnectorSpec
             )
         )
 
-        val result = await(connector.forwardMessage(ReferenceDataExport, testBody))
+        val result = await(connector.forwardMessage(ReferenceDataExport, testBody, testCorrelationId))
 
         result shouldBe true
       }
@@ -120,7 +121,7 @@ class EisConnectorSpec
             )
         )
 
-        val result = await(connector.forwardMessage(ReferenceDataExport, testBody))
+        val result = await(connector.forwardMessage(ReferenceDataExport, testBody, testCorrelationId))
 
         result shouldBe false
       }
@@ -134,7 +135,7 @@ class EisConnectorSpec
             )
         )
 
-        val result = await(connector.forwardMessage(ReferenceDataExport, testBody))
+        val result = await(connector.forwardMessage(ReferenceDataExport, testBody, testCorrelationId))
 
         result shouldBe false
       }
@@ -155,7 +156,7 @@ class EisConnectorSpec
             )
         )
 
-        val result = await(connector.forwardMessage(messageType, testBody))
+        val result = await(connector.forwardMessage(messageType, testBody, testCorrelationId))
 
         result shouldBe true
       }
@@ -170,7 +171,7 @@ class EisConnectorSpec
             )
         )
 
-        val result = await(connector.forwardMessage(messageType, testBody))
+        val result = await(connector.forwardMessage(messageType, testBody, testCorrelationId))
 
         result shouldBe false
 
@@ -187,7 +188,7 @@ class EisConnectorSpec
             )
         )
 
-        val result = await(connector.forwardMessage(messageType, testBody))
+        val result = await(connector.forwardMessage(messageType, testBody, testCorrelationId))
 
         result shouldBe false
 

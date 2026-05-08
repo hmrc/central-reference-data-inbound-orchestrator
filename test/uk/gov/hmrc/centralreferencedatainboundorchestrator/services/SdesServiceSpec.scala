@@ -176,7 +176,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(1)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "should return av scan passed when accepting a FileReceived notification" in {
@@ -205,7 +205,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "should return av scan failed when accepting a FileProcessingFailure notification" in {
@@ -234,7 +234,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "should fail if SDES notification is not valid" in {
@@ -261,47 +261,47 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "forward a ReferenceDataExport payload to EIS" in {
-      when(mockEisConnector.forwardMessage(eqTo(ReferenceDataExport), eqTo(testBody))(using any(), any()))
+      when(mockEisConnector.forwardMessage(eqTo(ReferenceDataExport), eqTo(testBody), any)(using any(), any()))
         .thenReturn(Future.successful(true))
 
-      val result = sdesService.sendMessage(testExportRequest).futureValue
+      val result = sdesService.sendMessage(testExportRequest, "test-correlation-id").futureValue
 
       result shouldBe true
 
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(1)).forwardMessage(eqTo(ReferenceDataExport), any)(using any(), any())
+      verify(mockEisConnector, times(1)).forwardMessage(eqTo(ReferenceDataExport), any, any)(using any(), any())
     }
 
     "forward a ReferenceDataSubscription payload to EIS after conversion" in {
-      when(mockEisConnector.forwardMessage(eqTo(ReferenceDataSubscription), any)(using any(), any()))
+      when(mockEisConnector.forwardMessage(eqTo(ReferenceDataSubscription), any, any)(using any(), any()))
         .thenReturn(Future.successful(true))
 
-      val result = sdesService.sendMessage(testSubscriptionRequest).futureValue
+      val result = sdesService.sendMessage(testSubscriptionRequest, "test-correlation-id").futureValue
 
       result shouldBe true
 
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(1)).forwardMessage(eqTo(ReferenceDataSubscription), any)(using any(), any())
+      verify(mockEisConnector, times(1)).forwardMessage(eqTo(ReferenceDataSubscription), any, any)(using any(), any())
     }
 
     "fail when sendMessage receives an unsupported message type" in {
       val unsupportedRequest = EISRequest("<Body></Body>", "correlationID", null)
 
-      val result = sdesService.sendMessage(unsupportedRequest)
+      val result = sdesService.sendMessage(unsupportedRequest, "test-correlation-id")
 
       recoverToExceptionIf[Exception](result).map { ex =>
         ex.getMessage shouldBe "Message type 'null' is not supported"
       }.futureValue
 
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "update wrapper status on successful call to EIS" in {
@@ -317,7 +317,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "update wrapper status on successful call to EIS with status update failure" in {
@@ -335,7 +335,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "update wrapper status on failed call to EIS" in {
@@ -353,7 +353,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "should return exception MongoWriteError when accepting a FileProcessingFailure notification but Mongo fails to write" in {
@@ -382,7 +382,7 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(1)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(0)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
 
     "should return exception NoMatchingUIDInMongoError when forwarding a message but Mongo fails to find UID in Mongo Matching" in {
@@ -412,6 +412,6 @@ class SdesServiceSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndAfterEa
       verify(mockMessageWrapperRepository, times(0)).updateStatus(any, any)(using any())
       verify(mockMessageWrapperRepository, times(1)).findByUid(any)(using any())
       verify(mockEISWorkItemRepository, times(0)).set(any)
-      verify(mockEisConnector, times(0)).forwardMessage(any, any)(using any(), any())
+      verify(mockEisConnector, times(0)).forwardMessage(any, any, any)(using any(), any())
     }
   }

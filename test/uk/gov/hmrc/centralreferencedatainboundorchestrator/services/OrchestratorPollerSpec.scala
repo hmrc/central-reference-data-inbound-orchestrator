@@ -102,7 +102,7 @@ class OrchestratorPollerSpec
         }
       }
 
-      verify(sdesService, times(0)).sendMessage(any)(using any)
+      verify(sdesService, times(0)).sendMessage(any, any)(using any)
     }
 
     "processing a new item works" in {
@@ -118,7 +118,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item), any)(using any))
         .thenReturn(Future.successful(true))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -126,12 +126,14 @@ class OrchestratorPollerSpec
         eventually {
           logEvents.count(event =>
             event.getLevel == Level.INFO &&
-              event.getFormattedMessage == s"Successfully sent message with uuid ${wi.item.correlationID}"
+              event.getFormattedMessage.contains(
+                s"Successfully sent message with uuid ${wi.item.correlationID} and correlationId "
+              )
           ) shouldBe 1
         }
       }
 
-      verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(1)).sendMessage(any, any)(using any)
       verify(sdesService, times(1)).updateStatus(eqTo(true), eqTo(correlationID))
       verify(workItemRepository, times(1)).completeAndDelete(eqTo(wi.id))
     }
@@ -150,7 +152,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item), any)(using any))
         .thenReturn(Future.successful(true))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -158,12 +160,14 @@ class OrchestratorPollerSpec
         eventually {
           logEvents.count(event =>
             event.getLevel == Level.INFO &&
-              event.getFormattedMessage == s"Successfully sent message with uuid ${wi.item.correlationID}"
+              event.getFormattedMessage.contains(
+                s"Successfully sent message with uuid ${wi.item.correlationID} and correlationId "
+              )
           ) shouldBe 1
         }
       }
 
-      verify(sdesService, times(1)).sendMessage(eqTo(wi.item))(using any)
+      verify(sdesService, times(1)).sendMessage(eqTo(wi.item), any)(using any)
       verify(sdesService, times(1)).updateStatus(eqTo(true), eqTo(correlationID))
       verify(workItemRepository, times(1)).completeAndDelete(eqTo(wi.id))
     }
@@ -181,7 +185,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item), any)(using any))
         .thenReturn(Future.successful(false))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -194,7 +198,7 @@ class OrchestratorPollerSpec
         }
       }
 
-      verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(1)).sendMessage(any, any)(using any)
       verify(sdesService, times(0)).updateStatus(any, any)
       verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(Failed), any)
     }
@@ -222,7 +226,7 @@ class OrchestratorPollerSpec
         }
       }
 
-      verify(sdesService, times(0)).sendMessage(any)(using any)
+      verify(sdesService, times(0)).sendMessage(any, any)(using any)
       verify(sdesService, times(0)).updateStatus(any, any)
       verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(Failed), any)
     }
@@ -240,7 +244,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item), any)(using any))
         .thenReturn(Future.successful(false))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -253,7 +257,7 @@ class OrchestratorPollerSpec
         }
       }
 
-      verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(1)).sendMessage(any, any)(using any)
       verify(sdesService, times(1)).updateStatus(eqTo(false), eqTo(correlationID))
       verify(workItemRepository, times(1))
         .markAs(eqTo(wi.id), eqTo(PermanentlyFailed), any)
@@ -272,7 +276,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item), any)(using any))
         .thenReturn(Future.failed(new IllegalArgumentException))
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -285,7 +289,7 @@ class OrchestratorPollerSpec
         }
       }
 
-      verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(1)).sendMessage(any, any)(using any)
       verify(sdesService, times(0)).updateStatus(any, any)
       verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(Failed), any)
     }
@@ -303,7 +307,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item), any)(using any))
         .thenThrow(new IllegalArgumentException)
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -316,7 +320,7 @@ class OrchestratorPollerSpec
         }
       }
 
-      verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(1)).sendMessage(any, any)(using any)
       verify(sdesService, times(0)).updateStatus(any, any)
       verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(Failed), any)
     }
@@ -334,7 +338,7 @@ class OrchestratorPollerSpec
       when(workItemRepository.pullOutstanding(eqTo(before), eqTo(now)))
         .thenReturn(Future.successful(Some(wi)))
 
-      when(sdesService.sendMessage(eqTo(wi.item))(using any))
+      when(sdesService.sendMessage(eqTo(wi.item), any)(using any))
         .thenThrow(new IllegalArgumentException)
 
       withCaptureOfLoggingFrom(poller.testLogger) { logEvents =>
@@ -347,7 +351,7 @@ class OrchestratorPollerSpec
         }
       }
 
-      verify(sdesService, times(1)).sendMessage(any)(using any)
+      verify(sdesService, times(1)).sendMessage(any, any)(using any)
       verify(sdesService, times(1)).updateStatus(eqTo(false), eqTo(correlationID))
       verify(workItemRepository, times(1)).markAs(eqTo(wi.id), eqTo(PermanentlyFailed), any)
     }
