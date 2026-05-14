@@ -100,7 +100,7 @@ class InboundController @Inject() (
           case Some(uuid) =>
             workItemRepo
               .set(EISRequest(validatedMessage.toString, uuid, SoapAction.ReferenceDataSubscription))
-              .map(_ => Accepted(s"Message with UID: $uuid, successfully queued"))
+              .map(_ => Ok(SubscriptionChangeResponse.acknowledgement(uuid)))
           case None       =>
             val rawMessageId =
               (validatedMessage \\ "Header" \ "MessageID").headOption.map(_.text.trim).getOrElse("not present")

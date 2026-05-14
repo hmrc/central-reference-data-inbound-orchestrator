@@ -33,12 +33,14 @@ import uk.gov.hmrc.centralreferencedatainboundorchestrator.helpers.{InboundSoapM
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.MessageStatus.MessageStatus
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SoapAction.ReferenceDataSubscription
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.models.SubscriptionChangeResponse
 import uk.gov.hmrc.centralreferencedatainboundorchestrator.repositories.{EISWorkItemRepository, MessageWrapperRepository}
 import uk.gov.hmrc.http.test.ExternalWireMockSupport
 import uk.gov.hmrc.mongo.test.MongoSupport
 import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 
 import scala.xml.Elem
+import scala.xml.Utility.trim
 
 class InboundControllerISpec extends AnyWordSpec,
   Matchers,
@@ -376,9 +378,8 @@ class InboundControllerISpec extends AnyWordSpec,
           .post(subscriptionMessageWithRDEntityList)
           .futureValue
 
-      response.status shouldBe ACCEPTED
-      response.body.toString should include("12345678-1234-1234-1234-123456789012")
-      response.body.toString should include("successfully queued")
+      response.status shouldBe OK
+      trim(response.body) shouldBe trim(SubscriptionChangeResponse.acknowledgement("12345678-1234-1234-1234-123456789012"))
       
       val workItems = await(workItemRepository.collection.find().toFuture())
       workItems.size shouldBe 1
