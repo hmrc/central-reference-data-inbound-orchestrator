@@ -22,9 +22,9 @@ import scala.xml.Utility.trim
 
 class SubscriptionChangeResponseSpec extends AnyWordSpec, Matchers {
   "acknowledgement" should {
-    val testMessageId = "6AFB3F32-9DD8-44C6-A8A0-0D04AB175F0E"
-    val expectedAcknowledgement = 
-        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+    val testMessageId           = "6AFB3F32-9DD8-44C6-A8A0-0D04AB175F0E"
+    val expectedAcknowledgement =
+      <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
             <soap:Body>
                 <ns15:ReceiveReferenceDataRespMsg xmlns:ns0="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
                 xmlns:ns15="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
@@ -40,8 +40,8 @@ class SubscriptionChangeResponseSpec extends AnyWordSpec, Matchers {
             </soap:Body>
         </soap:Envelope>
     "return a valid message" in {
-        val result = SubscriptionChangeResponse.acknowledgement(testMessageId)
-        trim(result) shouldEqual trim(expectedAcknowledgement)
+      val result = SubscriptionChangeResponse.acknowledgement(testMessageId)
+      trim(result) shouldEqual trim(expectedAcknowledgement)
     }
   }
 }

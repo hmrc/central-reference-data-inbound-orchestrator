@@ -17,8 +17,7 @@
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
 
 object SubscriptionChangeResponse {
-  val acknowledgement = (messageId: String) =>
-    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  val acknowledgement = (messageId: String) => <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
        <soap:Body>
             <ns15:ReceiveReferenceDataRespMsg xmlns:ns0="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
             xmlns:ns15="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
