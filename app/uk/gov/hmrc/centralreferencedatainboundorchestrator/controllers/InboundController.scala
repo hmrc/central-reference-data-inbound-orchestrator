@@ -98,9 +98,14 @@ class InboundController @Inject() (
       case (true, _)     =>
         extractUuid(validatedMessage) match {
           case Some(uuid) =>
+            val responseMessageId = UUID.randomUUID().toString()
             workItemRepo
               .set(EISRequest(validatedMessage.toString, uuid, SoapAction.ReferenceDataSubscription))
-              .map(_ => Ok(SubscriptionChangeResponse.acknowledgement(uuid)))
+              .map(_ => 
+                val response = SubscriptionChangeResponse.acknowledgement(uuid, responseMessageId, appConfig)
+                logger.info(s"Response for Subscription Change: ${uuid}\n${response}")
+                Ok(response)
+              )
           case None       =>
             val rawMessageId =
               (validatedMessage \\ "Header" \ "MessageID").headOption.map(_.text.trim).getOrElse("not present")

@@ -15,9 +15,28 @@
  */
 
 package uk.gov.hmrc.centralreferencedatainboundorchestrator.models
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
+
+import scala.xml.Elem
 
 object SubscriptionChangeResponse {
-  val acknowledgement = (messageId: String) => <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  def acknowledgement(messageId: String, responseMessageId: String, appConfig: AppConfig) =
+    <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+        <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
+            <wsa:From>
+                <wsa:Address>{appConfig.subscriptionResponsePartner}</wsa:Address>
+            </wsa:From>
+            <wsa:To>http://www.w3.org/2005/08/addressing/anonymous</wsa:To>
+            <wsa:Action xmlns="http://www.w3.org/2005/08/addressing">{
+      SoapAction.ReferenceDataSubscriptionAction
+    }</wsa:Action>
+            <wsa:RelatesTo>{messageId}</wsa:RelatesTo>
+            <wsa:MessageID xmlns="http://www.w3.org/2005/08/addressing">{responseMessageId}</wsa:MessageID>
+            <m:MessageHeader xmlns:m="http://ccn2.ec.eu/CCN2.Service.Platform.Common.Schema">
+                <m:Version>1.0</m:Version>
+                <m:MessageType>Orchestrator subscription response</m:MessageType>
+            </m:MessageHeader>
+        </soap:Header>
        <soap:Body>
             <ns15:ReceiveReferenceDataRespMsg xmlns:ns0="http://xmlns.ec.eu/BusinessObjects/CSRD2/ReferenceDataSubscriptionReceiverCBSServiceType/V4"
             xmlns:ns15="http://xmlns.ec.eu/CallbackService/CSRD2/IReferenceDataSubscriptionReceiverCBS/V4"
