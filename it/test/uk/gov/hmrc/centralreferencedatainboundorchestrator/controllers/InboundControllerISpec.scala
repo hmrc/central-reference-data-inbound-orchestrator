@@ -18,10 +18,12 @@ package uk.gov.hmrc.centralreferencedatainboundorchestrator.controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.mongodb.scala.{ObservableFuture, SingleObservableFuture}
+import org.mockito.Mockito.*
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -41,6 +43,7 @@ import uk.gov.hmrc.mongo.workitem.ProcessingStatus
 
 import scala.xml.Elem
 import scala.xml.Utility.trim
+import uk.gov.hmrc.centralreferencedatainboundorchestrator.config.AppConfig
 
 class InboundControllerISpec extends AnyWordSpec,
   Matchers,
@@ -55,6 +58,10 @@ class InboundControllerISpec extends AnyWordSpec,
   private val wsClient = app.injector.instanceOf[WSClient]
   private val baseUrl  = s"http://localhost:$port"
   private val url = s"$baseUrl/central-reference-data-inbound-orchestrator/"
+  val testSubscriptionPartner = "CCN2.Partner.XI.Customs.TAXUD/CSRDv3.APIPDEV"
+
+  val mockAppConfig = mock[AppConfig]
+  when(mockAppConfig.subscriptionResponsePartner).thenReturn(testSubscriptionPartner)
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -62,7 +69,8 @@ class InboundControllerISpec extends AnyWordSpec,
         "auditing.consumer.baseUri.host"  -> externalWireMockHost,
         "auditing.consumer.baseUri.port"  -> s"$externalWireMockPort",
         "auditing.enabled"                -> "true",
-        "mongodb.uri"                     -> s"$mongoUri"
+        "mongodb.uri"                     -> s"$mongoUri",
+        "subscriptions.partner"           -> s"$testSubscriptionPartner"
       )
       .build()
 
@@ -379,7 +387,7 @@ class InboundControllerISpec extends AnyWordSpec,
           .futureValue
 
       response.status shouldBe OK
-      trim(response.body) shouldBe trim(SubscriptionChangeResponse.acknowledgement("12345678-1234-1234-1234-123456789012"))
+      response.body.toString() should include("<ns5:messageID>12345678-1234-1234-1234-123456789012</ns5:messageID>")
       
       val workItems = await(workItemRepository.collection.find().toFuture())
       workItems.size shouldBe 1

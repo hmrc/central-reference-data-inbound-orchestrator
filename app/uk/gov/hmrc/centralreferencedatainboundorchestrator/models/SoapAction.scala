@@ -28,7 +28,7 @@ enum SoapAction(private val action: String) {
 object SoapAction {
   private lazy val ReferenceDataExportAction         =
     "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/ReceiveReferenceData"
-  private lazy val ReferenceDataSubscriptionAction   =
+  lazy val ReferenceDataSubscriptionAction           =
     "CCN2.Service.Customs.Default.CSRD.ReferenceDataSubscriptionReceiverCBS/ReceiveReferenceData"
   private lazy val IsAliveActionExport               = "CCN2.Service.Customs.Default.CSRD.ReferenceDataExportReceiverCBS/IsAlive"
   private lazy val IsAliveActionSubscription         =

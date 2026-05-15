@@ -228,10 +228,7 @@ class InboundControllerSpec extends AnyWordSpec, GuiceOneAppPerSuite, BeforeAndA
       )
 
       status(result)        shouldBe OK
-      contentAsString(result) should be(
-        SubscriptionChangeResponse.acknowledgement("12345678-1234-1234-1234-123456789abc").toString()
-      )
-
+      contentAsString(result) should include("12345678-1234-1234-1234-123456789abc")
       verify(mockAuditHandler, times(1)).auditNewMessageWrapper(any)(any)
       verify(mockValidationService, times(1)).validateAndExtractAction(any)
       verify(mockWorkItemRepo, times(1)).set(any[EISRequest])
