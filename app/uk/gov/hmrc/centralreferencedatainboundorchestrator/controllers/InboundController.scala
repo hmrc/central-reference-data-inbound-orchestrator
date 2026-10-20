@@ -51,12 +51,14 @@ class InboundController @Inject() (
 
     val result = validationService.validateAndExtractAction(request.body) match {
       case Some((soapAction, validatedMessage)) =>
+        logger.warn(s"Incoming SOAP message with action $soapAction")
         if appConfig.logIncomingMessages /*&& soapAction != SoapAction.ReferenceDataExport*/ then
-          logger.warn(s"Incoming SOAP message with action $soapAction: ${request.body}")
+          logger.warn(s"Incoming SOAP message has body: ${request.body}")
         Some(handleInboundMessage(soapAction, validatedMessage))
       case None                                 =>
+        logger.warn(s"Incoming SOAP message with unrecognised action")
         if appConfig.logIncomingMessages then
-          logger.warn(s"Incoming SOAP message with unrecognised action: ${request.body}")
+          logger.warn(s"Incoming SOAP message has body: ${request.body}")
         None
     }
 
